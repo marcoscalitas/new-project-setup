@@ -1,0 +1,22 @@
+# ============================================
+# Yadah Burger — Git Ignore
+# ============================================
+
+# --- Ambiente ---
+.env
+
+# --- Laravel ---
+src/vendor/
+src/node_modules/
+src/storage/*.key
+src/.phpunit.result.cache
+
+# --- IDEs ---
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- OS ---
+.DS_Store
+Thumbs.db
