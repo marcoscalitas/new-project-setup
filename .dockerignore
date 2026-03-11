@@ -1,0 +1,36 @@
+# ============================================
+# Meu Projecto — Docker Ignore
+# ============================================
+
+# --- Git ---
+.git
+.gitignore
+.gitattributes
+
+# --- Ambiente ---
+.env
+
+# --- Dependências ---
+node_modules
+vendor
+
+# --- Storage (logs e cache) ---
+storage/logs
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+
+# --- Testes ---
+tests
+
+# --- Docker (evitar recursão) ---
+docker
+
+# --- Documentação ---
+*.md
+
+# --- IDE ---
+.idea
+.vscode
+*.swp
+*.swo
