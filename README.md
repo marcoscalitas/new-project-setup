@@ -169,16 +169,14 @@ cp .env.example .env
 
 ### `docker-compose.yml`
 
-Este é o ficheiro principal da infraestrutura. Os nomes dos containers, rede e volumes devem ser **únicos por projecto** para evitar conflitos quando tiver múltiplos projectos Docker na mesma máquina.
+Este é o ficheiro principal da infraestrutura. Os nomes dos containers devem ser **únicos por projecto** para evitar conflitos quando tiver múltiplos projectos Docker na mesma máquina. Já os nomes da rede e volumes são genéricos propositalmente — o Docker Compose prefixa-os automaticamente com o nome do directório do projecto (ex: `meuapp_app_network`, `meuapp_postgres_data`), evitando duplicação como `meuapp_meuapp_network`.
 
 | O quê | Valor no template | Alterar para |
 |-------|-------------------|-------------|
 | Comentário do topo | `# Meu Projecto — Docker Compose` | `# <Seu Projecto> — Docker Compose` |
 | `container_name` dos serviços | `meu_projecto_app`, `_nginx`, `_postgres`, `_redis`, `_queue` | `<seu_projecto>_app`, `_nginx`, etc. |
-| Nome da rede | `meu_projecto_network` | `<seu_projecto>_network` |
-| Nome dos volumes | `meu_projecto_postgres_data`, `meu_projecto_redis_data` | `<seu_projecto>_postgres_data`, etc. |
 
-> **Por quê?** O Docker usa os `container_name` para identificar containers. Se dois projectos tiverem o mesmo nome, haverá conflito ao subir ambos.
+> **Nota**: A rede (`app_network`) e os volumes (`postgres_data`, `redis_data`) **não precisam ser renomeados**. O Docker Compose adiciona automaticamente o prefixo do projecto (nome da pasta), garantindo isolamento entre projectos sem nomes redundantes.
 
 ---
 

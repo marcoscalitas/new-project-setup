@@ -14,7 +14,7 @@ services:
             - ./src:/var/www
             - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
         networks:
-            - meu_projecto_network
+            - app_network
         depends_on:
             postgres:
                 condition: service_healthy
@@ -47,7 +47,7 @@ services:
         depends_on:
             - app
         networks:
-            - meu_projecto_network
+            - app_network
         logging:
             driver: json-file
             options:
@@ -79,10 +79,10 @@ services:
         ports:
             - "127.0.0.1:5432:5432"
         volumes:
-            - meu_projecto_postgres_data:/var/lib/postgresql/data
+            - postgres_data:/var/lib/postgresql/data
             - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
         networks:
-            - meu_projecto_network
+            - app_network
         healthcheck:
             test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
             interval: 10s
@@ -111,9 +111,9 @@ services:
             - "127.0.0.1:6379:6379"
         volumes:
             - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
-            - meu_projecto_redis_data:/data
+            - redis_data:/data
         networks:
-            - meu_projecto_network
+            - app_network
         healthcheck:
             test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
             interval: 10s
@@ -146,7 +146,7 @@ services:
             - ./src:/var/www
             - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
         networks:
-            - meu_projecto_network
+            - app_network
         depends_on:
             postgres:
                 condition: service_healthy
@@ -167,9 +167,9 @@ services:
                     memory: 64M
 
 networks:
-    meu_projecto_network:
+    app_network:
         driver: bridge
 
 volumes:
-    meu_projecto_postgres_data:
-    meu_projecto_redis_data:
+    postgres_data:
+    redis_data:
