@@ -20,6 +20,11 @@ services:
                 condition: service_healthy
             redis:
                 condition: service_healthy
+        healthcheck:
+            test: ["CMD-SHELL", "php-fpm -t || exit 1"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
         logging:
             driver: json-file
             options:
@@ -48,6 +53,11 @@ services:
             - app
         networks:
             - app_network
+        healthcheck:
+            test: ["CMD-SHELL", "curl -sf http://localhost/ || exit 1"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
         logging:
             driver: json-file
             options:
@@ -80,7 +90,7 @@ services:
             - "127.0.0.1:5432:5432"
         volumes:
             - postgres_data:/var/lib/postgresql/data
-            - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+            - ./docker/postgres/init.sh:/docker-entrypoint-initdb.d/init.sh
         networks:
             - app_network
         healthcheck:
@@ -141,7 +151,7 @@ services:
         restart: unless-stopped
         working_dir: /var/www
         command: >
-            sh -c "while [ ! -f /var/www/artisan ]; do sleep 1; done && php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600"
+            sh -c "while [ ! -f /var/www/artisan ]; do sleep 1; done && php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600 --max-jobs=1000"
         volumes:
             - ./src:/var/www
             - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
@@ -152,6 +162,11 @@ services:
                 condition: service_healthy
             redis:
                 condition: service_healthy
+        healthcheck:
+            test: ["CMD-SHELL", "pgrep -f 'queue:work' || exit 1"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
         logging:
             driver: json-file
             options:
@@ -175,9 +190,9 @@ services:
             - ./src:/var/www
         networks:
             - app_network
-        command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+        command: sh -c "[ -d node_modules ] && npm run dev -- --host 0.0.0.0 || (npm install && npm run dev -- --host 0.0.0.0)"
         ports:
-            - "${VITE_PORT:-5173}:5173"
+            - "127.0.0.1:${VITE_PORT:-5173}:5173"
         logging:
             driver: json-file
             options:
@@ -214,6 +229,44 @@ services:
                 reservations:
                     cpus: '0.05'
                     memory: 16M
+
+    scheduler:
+        build:
+            context: .
+            dockerfile: docker/php/Dockerfile
+        container_name: meu_projecto_scheduler
+        restart: unless-stopped
+        working_dir: /var/www
+        command: >
+            sh -c "while [ ! -f /var/www/artisan ]; do sleep 1; done && php artisan schedule:work"
+        volumes:
+            - ./src:/var/www
+            - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+        networks:
+            - app_network
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD-SHELL", "pgrep -f 'schedule:work' || exit 1"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+                max-file: "3"
+        deploy:
+            resources:
+                limits:
+                    cpus: '0.5'
+                    memory: 256M
+                reservations:
+                    cpus: '0.1'
+                    memory: 64M
 
 networks:
     app_network:

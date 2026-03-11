@@ -14,6 +14,7 @@ Clone, configure e comece a desenvolver em minutos.
 | PostgreSQL | `postgres:17-alpine`  | 5432 |
 | Redis      | `redis:alpine`        | 6379 |
 | Queue      | PHP 8.4 (worker)      | — |
+| Scheduler  | PHP 8.4 (cron)        | — |
 | Node       | `node:22-alpine`      | `VITE_PORT` → 5173 |
 | Mailpit    | `axllent/mailpit`     | `MAILPIT_PORT` → 8025 (web) / 1025 (SMTP) |
 
@@ -31,7 +32,7 @@ Clone, configure e comece a desenvolver em minutos.
 │   │   ├── Dockerfile          # Multi-stage build (builder + production)
 │   │   └── php.ini             # Configurações customizadas do PHP
 │   ├── postgres/
-│   │   └── init.sql            # Script de inicialização do banco
+│   │   └── init.sh             # Script de inicialização do banco
 │   └── redis/
 │       └── redis.conf          # Configuração do Redis
 ├── src/                        # Código-fonte Laravel
@@ -149,7 +150,7 @@ cp .env.example .env
 | `VITE_PORT` | `5173` | Porta do Vite (opcional) |
 | `MAILPIT_PORT` | `8025` | Porta da interface do Mailpit (opcional) |
 
-> Os valores de `POSTGRES_DB` e `POSTGRES_USER` definidos aqui devem corresponder aos usados no `init.sql`.
+> Os valores de `POSTGRES_DB` e `POSTGRES_USER` definidos aqui devem corresponder aos usados no `init.sh`.
 
 ---
 
@@ -178,23 +179,21 @@ Este é o ficheiro principal da infraestrutura. Os nomes dos containers devem se
 | O quê | Valor no template | Alterar para |
 |-------|-------------------|-------------|
 | Comentário do topo | `# Meu Projecto — Docker Compose` | `# <Seu Projecto> — Docker Compose` |
-| `container_name` dos serviços | `meu_projecto_app`, `_nginx`, `_postgres`, `_redis`, `_queue`, `_node`, `_mailpit` | `<seu_projecto>_app`, `_nginx`, etc. |
+| `container_name` dos serviços | `meu_projecto_app`, `_nginx`, `_postgres`, `_redis`, `_queue`, `_scheduler`, `_node`, `_mailpit` | `<seu_projecto>_app`, `_nginx`, etc. |
 
 > **Nota**: A rede (`app_network`) e os volumes (`postgres_data`, `redis_data`) **não precisam ser renomeados**. O Docker Compose adiciona automaticamente o prefixo do projecto (nome da pasta), garantindo isolamento entre projectos sem nomes redundantes.
 
 ---
 
-### `docker/postgres/init.sql`
+### `docker/postgres/init.sh`
 
 Este script corre **apenas na primeira vez** que o volume do PostgreSQL é criado. Se o banco já foi inicializado, alterar este ficheiro não terá efeito (precisará apagar o volume com `docker compose down -v`).
 
 | O quê | Valor no template | Alterar para |
 |-------|-------------------|-------------|
-| `ALTER DATABASE` — nome do banco | `meu_projecto_db` | Deve ser **igual** ao `POSTGRES_DB` no `.env` |
-| `GRANT` — nome do utilizador | `meu_projecto_user` | Deve ser **igual** ao `POSTGRES_USER` no `.env` |
 | Timezone | `Africa/Luanda` | Timezone do seu projecto (ex: `America/Sao_Paulo`, `Europe/Lisbon`) |
 
-> **Atenção**: se os nomes no `init.sql` não coincidirem com as variáveis no `.env`, as permissões não serão aplicadas e o Laravel não conseguirá conectar ao banco.
+> **Nota**: o script usa variáveis de ambiente (`$POSTGRES_DB`, `$POSTGRES_USER`) automaticamente — não é necessário alterar nomes de banco ou utilizador manualmente.
 
 ---
 
@@ -339,12 +338,18 @@ docker compose down -v
 
 ### Queue Worker
 - Processa filas via Redis com retry automático (`--tries=3`)
+- Limite de 1000 jobs ou 1 hora (`--max-jobs=1000 --max-time=3600`)
+- Healthcheck com `pgrep`
 - Reinicia automaticamente quando o container inicia
-- Limites de recursos independentes
+
+### Scheduler
+- Executa `php artisan schedule:work` para tarefas agendadas
+- Healthcheck com `pgrep`
+- Reinicia automaticamente quando o container inicia
 
 ### Node (Vite)
 - Imagem `node:22-alpine` dedicada para compilação de assets
-- Corre `npm install && npm run dev` automaticamente ao iniciar
+- Corre `npm install` apenas se `node_modules` não existir, depois inicia o Vite
 - Vite acessível em `http://localhost:5173` com Hot Module Replacement (HMR)
 - Porta configurável via variável `VITE_PORT`
 
@@ -364,6 +369,7 @@ Cada serviço tem limites de CPU e memória definidos para evitar consumo excess
 | PostgreSQL| 1.0     | 512M        |
 | Redis     | 0.5     | 256M        |
 | Queue     | 0.5     | 256M        |
+| Scheduler | 0.5     | 256M        |
 | Node      | 0.5     | 512M        |
 | Mailpit   | 0.25    | 64M         |
 
@@ -375,5 +381,7 @@ Cada serviço tem limites de CPU e memória definidos para evitar consumo excess
 - O PHP está configurado para **produção** por padrão (`display_errors = Off`). Para desenvolvimento, altere no `php.ini`
 - Em produção, desactive `opcache.validate_timestamps` no `php.ini` para melhor performance
 - Os logs dos containers são limitados a **10MB × 3 ficheiros** cada
-- O **Node** corre `npm install && npm run dev` automaticamente, servindo o Vite na porta 5173
+- O **Node** corre `npm install` apenas na primeira vez (se `node_modules` não existir), depois serve o Vite na porta 5173
+- O **Scheduler** executa tarefas agendadas do Laravel automaticamente
 - O **Mailpit** captura todos os emails enviados pela aplicação — acesse `http://localhost:8025` para visualizar
+- Healthchecks configurados em todos os serviços para monitorização automática
