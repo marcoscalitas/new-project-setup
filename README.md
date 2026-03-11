@@ -1,6 +1,6 @@
 # 🐳 Laravel Docker Boilerplate
 
-Boilerplate Docker para projectos **Laravel 12 + PHP 8.4** com Nginx, PostgreSQL e Redis.  
+Boilerplate Docker para projectos **Laravel 12 + PHP 8.4** com Nginx, PostgreSQL, Redis, Node.js e Mailpit.  
 Clone, configure e comece a desenvolver em minutos.
 
 ---
@@ -14,6 +14,8 @@ Clone, configure e comece a desenvolver em minutos.
 | PostgreSQL | `postgres:17-alpine`  | 5432 |
 | Redis      | `redis:alpine`        | 6379 |
 | Queue      | PHP 8.4 (worker)      | — |
+| Node       | `node:22-alpine`      | `VITE_PORT` → 5173 |
+| Mailpit    | `axllent/mailpit`     | `MAILPIT_PORT` → 8025 (web) / 1025 (SMTP) |
 
 ---
 
@@ -144,6 +146,8 @@ cp .env.example .env
 | `POSTGRES_USER` | `meu_projecto_user` | Utilizador do PostgreSQL |
 | `POSTGRES_PASSWORD` | *(vazio)* | Uma senha segura |
 | `REDIS_PASSWORD` | *(vazio)* | Uma senha segura |
+| `VITE_PORT` | `5173` | Porta do Vite (opcional) |
+| `MAILPIT_PORT` | `8025` | Porta da interface do Mailpit (opcional) |
 
 > Os valores de `POSTGRES_DB` e `POSTGRES_USER` definidos aqui devem corresponder aos usados no `init.sql`.
 
@@ -174,7 +178,7 @@ Este é o ficheiro principal da infraestrutura. Os nomes dos containers devem se
 | O quê | Valor no template | Alterar para |
 |-------|-------------------|-------------|
 | Comentário do topo | `# Meu Projecto — Docker Compose` | `# <Seu Projecto> — Docker Compose` |
-| `container_name` dos serviços | `meu_projecto_app`, `_nginx`, `_postgres`, `_redis`, `_queue` | `<seu_projecto>_app`, `_nginx`, etc. |
+| `container_name` dos serviços | `meu_projecto_app`, `_nginx`, `_postgres`, `_redis`, `_queue`, `_node`, `_mailpit` | `<seu_projecto>_app`, `_nginx`, etc. |
 
 > **Nota**: A rede (`app_network`) e os volumes (`postgres_data`, `redis_data`) **não precisam ser renomeados**. O Docker Compose adiciona automaticamente o prefixo do projecto (nome da pasta), garantindo isolamento entre projectos sem nomes redundantes.
 
@@ -338,6 +342,18 @@ docker compose down -v
 - Reinicia automaticamente quando o container inicia
 - Limites de recursos independentes
 
+### Node (Vite)
+- Imagem `node:22-alpine` dedicada para compilação de assets
+- Corre `npm install && npm run dev` automaticamente ao iniciar
+- Vite acessível em `http://localhost:5173` com Hot Module Replacement (HMR)
+- Porta configurável via variável `VITE_PORT`
+
+### Mailpit
+- Captura todos os emails enviados pela aplicação (nenhum email sai para a internet)
+- Interface web em `http://localhost:8025` para visualizar emails
+- SMTP na porta `1025` — configurado automaticamente no `.env` do Laravel
+- Porta da interface configurável via variável `MAILPIT_PORT`
+
 ### Recursos (deploy limits)
 Cada serviço tem limites de CPU e memória definidos para evitar consumo excessivo:
 
@@ -348,6 +364,8 @@ Cada serviço tem limites de CPU e memória definidos para evitar consumo excess
 | PostgreSQL| 1.0     | 512M        |
 | Redis     | 0.5     | 256M        |
 | Queue     | 0.5     | 256M        |
+| Node      | 0.5     | 512M        |
+| Mailpit   | 0.25    | 64M         |
 
 ---
 
@@ -357,3 +375,5 @@ Cada serviço tem limites de CPU e memória definidos para evitar consumo excess
 - O PHP está configurado para **produção** por padrão (`display_errors = Off`). Para desenvolvimento, altere no `php.ini`
 - Em produção, desactive `opcache.validate_timestamps` no `php.ini` para melhor performance
 - Os logs dos containers são limitados a **10MB × 3 ficheiros** cada
+- O **Node** corre `npm install && npm run dev` automaticamente, servindo o Vite na porta 5173
+- O **Mailpit** captura todos os emails enviados pela aplicação — acesse `http://localhost:8025` para visualizar
