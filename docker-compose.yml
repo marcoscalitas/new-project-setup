@@ -166,6 +166,55 @@ services:
                     cpus: '0.1'
                     memory: 64M
 
+    node:
+        image: node:22-alpine
+        container_name: meu_projecto_node
+        restart: unless-stopped
+        working_dir: /var/www
+        volumes:
+            - ./src:/var/www
+        networks:
+            - app_network
+        command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+        ports:
+            - "${VITE_PORT:-5173}:5173"
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+                max-file: "3"
+        deploy:
+            resources:
+                limits:
+                    cpus: '0.5'
+                    memory: 512M
+                reservations:
+                    cpus: '0.1'
+                    memory: 64M
+
+    mailpit:
+        image: axllent/mailpit
+        container_name: meu_projecto_mailpit
+        restart: unless-stopped
+        ports:
+            - "127.0.0.1:${MAILPIT_PORT:-8025}:8025"
+            - "127.0.0.1:1025:1025"
+        networks:
+            - app_network
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+                max-file: "3"
+        deploy:
+            resources:
+                limits:
+                    cpus: '0.25'
+                    memory: 64M
+                reservations:
+                    cpus: '0.05'
+                    memory: 16M
+
 networks:
     app_network:
         driver: bridge
