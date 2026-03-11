@@ -55,20 +55,20 @@ RUN apk add --no-cache \
     && rm -rf /var/cache/apk/*
 
 # Utilizador não root
-RUN addgroup -g 1000 yadah && \
-    adduser -u 1000 -s /bin/sh -D -G yadah yadah
+RUN addgroup -g 1000 appuser && \
+    adduser -u 1000 -s /bin/sh -D -G appuser appuser
 
 # Directório da aplicação
 WORKDIR /var/www
 
 # Permissões correctas
-RUN chown -R yadah:yadah /var/www
+RUN chown -R appuser:appuser /var/www
 
 # Directório de logs do Laravel
 RUN mkdir -p /var/www/storage/logs && \
-    chown -R yadah:yadah /var/www/storage
+    chown -R appuser:appuser /var/www/storage
 
 # Mudar para utilizador não root
-USER yadah
+USER appuser
 
 EXPOSE 9000
