@@ -276,8 +276,11 @@ services:
 
 networks:
     app_network:
+        name: meu_projecto_network
         driver: bridge
 
 volumes:
     postgres_data:
+        name: meu_projecto_postgres_data
     redis_data:
+        name: meu_projecto_redis_data
