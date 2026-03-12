@@ -33,7 +33,7 @@ RUN apk add --no-cache \
 RUN pecl install redis && docker-php-ext-enable redis
 
 # Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # ============================================
 # STAGE 2 — Production (imagem final leve)
