@@ -115,7 +115,8 @@ test-feature: ## Run feature tests only
 # Maintenance
 # ============================================
 
-reset: ## Destroy containers and volumes, remove .env files ⚠️
+reset: ## Destroy containers, volumes and .env files ⚠️
+	@read -p "Tens a certeza? Isto apaga volumes e .env files. [y/N] " ans && [ "$$ans" = "y" ]
 	$(DC) down -v
 	rm -f .env src/.env
 
