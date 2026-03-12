@@ -91,6 +91,7 @@ if [ ! -f src/.env ]; then
         sed -i "s|^APP_ENV=.*|APP_ENV=production|" src/.env
         sed -i "s|^APP_DEBUG=.*|APP_DEBUG=false|" src/.env
         sed -i "s|^LOG_LEVEL=.*|LOG_LEVEL=error|" src/.env
+        sed -i "s|^SESSION_SECURE_COOKIE=.*|SESSION_SECURE_COOKIE=true|" src/.env
     fi
 
     info "Ficheiro src/.env criado e sincronizado com as credenciais do .env"
