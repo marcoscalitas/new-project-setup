@@ -68,14 +68,7 @@ RUN chown -R appuser:appuser /var/www
 RUN mkdir -p /var/www/storage/logs && \
     chown -R appuser:appuser /var/www/storage
 
-# Entrypoint para ler Docker secrets
-COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
 # Mudar para utilizador não root
 USER appuser
-
-ENTRYPOINT ["entrypoint.sh"]
-CMD ["php-fpm"]
 
 EXPOSE 9000

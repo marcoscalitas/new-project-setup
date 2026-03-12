@@ -25,7 +25,6 @@ tests
 
 # --- Docker (evitar recursão) ---
 docker
-!docker/php/entrypoint.sh
 
 # --- Documentação ---
 *.md
