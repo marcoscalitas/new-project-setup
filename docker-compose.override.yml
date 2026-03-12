@@ -1,13 +1,11 @@
 # ============================================
-# Meu Projecto — Docker Compose Override (DEV)
+# Docker Compose — Development Override
 # ============================================
-# Este ficheiro é carregado AUTOMATICAMENTE pelo
-# Docker Compose junto com o docker-compose.yml.
-# Adiciona serviços de desenvolvimento: node (Vite) e mailpit.
-# Sobrescreve nginx para usar CSP com localhost:5173.
+# Auto-loaded by Docker Compose in development.
+# Adds node (Vite HMR) and mailpit services.
+# Overrides nginx to allow Vite CSP origins.
 #
-# Em produção, ignore este ficheiro com:
-#   docker compose -f docker-compose.yml up -d
+# This file is NOT used in production.
 # ============================================
 
 services:
@@ -17,7 +15,7 @@ services:
 
     node:
         image: node:22-alpine
-        container_name: meu_projecto_node
+        container_name: ${PROJECT_NAME}_node
         restart: unless-stopped
         working_dir: /var/www
         volumes:
@@ -28,10 +26,11 @@ services:
         ports:
             - "127.0.0.1:${VITE_PORT:-5173}:5173"
         healthcheck:
-            test: ["CMD-SHELL", "wget -qO- http://localhost:5173/ || exit 1"]
+            test: [ "CMD-SHELL", "wget -qO- http://localhost:5173/ || exit 1" ]
             interval: 30s
             timeout: 5s
-            retries: 3
+            retries: 5
+            start_period: 90s
         logging:
             driver: json-file
             options:
@@ -48,7 +47,7 @@ services:
 
     mailpit:
         image: axllent/mailpit
-        container_name: meu_projecto_mailpit
+        container_name: ${PROJECT_NAME}_mailpit
         restart: unless-stopped
         ports:
             - "127.0.0.1:${MAILPIT_PORT:-8025}:8025"

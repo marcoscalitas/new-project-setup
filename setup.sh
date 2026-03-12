@@ -1,9 +1,15 @@
 #!/bin/bash
 # ============================================
-# Meu Projecto — Setup Automático
+# Project Setup
+# Usage: ./setup.sh [--prod]
 # ============================================
 
 set -e
+
+PROD=false
+for arg in "$@"; do
+    [ "$arg" = "--prod" ] && PROD=true
+done
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -20,11 +26,21 @@ docker compose version >/dev/null 2>&1 || error "Docker Compose não encontrado.
 
 # --- .env da raiz (Docker) ---
 if [ ! -f .env ]; then
-    if [ ! -f .env.example ]; then
-        error "Ficheiro .env.example não encontrado."
-    fi
+    [ ! -f .env.example ] && error "Ficheiro .env.example não encontrado."
     cp .env.example .env
     info "Ficheiro .env criado a partir do .env.example"
+
+    # Derivar credenciais a partir do PROJECT_NAME
+    PROJECT_NAME=$(grep '^PROJECT_NAME=' .env | cut -d= -f2)
+    PROJECT_NAME=${PROJECT_NAME:-myproject}
+    sed -i "s|^POSTGRES_DB=.*|POSTGRES_DB=${PROJECT_NAME}_db|" .env
+    sed -i "s|^POSTGRES_USER=.*|POSTGRES_USER=${PROJECT_NAME}_user|" .env
+
+    # Definir ambiente
+    if $PROD; then
+        sed -i "s|^APP_ENV=.*|APP_ENV=production|" .env
+        info "Modo produção activado."
+    fi
 
     # Auto-gerar passwords seguras se estiverem vazias
     if grep -q '^POSTGRES_PASSWORD=$' .env; then
@@ -39,12 +55,22 @@ if [ ! -f .env ]; then
     fi
 else
     info "Ficheiro .env já existe — a usar configuração existente."
+    if $PROD && ! grep -q '^APP_ENV=production' .env; then
+        warn "Flag --prod activa mas .env tem APP_ENV != production."
+    fi
 fi
 
 # --- Carregar variáveis do .env ---
 set -a
 . ./.env
 set +a
+
+# Comando docker compose para o modo actual
+if $PROD; then
+    DCMD="docker compose -f docker-compose.yml"
+else
+    DCMD="docker compose"
+fi
 
 # --- .env do Laravel (src/) ---
 if [ ! -f src/.env ]; then
@@ -60,6 +86,13 @@ if [ ! -f src/.env ]; then
     sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASSWORD}|" src/.env
     sed -i "s|^APP_URL=.*|APP_URL=http://localhost:${APP_PORT:-8080}|" src/.env
 
+    # Ajustar valores para produção
+    if $PROD; then
+        sed -i "s|^APP_ENV=.*|APP_ENV=production|" src/.env
+        sed -i "s|^APP_DEBUG=.*|APP_DEBUG=false|" src/.env
+        sed -i "s|^LOG_LEVEL=.*|LOG_LEVEL=error|" src/.env
+    fi
+
     info "Ficheiro src/.env criado e sincronizado com as credenciais do .env"
 else
     info "Ficheiro src/.env já existe — a usar configuração existente."
@@ -67,16 +100,15 @@ fi
 
 # --- Subir containers ---
 info "A construir e iniciar os containers..."
-docker compose up -d --build
+$DCMD up -d --build
 
 # --- Aguardar serviços ficarem healthy ---
 info "A aguardar que os serviços fiquem prontos..."
 TIMEOUT=120
 ELAPSED=0
 while [ $ELAPSED -lt $TIMEOUT ]; do
-    HEALTHY=$(docker compose ps --format json 2>/dev/null | grep -c '"healthy"' || true)
-    TOTAL=$(docker compose ps --format json 2>/dev/null | grep -c '"running"' || true)
-    if [ "$HEALTHY" -ge 4 ] 2>/dev/null; then
+    APP_HEALTH=$(docker inspect --format='{{.State.Health.Status}}' "${PROJECT_NAME:-myproject}_app" 2>/dev/null || echo "starting")
+    if [ "$APP_HEALTH" = "healthy" ]; then
         break
     fi
     sleep 3
@@ -87,24 +119,40 @@ echo ""
 
 if [ $ELAPSED -ge $TIMEOUT ]; then
     warn "Timeout a aguardar serviços. Alguns podem não estar prontos."
-    docker compose ps
+    $DCMD ps
 fi
 
 # --- Instalar dependências PHP ---
 info "A instalar dependências do Composer..."
-docker compose exec -T app composer install --no-interaction --prefer-dist
+if $PROD; then
+    $DCMD exec -T app composer install --no-interaction --no-dev --optimize-autoloader
+else
+    $DCMD exec -T app composer install --no-interaction --prefer-dist
+fi
 
-# --- Gerar APP_KEY ---
-info "A gerar chave da aplicação..."
-docker compose exec -T app php artisan key:generate
+# --- Gerar APP_KEY (só se estiver vazio) ---
+if grep -q '^APP_KEY=$' src/.env; then
+    info "A gerar chave da aplicação..."
+    $DCMD exec -T app php artisan key:generate
+else
+    info "APP_KEY já definida — a ignorar key:generate."
+fi
 
 # --- Executar migrations ---
 info "A executar migrations..."
-docker compose exec -T app php artisan migrate --force
+$DCMD exec -T app php artisan migrate --force
+
+# --- Cache de produção ---
+if $PROD; then
+    info "A optimizar para produção..."
+    $DCMD exec -T app php artisan config:cache
+    $DCMD exec -T app php artisan route:cache
+    $DCMD exec -T app php artisan view:cache
+fi
 
 # --- Storage link ---
 info "A criar symlink do storage..."
-docker compose exec -T app php artisan storage:link 2>/dev/null || true
+$DCMD exec -T app php artisan storage:link 2>/dev/null || true
 
 # --- Resultado ---
 echo ""
@@ -112,13 +160,15 @@ echo "============================================"
 info "Setup concluído com sucesso!"
 echo "============================================"
 echo ""
-echo "  App:     http://localhost:${APP_PORT:-8080}"
-echo "  Mailpit: http://localhost:${MAILPIT_PORT:-8025}"
-echo "  Vite:    http://localhost:${VITE_PORT:-5173}"
+echo "  App: http://localhost:${APP_PORT:-8080}"
+if ! $PROD; then
+    echo "  Mailpit: http://localhost:${MAILPIT_PORT:-8025}"
+    echo "  Vite:    http://localhost:${VITE_PORT:-5173}"
+fi
 echo ""
 echo "  Comandos úteis:"
-echo "    docker compose exec app sh          # Entrar no container"
-echo "    docker compose exec app php artisan # Artisan"
-echo "    docker compose logs -f app          # Logs"
-echo "    docker compose down                 # Parar"
+echo "    $DCMD exec app sh          # Entrar no container"
+echo "    $DCMD exec app php artisan # Artisan"
+echo "    $DCMD logs -f app          # Logs"
+echo "    $DCMD down                 # Parar"
 echo ""
