@@ -48,6 +48,18 @@ Clone, configure e comece a desenvolver em minutos.
 
 ## Início Rápido
 
+### Opção A — Setup automático
+
+```bash
+git clone <url-do-repositorio> meu-projecto
+cd meu-projecto
+./setup.sh
+```
+
+O script cria os `.env`, sobe os containers, instala dependências, gera a chave e executa as migrations automaticamente. Na primeira execução, será pedido para confirmar (as passwords estarão vazias no `.env`).
+
+### Opção B — Setup manual
+
 ### 1. Clonar o repositório
 
 ```bash
