@@ -104,37 +104,39 @@ That's it. No more manual find-and-replace across multiple files.
 
 ## Useful Commands
 
+A `Makefile` wraps all common day-to-day operations. Run `make help` for the full list.
+
 ```bash
-# Start containers (dev — loads override automatically)
-docker compose up -d
+make setup          # First-time setup (dev)
+make setup-prod     # First-time setup (production)
 
-# Start containers (prod — no node, no mailpit)
-docker compose -f docker-compose.yml up -d
+make up             # Start all containers
+make down           # Stop containers (keep volumes)
+make restart        # Restart all containers
+make build          # Rebuild app image and restart
 
-# Rebuild after Dockerfile changes
-docker compose up -d --build
+make ps             # Container status
+make logs           # Follow app logs
+make logs-nginx     # Follow nginx logs
+make logs-queue     # Follow queue worker logs
 
-# Enter the app container
-docker compose exec app sh
+make shell          # Open shell in app container
+make artisan CMD="migrate:status"
+make composer CMD="require vendor/pkg"
+make npm CMD="install"
 
-# Artisan
-docker compose exec app php artisan <command>
+make migrate        # Run migrations
+make migrate-fresh  # Drop all tables and re-run ⚠️
+make tinker         # Open Laravel Tinker
 
-# Composer
-docker compose exec app composer <command>
+make cache-clear    # Clear all caches
+make cache-warm     # Cache config + routes + views (production)
 
-# Logs
-docker compose logs -f app
-docker compose logs -f nginx
+make test           # Run all tests
+make test-unit      # Unit tests only
+make test-feature   # Feature tests only
 
-# Container status
-docker compose ps
-
-# Stop everything (keep volumes)
-docker compose down
-
-# Stop and delete volumes (full reset) ⚠️
-docker compose down -v
+make reset          # Destroy containers, volumes and .env files ⚠️
 ```
 
 ---
