@@ -44,7 +44,7 @@ The script:
 Differences in `--prod` mode:
 - Skips `node` and `mailpit` containers (no override)
 - `composer install --no-dev --optimize-autoloader`
-- Sets `APP_ENV=production`, `APP_DEBUG=false`, `LOG_LEVEL=error` in `src/.env`
+- Sets `APP_ENV=production`, `APP_DEBUG=false`, `LOG_LEVEL=error`, `SESSION_SECURE_COOKIE=true` in `src/.env`
 - Runs `config:cache`, `route:cache`, `view:cache`
 - Uses `php.production.ini` (OPcache without timestamp validation)
 
@@ -144,6 +144,7 @@ docker compose down -v
 ### PHP (multi-stage Dockerfile)
 - **Stage 1 — Builder**: compiles extensions (pdo_pgsql, redis, gd, zip, bcmath, pcntl, opcache)
 - **Stage 2 — Production**: lean image with runtime only, no build tools
+- **Stage 3 — Development**: extends production, adds bash and dev tooling
 - Runs as non-root user (UID 1000)
 - Two PHP config files:
   - `php.local.ini`: `display_errors=On`, `validate_timestamps=1`, `cookie_secure=Off`
