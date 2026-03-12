@@ -25,15 +25,28 @@ if [ ! -f .env ]; then
     fi
     cp .env.example .env
     info "Ficheiro .env criado a partir do .env.example"
-    warn "Edite o .env com as credenciais do projecto antes de continuar."
-    warn "  → POSTGRES_PASSWORD e REDIS_PASSWORD estão vazios."
-    echo ""
-    read -p "Deseja continuar mesmo assim? (s/N) " -n 1 -r
-    echo ""
-    [[ $REPLY =~ ^[Ss]$ ]] || { info "Edite o .env e execute novamente."; exit 0; }
 else
     info "Ficheiro .env já existe — a usar configuração existente."
 fi
+
+# --- Docker Secrets ---
+mkdir -p secrets
+
+if [ ! -f secrets/db_password ]; then
+    tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 > secrets/db_password
+    info "Secret db_password gerado automaticamente (32 caracteres aleatórios)."
+else
+    info "Secret db_password já existe."
+fi
+
+if [ ! -f secrets/redis_password ]; then
+    tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 > secrets/redis_password
+    info "Secret redis_password gerado automaticamente (32 caracteres aleatórios)."
+else
+    info "Secret redis_password já existe."
+fi
+
+chmod 600 secrets/db_password secrets/redis_password
 
 # --- Carregar variáveis do .env ---
 export $(grep -v '^#' .env | grep -v '^\s*$' | xargs)
@@ -48,9 +61,17 @@ if [ ! -f src/.env ]; then
     # Sincronizar valores do .env da raiz para o src/.env
     sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${POSTGRES_DB}|" src/.env
     sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${POSTGRES_USER}|" src/.env
-    sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${POSTGRES_PASSWORD}|" src/.env
-    sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASSWORD}|" src/.env
     sed -i "s|^APP_URL=.*|APP_URL=http://localhost:${APP_PORT:-8080}|" src/.env
+
+    # Sincronizar passwords a partir dos Docker secrets
+    if [ -f secrets/db_password ]; then
+        DB_SECRET=$(cat secrets/db_password)
+        sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_SECRET}|" src/.env
+    fi
+    if [ -f secrets/redis_password ]; then
+        REDIS_SECRET=$(cat secrets/redis_password)
+        sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_SECRET}|" src/.env
+    fi
 
     info "Ficheiro src/.env criado e sincronizado com as credenciais do .env"
 else
