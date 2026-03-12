@@ -36,7 +36,9 @@ else
 fi
 
 # --- Carregar variáveis do .env ---
-export $(grep -v '^#' .env | grep -v '^\s*$' | xargs)
+set -a
+. ./.env
+set +a
 
 # --- .env do Laravel (src/) ---
 if [ ! -f src/.env ]; then
