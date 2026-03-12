@@ -25,12 +25,18 @@ if [ ! -f .env ]; then
     fi
     cp .env.example .env
     info "Ficheiro .env criado a partir do .env.example"
-    warn "Edite o .env com as credenciais do projecto antes de continuar."
-    warn "  → POSTGRES_PASSWORD e REDIS_PASSWORD estão vazios."
-    echo ""
-    read -p "Deseja continuar mesmo assim? (s/N) " -n 1 -r
-    echo ""
-    [[ $REPLY =~ ^[Ss]$ ]] || { info "Edite o .env e execute novamente."; exit 0; }
+
+    # Auto-gerar passwords seguras se estiverem vazias
+    if grep -q '^POSTGRES_PASSWORD=$' .env; then
+        GENERATED_PG=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
+        sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${GENERATED_PG}|" .env
+        info "POSTGRES_PASSWORD gerado automaticamente."
+    fi
+    if grep -q '^REDIS_PASSWORD=$' .env; then
+        GENERATED_RD=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
+        sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${GENERATED_RD}|" .env
+        info "REDIS_PASSWORD gerado automaticamente."
+    fi
 else
     info "Ficheiro .env já existe — a usar configuração existente."
 fi
