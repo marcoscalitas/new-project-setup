@@ -23,19 +23,22 @@ Clone, configure e comece a desenvolver em minutos.
 ## Estrutura do Projecto
 
 ```
-├── docker-compose.yml
+├── docker-compose.yml              # Serviços base (produção)
+├── docker-compose.override.yml     # Serviços dev (node + mailpit) — carregado automaticamente
+├── setup.sh                        # Script de setup automático
 ├── docker/
 │   ├── nginx/
-│   │   ├── nginx.conf          # Configuração global do Nginx
-│   │   └── default.conf        # Server block (virtual host)
+│   │   ├── nginx.conf              # Nginx global (produção — CSP restrito)
+│   │   ├── nginx.dev.conf          # Nginx global (dev — CSP com Vite)
+│   │   └── default.conf            # Server block (virtual host)
 │   ├── php/
-│   │   ├── Dockerfile          # Multi-stage build (builder + production)
-│   │   └── php.ini             # Configurações customizadas do PHP
+│   │   ├── Dockerfile              # Multi-stage build (builder + production)
+│   │   └── php.ini                 # Configurações customizadas do PHP
 │   ├── postgres/
-│   │   └── init.sh             # Script de inicialização do banco
+│   │   └── init.sh                 # Script de inicialização do banco
 │   └── redis/
-│       └── redis.conf          # Configuração do Redis
-├── src/                        # Código-fonte Laravel
+│       └── redis.conf              # Configuração do Redis
+├── src/                            # Código-fonte Laravel
 │   ├── app/
 │   ├── config/
 │   ├── database/
@@ -184,18 +187,34 @@ cp .env.example .env
 
 ---
 
-### `docker-compose.yml`
+### `docker-compose.yml` (base)
 
-Este é o ficheiro principal da infraestrutura. Os nomes dos containers, rede e volumes devem ser **únicos por projecto** para evitar conflitos quando tiver múltiplos projectos Docker na mesma máquina. Todos usam `name:` explícito para garantir controlo total sobre os nomes.
+Contém os serviços de infraestrutura (app, nginx, postgres, redis, queue, scheduler). Os nomes dos containers, rede e volumes devem ser **únicos por projecto**.
 
 | O quê | Valor no template | Alterar para |
 |-------|-------------------|-------------|
 | Comentário do topo | `# Meu Projecto — Docker Compose` | `# <Seu Projecto> — Docker Compose` |
-| `container_name` dos serviços | `meu_projecto_app`, `_nginx`, `_postgres`, `_redis`, `_queue`, `_scheduler`, `_node`, `_mailpit` | `<seu_projecto>_app`, `_nginx`, etc. |
+| `container_name` dos serviços | `meu_projecto_app`, `_nginx`, `_postgres`, `_redis`, `_queue`, `_scheduler` | `<seu_projecto>_app`, `_nginx`, etc. |
 | `name` da rede | `meu_projecto_network` | `<seu_projecto>_network` |
 | `name` dos volumes | `meu_projecto_postgres_data`, `meu_projecto_redis_data` | `<seu_projecto>_postgres_data`, `<seu_projecto>_redis_data` |
 
 > **Nota**: os `name:` são nomes **finais absolutos** — o Docker Compose **não** adiciona prefixo quando `name:` está definido.
+
+---
+
+### `docker-compose.override.yml` (dev)
+
+Carregado **automaticamente** pelo Docker Compose. Adiciona os serviços de desenvolvimento: **node** (Vite) e **mailpit**. Também sobrescreve o nginx para usar `nginx.dev.conf` (CSP com `localhost:5173`).
+
+| O quê | Valor no template | Alterar para |
+|-------|-------------------|-------------|
+| Comentário do topo | `Meu Projecto` | Nome do seu projecto |
+| `container_name` | `meu_projecto_node`, `meu_projecto_mailpit` | `<seu_projecto>_node`, `<seu_projecto>_mailpit` |
+
+> **Produção**: para ignorar o override e subir apenas os serviços base, use:
+> ```bash
+> docker compose -f docker-compose.yml up -d
+> ```
 
 ---
 
@@ -211,15 +230,27 @@ Este script corre **apenas na primeira vez** que o volume do PostgreSQL é criad
 
 ---
 
-### `docker/nginx/nginx.conf`
+### `docker/nginx/nginx.conf` (produção)
 
-Configuração global do Nginx (rate limiting, gzip, headers de segurança). Normalmente só precisa de ajustes nos limites.
+Configuração global do Nginx para produção. CSP restrito (sem `localhost:5173`).
 
 | O quê | Valor no template | Alterar para |
 |-------|-------------------|-------------|
 | Comentário do topo | `Meu Projecto` | Nome do seu projecto |
 | Rate limits (opcional) | `30r/s` API / `5r/m` login | Ajustar conforme necessidade |
 | `client_max_body_size` (opcional) | `12M` | Aumentar se precisar de uploads maiores |
+
+---
+
+### `docker/nginx/nginx.dev.conf` (dev)
+
+Igual ao `nginx.conf`, mas com CSP que permite `http://localhost:5173` (Vite dev server). Carregado automaticamente pelo `docker-compose.override.yml`.
+
+| O quê | Valor no template | Alterar para |
+|-------|-------------------|-------------|
+| Comentário do topo | `Meu Projecto` | Nome do seu projecto |
+
+> **Nota**: ao alterar o `nginx.conf`, replique as mesmas alterações no `nginx.dev.conf` (excepto o CSP).
 
 ---
 
@@ -361,31 +392,50 @@ docker compose down -v
 - Healthcheck com `pgrep`
 - Reinicia automaticamente quando o container inicia
 
-### Node (Vite)
+### Node (Vite) *(apenas dev)*
+- Definido no `docker-compose.override.yml` (carregado automaticamente em dev)
 - Imagem `node:22-alpine` dedicada para compilação de assets
 - Corre `npm install` apenas se `node_modules` não existir, depois inicia o Vite
 - Vite acessível em `http://localhost:5173` com Hot Module Replacement (HMR)
 - Porta configurável via variável `VITE_PORT`
 
-### Mailpit
+### Mailpit *(apenas dev)*
+- Definido no `docker-compose.override.yml` (carregado automaticamente em dev)
 - Captura todos os emails enviados pela aplicação (nenhum email sai para a internet)
 - Interface web em `http://localhost:8025` para visualizar emails
 - SMTP na porta `1025` — configurado automaticamente no `.env` do Laravel
 - Porta da interface configurável via variável `MAILPIT_PORT`
 
+### Separação Dev / Produção
+
+| Ficheiro | Carregamento | Conteúdo |
+|----------|-------------|----------|
+| `docker-compose.yml` | Sempre | Serviços base: app, nginx, postgres, redis, queue, scheduler |
+| `docker-compose.override.yml` | Automático em dev | node (Vite), mailpit, nginx com CSP dev |
+| `nginx.conf` | Produção | CSP restrito (`'self'`) |
+| `nginx.dev.conf` | Dev (via override) | CSP com `http://localhost:5173` |
+
+```bash
+# Desenvolvimento (carrega yml + override automaticamente)
+docker compose up -d
+
+# Produção (ignora override — sem node, sem mailpit)
+docker compose -f docker-compose.yml up -d
+```
+
 ### Recursos (deploy limits)
 Cada serviço tem limites de CPU e memória definidos para evitar consumo excessivo:
 
-| Serviço   | CPU max | Memória max |
-|-----------|---------|-------------|
-| App       | 1.0     | 512M        |
-| Nginx     | 0.5     | 128M        |
-| PostgreSQL| 1.0     | 512M        |
-| Redis     | 0.5     | 256M        |
-| Queue     | 0.5     | 256M        |
-| Scheduler | 0.5     | 256M        |
-| Node      | 0.5     | 512M        |
-| Mailpit   | 0.25    | 64M         |
+| Serviço   | Ambiente | CPU max | Memória max |
+|-----------|----------|---------|-------------|
+| App       | base     | 1.0     | 512M        |
+| Nginx     | base     | 0.5     | 128M        |
+| PostgreSQL| base     | 1.0     | 512M        |
+| Redis     | base     | 0.5     | 256M        |
+| Queue     | base     | 0.5     | 256M        |
+| Scheduler | base     | 0.5     | 256M        |
+| Node      | dev      | 0.5     | 512M        |
+| Mailpit   | dev      | 0.25    | 64M         |
 
 ---
 
@@ -395,7 +445,8 @@ Cada serviço tem limites de CPU e memória definidos para evitar consumo excess
 - O PHP está configurado para **produção** por padrão (`display_errors = Off`). Para desenvolvimento, altere no `php.ini`
 - Em produção, desactive `opcache.validate_timestamps` no `php.ini` para melhor performance
 - Os logs dos containers são limitados a **10MB × 3 ficheiros** cada
-- O **Node** corre `npm install` apenas na primeira vez (se `node_modules` não existir), depois serve o Vite na porta 5173
+- O **Node** e o **Mailpit** são serviços de dev — definidos no `docker-compose.override.yml`, carregado automaticamente
+- Em **produção**, use `docker compose -f docker-compose.yml up -d` para ignorar o override
+- Em produção, compile os assets com `npm run build` — os ficheiros ficam em `public/build/` e são servidos pelo nginx
 - O **Scheduler** executa tarefas agendadas do Laravel automaticamente
-- O **Mailpit** captura todos os emails enviados pela aplicação — acesse `http://localhost:8025` para visualizar
 - Healthchecks configurados em todos os serviços para monitorização automática
