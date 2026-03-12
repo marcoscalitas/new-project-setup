@@ -5,6 +5,10 @@
 # --- Ambiente ---
 .env
 
+# --- Docker Secrets ---
+secrets/*
+!secrets/*.example
+
 # --- Laravel ---
 src/vendor/
 src/node_modules/
