@@ -26,9 +26,6 @@ Clone, configure e comece a desenvolver em minutos.
 ├── docker-compose.yml              # Serviços base (produção)
 ├── docker-compose.override.yml     # Serviços dev (node + mailpit) — carregado automaticamente
 ├── setup.sh                        # Script de setup automático
-├── secrets/                        # Docker secrets (passwords)
-│   ├── db_password.example          # Template da password do PostgreSQL
-│   └── redis_password.example       # Template da password do Redis
 ├── docker/
 │   ├── nginx/
 │   │   ├── nginx.conf              # Nginx global (produção — CSP restrito)
@@ -36,7 +33,6 @@ Clone, configure e comece a desenvolver em minutos.
 │   │   └── default.conf            # Server block (virtual host)
 │   ├── php/
 │   │   ├── Dockerfile              # Multi-stage build (builder + production)
-│   │   ├── entrypoint.sh           # Lê Docker secrets para variáveis de ambiente
 │   │   └── php.ini                 # Configurações customizadas do PHP
 │   ├── postgres/
 │   │   └── init.sh                 # Script de inicialização do banco
@@ -63,7 +59,7 @@ cd meu-projecto
 ./setup.sh
 ```
 
-O script cria os `.env`, gera passwords aleatórias nos Docker secrets, sobe os containers, instala dependências, gera a chave e executa as migrations automaticamente.
+O script cria os `.env`, sobe os containers, instala dependências, gera a chave e executa as migrations automaticamente. Na primeira execução, será pedido para confirmar (as passwords estarão vazias no `.env`).
 
 ### Opção B — Setup manual
 
@@ -85,22 +81,13 @@ APP_PORT=8080
 # PostgreSQL
 POSTGRES_DB=meu_projecto_db
 POSTGRES_USER=meu_projecto_user
+POSTGRES_PASSWORD=sua_senha_segura
+
+# Redis
+REDIS_PASSWORD=sua_senha_redis
 ```
 
-### 3. Criar Docker secrets
-
-As passwords ficam em ficheiros separados (mais seguro que variáveis de ambiente):
-
-```bash
-mkdir -p secrets
-echo -n "sua_senha_postgres" > secrets/db_password
-echo -n "sua_senha_redis" > secrets/redis_password
-chmod 600 secrets/db_password secrets/redis_password
-```
-
-### 4. Configurar `.env` do Laravel
-
-Configure o `src/.env`:
+E configure o `.env` do Laravel em `src/.env`:
 
 ```env
 APP_NAME="Meu Projecto"
@@ -114,7 +101,7 @@ DB_HOST=postgres
 DB_PORT=5432
 DB_DATABASE=meu_projecto_db
 DB_USERNAME=meu_projecto_user
-DB_PASSWORD=sua_senha_postgres
+DB_PASSWORD=sua_senha_segura
 
 CACHE_STORE=redis
 SESSION_DRIVER=redis
@@ -130,15 +117,13 @@ REDIS_QUEUE_DB=1
 REDIS_SESSION_DB=2
 ```
 
-> **Nota**: dentro dos containers Docker, o `entrypoint.sh` sobrescreve `DB_PASSWORD` e `REDIS_PASSWORD` automaticamente a partir dos Docker secrets.
-
-### 5. Subir os containers
+### 3. Subir os containers
 
 ```bash
 docker compose up -d --build
 ```
 
-### 6. Instalar dependências e configurar o Laravel
+### 4. Instalar dependências e configurar o Laravel
 
 ```bash
 docker compose exec app composer install
@@ -146,7 +131,7 @@ docker compose exec app php artisan key:generate
 docker compose exec app php artisan migrate
 ```
 
-### 7. Acessar a aplicação
+### 5. Acessar a aplicação
 
 ```
 http://localhost:8080
@@ -175,10 +160,12 @@ cp .env.example .env
 | `APP_PORT` | `8080` | Porta HTTP do projecto |
 | `POSTGRES_DB` | `meu_projecto_db` | Nome do banco de dados |
 | `POSTGRES_USER` | `meu_projecto_user` | Utilizador do PostgreSQL |
+| `POSTGRES_PASSWORD` | *(vazio)* | Uma senha segura |
+| `REDIS_PASSWORD` | *(vazio)* | Uma senha segura |
 | `VITE_PORT` | `5173` | Porta do Vite (opcional) |
 | `MAILPIT_PORT` | `8025` | Porta da interface do Mailpit (opcional) |
 
-> As passwords já não ficam no `.env` — são geridas via Docker secrets (ver abaixo).
+> Os valores de `POSTGRES_DB` e `POSTGRES_USER` definidos aqui devem corresponder aos usados no `init.sh`.
 
 ---
 
@@ -189,28 +176,6 @@ cp .env.example .env
 | Comentário do topo | `Meu Projecto` | Nome do seu projecto |
 | `POSTGRES_DB` | `meu_projecto_db` | Mesmo valor que usará no `.env` |
 | `POSTGRES_USER` | `meu_projecto_user` | Mesmo valor que usará no `.env` |
-
----
-
-### `secrets/` (Docker Secrets)
-
-As passwords do PostgreSQL e Redis são geridas via Docker secrets. Cada ficheiro contém apenas a password (sem newline extra).
-
-| Ficheiro | Contém | Alterar para |
-|----------|--------|-------------|
-| `secrets/db_password` | Password do PostgreSQL | Uma senha segura (gerada automaticamente pelo `setup.sh`) |
-| `secrets/redis_password` | Password do Redis | Uma senha segura (gerada automaticamente pelo `setup.sh`) |
-
-> **setup.sh** gera passwords aleatórias de 32 caracteres automaticamente.
-> Para definir manualmente, crie os ficheiros antes de executar o setup:
-> ```bash
-> mkdir -p secrets
-> echo -n "minha_senha_postgres" > secrets/db_password
-> echo -n "minha_senha_redis" > secrets/redis_password
-> chmod 600 secrets/db_password secrets/redis_password
-> ```
->
-> Os ficheiros `secrets/*.example` são templates tracked pelo git. Os ficheiros reais estão no `.gitignore`.
 
 ---
 
@@ -394,7 +359,6 @@ docker compose down -v
 - **Stage 1 — Builder**: compila extensões (pdo_pgsql, redis, gd, zip, bcmath, pcntl, opcache)
 - **Stage 2 — Production**: imagem leve apenas com runtime, sem ferramentas de compilação
 - Executa como utilizador **não-root** (UID 1000)
-- `entrypoint.sh` lê Docker secrets e exporta como variáveis de ambiente
 
 ### Nginx
 - `server_tokens off` — esconde versão do Nginx
@@ -414,7 +378,7 @@ docker compose down -v
 - 3 databases separados: cache (db0), filas (db1), sessões (db2)
 - Política de evicção: `allkeys-lru`
 - Persistência AOF com `appendfsync everysec`
-- Password via Docker secret (`/run/secrets/redis_password`)
+- Password via variável de ambiente
 - Healthcheck com `redis-cli ping`
 
 ### Queue Worker
@@ -458,27 +422,7 @@ docker compose up -d
 # Produção (ignora override — sem node, sem mailpit)
 docker compose -f docker-compose.yml up -d
 ```
-### Docker Secrets
 
-As passwords do PostgreSQL e Redis são geridas via Docker secrets em vez de variáveis de ambiente:
-
-| Secret | Ficheiro | Usado por |
-|--------|----------|-----------|
-| `db_password` | `secrets/db_password` | postgres, app, queue, scheduler |
-| `redis_password` | `secrets/redis_password` | redis, app, queue, scheduler |
-
-**Fluxo:**
-1. `secrets/db_password` e `secrets/redis_password` contêm as passwords (1 por ficheiro)
-2. Docker monta os ficheiros em `/run/secrets/` dentro dos containers
-3. PostgreSQL lê via `POSTGRES_PASSWORD_FILE` (suporte nativo)
-4. Redis lê via `cat /run/secrets/redis_password` no command
-5. App/Queue/Scheduler: `entrypoint.sh` exporta os secrets como `DB_PASSWORD` e `REDIS_PASSWORD`
-
-**Vantagens vs variáveis de ambiente:**
-- Passwords não aparecem em `docker inspect`
-- Não visíveis via `docker exec <container> env`
-- Ficheiros com `chmod 600` (apenas o dono lê)
-- Separação clara entre configuração (`.env`) e credenciais (`secrets/`)
 ### Recursos (deploy limits)
 Cada serviço tem limites de CPU e memória definidos para evitar consumo excessivo:
 
