@@ -1,36 +1,37 @@
 # ============================================
-# Meu Projecto — Docker Ignore
+# Docker Build Context — Exclusions
+# ============================================
+# The PHP image never COPYs source from the host
+# (src/ is mounted as a volume at runtime).
+# Only docker/php/Dockerfile needs to be in context.
 # ============================================
 
-# --- Git ---
+# Git
 .git
 .gitignore
 .gitattributes
 
-# --- Ambiente ---
+# Source code (mounted as volume, not baked in)
+src/
+
+# Environment files (never expose to build daemon)
 .env
+.env.*
+!.env.example
 
-# --- Dependências ---
-node_modules
-vendor
+# Services unrelated to the PHP build
+docker/nginx
+docker/postgres
+docker/redis
 
-# --- Storage (logs e cache) ---
-storage/logs
-storage/framework/cache
-storage/framework/sessions
-storage/framework/views
-
-# --- Testes ---
-tests
-
-# --- Docker (evitar recursão) ---
-docker
-
-# --- Documentação ---
+# Documentation
 *.md
+LICENSE*
 
-# --- IDE ---
-.idea
+# Editor / OS artefacts
 .vscode
+.idea
 *.swp
 *.swo
+.DS_Store
+Thumbs.db

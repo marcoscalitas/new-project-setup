@@ -15,6 +15,7 @@ services:
         build:
             context: .
             dockerfile: docker/php/Dockerfile
+            target: production
         image: ${PROJECT_NAME}_app
         container_name: ${PROJECT_NAME}_app
         restart: unless-stopped

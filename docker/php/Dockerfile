@@ -72,3 +72,15 @@ RUN mkdir -p /var/www/storage/logs && \
 USER appuser
 
 EXPOSE 9000
+
+# ============================================
+# STAGE 3 — Development (ferramentas extra)
+# ============================================
+FROM production AS development
+
+USER root
+
+# bash e ferramentas úteis em desenvolvimento
+RUN apk add --no-cache bash
+
+USER appuser

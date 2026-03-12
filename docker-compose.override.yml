@@ -9,6 +9,10 @@
 # ============================================
 
 services:
+    app:
+        build:
+            target: development
+
     nginx:
         volumes:
             - ./docker/nginx/nginx.dev.conf:/etc/nginx/nginx.conf
