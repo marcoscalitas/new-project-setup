@@ -3,7 +3,9 @@
 namespace Modules\Auth\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Password;
 use Modules\Auth\Http\Requests\ForgotPasswordRequest;
 use Modules\Auth\Http\Requests\LoginRequest;
 use Modules\Auth\Http\Requests\RegisterRequest;
@@ -14,43 +16,52 @@ class AuthController extends Controller
 {
     public function __construct(private AuthService $authService) {}
 
-    /**
-     * Handle a login request.
-     */
-    public function login(LoginRequest $request)
+    public function login(LoginRequest $request): JsonResponse
     {
-        //
+        $result = $this->authService->login($request->only('email', 'password'));
+
+        if (isset($result['error'])) {
+            return response()->json(['message' => $result['error']], $result['status']);
+        }
+
+        return response()->json([
+            'token' => $result['token'],
+            'user'  => $result['user'],
+        ], $result['status']);
     }
 
-    /**
-     * Handle a registration request.
-     */
-    public function register(RegisterRequest $request)
+    public function register(RegisterRequest $request): JsonResponse
     {
-        //
+        $result = $this->authService->register($request->validated());
+
+        return response()->json([
+            'token' => $result['token'],
+            'user'  => $result['user'],
+        ], $result['status']);
     }
 
-    /**
-     * Handle a logout request.
-     */
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
-        //
+        $this->authService->logout($request->user());
+
+        return response()->json(['message' => 'Sessão encerrada com sucesso.']);
     }
 
-    /**
-     * Handle a forgot password request.
-     */
-    public function forgotPassword(ForgotPasswordRequest $request)
+    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
-        //
+        $status = $this->authService->forgotPassword($request->input('email'));
+
+        return $status === Password::RESET_LINK_SENT
+            ? response()->json(['message' => 'Link de recuperação enviado.'])
+            : response()->json(['message' => 'Não foi possível enviar o link.'], 400);
     }
 
-    /**
-     * Handle a reset password request.
-     */
-    public function resetPassword(ResetPasswordRequest $request)
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
     {
-        //
+        $status = $this->authService->resetPassword($request->validated());
+
+        return $status === Password::PASSWORD_RESET
+            ? response()->json(['message' => 'Senha redefinida com sucesso.'])
+            : response()->json(['message' => 'Token inválido ou expirado.'], 400);
     }
 }
