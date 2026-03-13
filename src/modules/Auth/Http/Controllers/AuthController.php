@@ -12,11 +12,7 @@ use Modules\Auth\Services\AuthService;
 
 class AuthController extends Controller
 {
-
-    public function __construct(private AuthService $authService)
-    {
-        $this->authService = $authService;
-    }
+    public function __construct(private AuthService $authService) {}
 
     /**
      * Handle a login request.
