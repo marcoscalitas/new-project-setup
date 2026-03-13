@@ -2,9 +2,6 @@
 
 namespace Modules\Auth\Services;
 
-use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Auth;
-
 class AuthService
 {
     /**
@@ -12,15 +9,7 @@ class AuthService
      */
     public function login(array $credentials)
     {
-        if (!Auth::attempt($credentials)) {
-            throw ValidationException::withMessages([
-                'email' => [__('auth.failed')],
-            ]);
-        }
-
-        $user = Auth::user();
-        $token = $user->createToken('api-token')->accessToken;
-        return ['user' =>  $user, 'token' => $token];
+        //
     }
 
     /**

@@ -3,14 +3,25 @@
 namespace Modules\Auth\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request;                           
+use Modules\Auth\Http\Requests\ForgotPasswordRequest;
+use Modules\Auth\Http\Requests\LoginRequest;
+use Modules\Auth\Http\Requests\RegisterRequest;
+use Modules\Auth\Http\Requests\ResetPasswordRequest;
+use Modules\Auth\Services\AuthService;
 
 class AuthController extends Controller
 {
+
+    public function __construct(private AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     /**
      * Handle a login request.
      */
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
         //
     }
@@ -18,7 +29,7 @@ class AuthController extends Controller
     /**
      * Handle a registration request.
      */
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
         //
     }
@@ -34,7 +45,7 @@ class AuthController extends Controller
     /**
      * Handle a forgot password request.
      */
-    public function forgotPassword(Request $request)
+    public function forgotPassword(ForgotPasswordRequest $request)
     {
         //
     }
@@ -42,7 +53,7 @@ class AuthController extends Controller
     /**
      * Handle a reset password request.
      */
-    public function resetPassword(Request $request)
+    public function resetPassword(ResetPasswordRequest $request)
     {
         //
     }
