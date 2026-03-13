@@ -143,6 +143,11 @@ fi
 info "A executar migrations..."
 $DCMD exec -T app php artisan migrate --force
 
+# --- Passport: chaves de criptografia e client ---
+info "A configurar Passport..."
+$DCMD exec -T app php artisan passport:keys --force
+$DCMD exec -T app php artisan passport:client --personal --name="Personal Access Client" --no-interaction
+
 # --- Cache de produção ---
 if $PROD; then
     info "A optimizar para produção..."
