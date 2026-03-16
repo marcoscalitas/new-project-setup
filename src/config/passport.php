@@ -45,4 +45,20 @@ return [
 
     'connection' => env('PASSPORT_CONNECTION'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Personal Access Client
+    |--------------------------------------------------------------------------
+    |
+    | If you enable client hashing, you should set the personal access client
+    | ID and unhashed secret within your .env file. This will allow your
+    | application to create personal access tokens for users.
+    |
+    */
+
+    'personal_access_client' => [
+        'id' => env('PASSPORT_PERSONAL_ACCESS_CLIENT_ID'),
+        'secret' => env('PASSPORT_PERSONAL_ACCESS_CLIENT_SECRET'),
+    ],
+
 ];
