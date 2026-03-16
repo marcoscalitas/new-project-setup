@@ -49,11 +49,10 @@ class AuthController extends Controller
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
-        $status = $this->authService->forgotPassword($request->input('email'));
+        $this->authService->forgotPassword($request->input('email'));
 
-        return $status === Password::RESET_LINK_SENT
-            ? response()->json(['message' => 'Link de recuperação enviado.'])
-            : response()->json(['message' => 'Não foi possível enviar o link.'], 400);
+        // Sempre retorna 200 para evitar enumeração de e-mails (OWASP)
+        return response()->json(['message' => 'Link de recuperação enviado.']);
     }
 
     public function resetPassword(ResetPasswordRequest $request): JsonResponse
