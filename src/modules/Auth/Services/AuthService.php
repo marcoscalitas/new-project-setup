@@ -2,7 +2,6 @@
 
 namespace Modules\Auth\Services;
 
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Modules\User\Models\User;
@@ -14,11 +13,12 @@ class AuthService
      */
     public function login(array $credentials): array
     {
-        if (!Auth::attempt($credentials)) {
+        $user = User::where('email', $credentials['email'])->first();
+
+        if (!$user || !Hash::check($credentials['password'], $user->password)) {
             return ['error' => 'Credenciais inválidas.', 'status' => 401];
         }
 
-        $user  = Auth::user();
         $token = $user->createToken('api-token')->accessToken;
 
         return ['token' => $token, 'user' => $user, 'status' => 200];
