@@ -43,12 +43,12 @@ if [ ! -f .env ]; then
     fi
 
     # Auto-gerar passwords seguras se estiverem vazias
-    if grep -q '^POSTGRES_PASSWORD=$' .env; then
+    if grep -qE '^POSTGRES_PASSWORD=\s*$' .env; then
         GENERATED_PG=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
         sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${GENERATED_PG}|" .env
         info "POSTGRES_PASSWORD gerado automaticamente."
     fi
-    if grep -q '^REDIS_PASSWORD=$' .env; then
+    if grep -qE '^REDIS_PASSWORD=\s*$' .env; then
         GENERATED_RD=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
         sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${GENERATED_RD}|" .env
         info "REDIS_PASSWORD gerado automaticamente."
