@@ -3,8 +3,4 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Auth\Http\Controllers\AuthController;
 
-Route::prefix('auth')
-    ->middleware(['web'])
-    ->group(function () {
-        // Auth web routes
-    });
+// Web auth routes are handled by Fortify (prefix 'auth' set in config/fortify.php)
