@@ -4,7 +4,7 @@
 # Usage: make <target>
 # ============================================
 
-include .env
+-include .env
 export
 
 # Detect prod vs dev
