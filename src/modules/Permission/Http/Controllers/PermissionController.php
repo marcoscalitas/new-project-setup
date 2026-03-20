@@ -2,10 +2,9 @@
 
 namespace Modules\Permission\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-class PermissionController extends Controller
+class PermissionController
 {
     /**
      * Display a listing of the resource.

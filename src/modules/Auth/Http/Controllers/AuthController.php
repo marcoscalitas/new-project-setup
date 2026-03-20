@@ -2,7 +2,6 @@
 
 namespace Modules\Auth\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
@@ -12,7 +11,7 @@ use Modules\Auth\Http\Requests\RegisterRequest;
 use Modules\Auth\Http\Requests\ResetPasswordRequest;
 use Modules\Auth\Services\AuthService;
 
-class AuthController extends Controller
+class AuthController
 {
     public function __construct(private AuthService $authService) {}
 
