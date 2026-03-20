@@ -72,8 +72,19 @@ Differences in `--prod` mode:
 │       └── redis.conf          # Redis configuration
 └── src/                            # Laravel source code
     ├── app/
+    │   └── Providers/          # AppServiceProvider (Laravel core)
     ├── config/
     ├── database/
+    │   ├── migrations/         # Core migrations (cache, jobs)
+    │   └── seeders/            # DatabaseSeeder (entry point)
+    ├── modules/                # Modular architecture
+    │   ├── Admin/
+    │   ├── Auth/
+    │   ├── Notification/
+    │   ├── Permission/
+    │   ├── Settings/
+    │   ├── User/
+    │   └── Web/
     ├── routes/
     └── ...
 ```
