@@ -5,7 +5,7 @@ use Modules\Permission\Http\Controllers\RoleController;
 use Modules\Permission\Http\Controllers\PermissionController;
 
 Route::prefix('permission')
-    ->middleware(['web', 'auth'])
+    ->middleware(['auth'])
     ->group(function () {
         // Permission web routes
     });
