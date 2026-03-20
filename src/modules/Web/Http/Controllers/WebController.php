@@ -2,10 +2,9 @@
 
 namespace Modules\Web\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-class WebController extends Controller
+class WebController
 {
     /**
      * Display a listing of the resource.
