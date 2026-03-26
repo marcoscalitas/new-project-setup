@@ -8,10 +8,11 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Passport\HasApiTokens;
 use Modules\User\Database\Factories\UserFactory;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
 
     protected static function newFactory(): UserFactory
     {
@@ -51,4 +52,5 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
 }
