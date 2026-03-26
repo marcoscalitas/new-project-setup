@@ -79,13 +79,10 @@ Differences in `--prod` mode:
     │   ├── migrations/         # Core migrations (cache, jobs)
     │   └── seeders/            # DatabaseSeeder (entry point)
     ├── modules/                # Modular architecture
-    │   ├── Admin/
     │   ├── Auth/
     │   ├── Notification/
     │   ├── Permission/
-    │   ├── Settings/
-    │   ├── User/
-    │   └── Web/
+    │   └── User/
     ├── routes/
     └── ...
 ```
