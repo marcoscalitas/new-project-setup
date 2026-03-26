@@ -2,45 +2,45 @@
 
 namespace Modules\Permission\Services;
 
+use Modules\Permission\Models\Role;
+
 class RoleService
 {
-    /**
-     * Get all records.
-     */
     public function getAll()
     {
-        //
+        return Role::with('permissions')->get();
     }
 
-    /**
-     * Find a record by ID.
-     */
-    public function findById(string $id)
+    public function findById(int $id): Role
     {
-        //
+        return Role::with('permissions')->findOrFail($id);
     }
 
-    /**
-     * Create a new record.
-     */
-    public function create(array $data)
+    public function create(array $data): Role
     {
-        //
+        $role = Role::create(['name' => $data['name'], 'guard_name' => 'api']);
+
+        if (!empty($data['permissions'])) {
+            $role->syncPermissions($data['permissions']);
+        }
+
+        return $role->load('permissions');
     }
 
-    /**
-     * Update an existing record.
-     */
-    public function update(string $id, array $data)
+    public function update(int $id, array $data): Role
     {
-        //
+        $role = Role::findOrFail($id);
+        $role->update(['name' => $data['name']]);
+
+        if (array_key_exists('permissions', $data)) {
+            $role->syncPermissions($data['permissions'] ?? []);
+        }
+
+        return $role->load('permissions');
     }
 
-    /**
-     * Delete a record.
-     */
-    public function delete(string $id)
+    public function delete(int $id): void
     {
-        //
+        Role::findOrFail($id)->delete();
     }
 }
