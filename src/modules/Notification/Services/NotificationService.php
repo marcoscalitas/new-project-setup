@@ -2,45 +2,38 @@
 
 namespace Modules\Notification\Services;
 
+use Illuminate\Support\Collection;
+use Modules\User\Models\User;
+
 class NotificationService
 {
-    /**
-     * Get all records.
-     */
-    public function getAll()
+    public function getAll(User $user): Collection
     {
-        //
+        return $user->notifications;
     }
 
-    /**
-     * Find a record by ID.
-     */
-    public function findById(string $id)
+    public function getUnread(User $user): Collection
     {
-        //
+        return $user->unreadNotifications;
     }
 
-    /**
-     * Create a new record.
-     */
-    public function create(array $data)
+    public function findById(User $user, string $id)
     {
-        //
+        return $user->notifications()->findOrFail($id);
     }
 
-    /**
-     * Update an existing record.
-     */
-    public function update(string $id, array $data)
+    public function markAsRead(User $user, string $id): void
     {
-        //
+        $user->notifications()->findOrFail($id)->markAsRead();
     }
 
-    /**
-     * Delete a record.
-     */
-    public function delete(string $id)
+    public function markAllAsRead(User $user): void
     {
-        //
+        $user->unreadNotifications->markAsRead();
+    }
+
+    public function delete(User $user, string $id): void
+    {
+        $user->notifications()->findOrFail($id)->delete();
     }
 }
