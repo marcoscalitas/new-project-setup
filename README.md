@@ -56,6 +56,7 @@ Differences in `--prod` mode:
 ├── docker-compose.yml              # Base services (production)
 ├── docker-compose.override.yml     # Dev services (node + mailpit) — auto-loaded
 ├── setup.sh                        # One-command setup (--prod for production)
+├── rename.sh                       # Rename project (replaces myproject everywhere)
 ├── .env.example                    # Docker env template (passwords auto-generated)
 ├── docker/
 │   ├── nginx/
@@ -93,11 +94,18 @@ Differences in `--prod` mode:
 
 ## Customising for a New Project
 
-All infrastructure names are derived from a single variable. Edit `.env.example` before first run:
+Run the rename script to replace `myproject` across all config templates:
 
-```env
-PROJECT_NAME=myapp   # container names, volumes, network all use this
-APP_PORT=8080
+```bash
+./rename.sh yadah-productions
+```
+
+This updates `.env.example`, `src/.env.example`, and `README.md` — converting hyphens to underscores for DB names (`yadah_productions_db`, `yadah_productions_user`).
+
+Then run setup:
+
+```bash
+./setup.sh
 ```
 
 `setup.sh` automatically sets `POSTGRES_DB=${PROJECT_NAME}_db` and `POSTGRES_USER=${PROJECT_NAME}_user`.
