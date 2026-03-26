@@ -17,6 +17,15 @@
         <testsuite name="Auth-Api">
             <directory>modules/Auth/Tests/Api</directory>
         </testsuite>
+        <testsuite name="User">
+            <directory>modules/User/Tests</directory>
+        </testsuite>
+        <testsuite name="Permission">
+            <directory>modules/Permission/Tests</directory>
+        </testsuite>
+        <testsuite name="Notification">
+            <directory>modules/Notification/Tests</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
