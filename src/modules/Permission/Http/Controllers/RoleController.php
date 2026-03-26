@@ -2,47 +2,48 @@
 
 namespace Modules\Permission\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Modules\Permission\Http\Requests\StoreRoleRequest;
+use Modules\Permission\Http\Requests\UpdateRoleRequest;
+use Modules\Permission\Http\Resources\RoleResource;
+use Modules\Permission\Services\RoleService;
 
 class RoleController
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function __construct(private RoleService $roleService) {}
+
+    public function index(): JsonResponse
     {
-        //
+        $roles = $this->roleService->getAll();
+
+        return response()->json(RoleResource::collection($roles));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(StoreRoleRequest $request): JsonResponse
     {
-        //
+        $role = $this->roleService->create($request->validated());
+
+        return response()->json(new RoleResource($role), 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function show(int $id): JsonResponse
     {
-        //
+        $role = $this->roleService->findById($id);
+
+        return response()->json(new RoleResource($role));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function update(UpdateRoleRequest $request, int $id): JsonResponse
     {
-        //
+        $role = $this->roleService->update($id, $request->validated());
+
+        return response()->json(new RoleResource($role));
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy(int $id): JsonResponse
     {
-        //
+        $this->roleService->delete($id);
+
+        return response()->json(null, 204);
     }
 }

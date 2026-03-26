@@ -2,45 +2,35 @@
 
 namespace Modules\Permission\Services;
 
+use Modules\Permission\Models\Permission;
+
 class PermissionService
 {
-    /**
-     * Get all records.
-     */
     public function getAll()
     {
-        //
+        return Permission::all();
     }
 
-    /**
-     * Find a record by ID.
-     */
-    public function findById(string $id)
+    public function findById(int $id): Permission
     {
-        //
+        return Permission::findOrFail($id);
     }
 
-    /**
-     * Create a new record.
-     */
-    public function create(array $data)
+    public function create(array $data): Permission
     {
-        //
+        return Permission::create(['name' => $data['name'], 'guard_name' => 'api']);
     }
 
-    /**
-     * Update an existing record.
-     */
-    public function update(string $id, array $data)
+    public function update(int $id, array $data): Permission
     {
-        //
+        $permission = Permission::findOrFail($id);
+        $permission->update(['name' => $data['name']]);
+
+        return $permission;
     }
 
-    /**
-     * Delete a record.
-     */
-    public function delete(string $id)
+    public function delete(int $id): void
     {
-        //
+        Permission::findOrFail($id)->delete();
     }
 }
