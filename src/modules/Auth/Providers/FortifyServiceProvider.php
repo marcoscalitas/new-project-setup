@@ -4,8 +4,8 @@ namespace Modules\Auth\Providers;
 
 use Modules\Auth\Actions\CreateNewUser;
 use Modules\Auth\Actions\ResetUserPassword;
-use Modules\User\Actions\UpdateUserPassword;
-use Modules\User\Actions\UpdateUserProfileInformation;
+use Modules\Auth\Actions\UpdateUserPassword;
+use Modules\Auth\Actions\UpdateUserProfileInformation;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;

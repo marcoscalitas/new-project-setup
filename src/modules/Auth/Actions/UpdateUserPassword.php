@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\User\Actions;
+namespace Modules\Auth\Actions;
 
 use Modules\Auth\Actions\PasswordValidationRules;
 use Modules\User\Models\User;
