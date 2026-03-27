@@ -3,7 +3,9 @@
 namespace Modules\User\Services;
 
 use Illuminate\Support\Facades\Hash;
+use Modules\Permission\Events\RoleAssigned;
 use Modules\User\Models\User;
+use Spatie\Permission\Models\Role;
 
 class UserService
 {
@@ -26,7 +28,7 @@ class UserService
         ]);
 
         if (!empty($data['roles'])) {
-            $user->syncRoles($data['roles']);
+            $this->assignRolesToUser($user, $data['roles']);
         }
 
         return $user->load('roles');
@@ -45,7 +47,7 @@ class UserService
         $user->update($fields);
 
         if (array_key_exists('roles', $data)) {
-            $user->syncRoles($data['roles'] ?? []);
+            $this->assignRolesToUser($user, $data['roles'] ?? []);
         }
 
         return $user->load('roles');
@@ -54,5 +56,21 @@ class UserService
     public function delete(int $id): void
     {
         User::findOrFail($id)->delete();
+    }
+
+    /**
+     * Assign roles to a user and dispatch events.
+     */
+    private function assignRolesToUser(User $user, array $roleNames): void
+    {
+        $user->syncRoles($roleNames);
+
+        // Dispatch event for each assigned role
+        foreach ($roleNames as $roleName) {
+            $role = Role::where('name', $roleName)->first();
+            if ($role) {
+                RoleAssigned::dispatch($user, $role);
+            }
+        }
     }
 }

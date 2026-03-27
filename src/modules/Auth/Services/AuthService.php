@@ -4,6 +4,7 @@ namespace Modules\Auth\Services;
 
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Modules\Auth\Events\UserCreated;
 use Modules\User\Models\User;
 
 class AuthService
@@ -34,6 +35,8 @@ class AuthService
             'email'    => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
+
+        UserCreated::dispatch($user);
 
         $token = $user->createToken('api-token')->accessToken;
 
