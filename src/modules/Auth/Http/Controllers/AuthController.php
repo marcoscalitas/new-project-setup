@@ -9,6 +9,7 @@ use Modules\Auth\Http\Requests\ForgotPasswordRequest;
 use Modules\Auth\Http\Requests\LoginRequest;
 use Modules\Auth\Http\Requests\RegisterRequest;
 use Modules\Auth\Http\Requests\ResetPasswordRequest;
+use Modules\Auth\Http\Resources\AuthResource;
 use Modules\Auth\Services\AuthService;
 
 class AuthController
@@ -25,7 +26,7 @@ class AuthController
 
         return response()->json([
             'token' => $result['token'],
-            'user'  => $result['user'],
+            'user'  => new AuthResource($result['user']),
         ], $result['status']);
     }
 
@@ -35,7 +36,7 @@ class AuthController
 
         return response()->json([
             'token' => $result['token'],
-            'user'  => $result['user'],
+            'user'  => new AuthResource($result['user']),
         ], $result['status']);
     }
 
