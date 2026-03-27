@@ -1,231 +1,518 @@
-# Laravel Docker Boilerplate
+# Laravel 12 Docker Boilerplate (Modular Architecture)
 
-Generic Docker boilerplate for **Laravel 12 + PHP 8.4** projects.  
-Clone, rename your project, and you're running in one command — both dev and production.
+Um boilerplate profissional e production-ready baseado em **Laravel 12**, **Docker**, e **arquitetura modular**. Inclui autenticação com **Passport**, permissões com **Spatie**, e uma estrutura pronta pra escalabilidade.
 
----
-
-## Stack
+## 🚀 Stack Tecnológico
 
 | Service    | Image                 | Port |
 |------------|-----------------------|------|
-| PHP-FPM    | `php:8.4-fpm-alpine`  | 9000 (internal) |
-| Nginx      | `nginx:1-alpine`      | `APP_PORT` |
-| PostgreSQL | `postgres:17-alpine`  | 5432 |
-| Redis      | `redis:7-alpine`      | 6379 |
-| Queue      | PHP 8.4 worker        | — |
-| Scheduler  | PHP 8.4 cron          | — |
-| Node/Vite  | `node:22-alpine`      | `VITE_PORT` (dev only) |
-| Mailpit    | `axllent/mailpit`     | `MAILPIT_PORT` (dev only) |
+| **Laravel Passport** | 13 | OAuth 2.0 |
+| **Laravel Fortify** | 1.36 | Autenticação (2FA) |
+| **Spatie Permission** | 7.2.4 | RBAC (Roles & Permissions) |
 
----
+## 📁 Arquitetura Modular
 
-## Quick Start
+O projeto usa uma arquitetura **module-first**, cada módulo é autocontido:
 
-```bash
-git clone <repo-url> my-project
-cd my-project
-./setup.sh
+```
+src/
+├── modules/
+│   ├── Auth/              # Autenticação (Login, Register, 2FA, Fortify)
+│   ├── User/              # CRUD de usuários
+│   ├── Permission/        # RBAC (Roles & Permissions → Spatie)
+│   └── Notification/      # Notificações (DatabaseNotification nativa)
+├── routes/                # Rotas globais
+├── config/                # Configurações
+└── database/              # Migrations & Seeders
 ```
 
-The script:
-- Creates `.env` from `.env.example`, using `PROJECT_NAME` to derive DB credentials
-- Auto-generates secure 32-char passwords for `POSTGRES_PASSWORD` and `REDIS_PASSWORD` if empty
-- Syncs credentials into `src/.env`
-- Builds and starts all containers
-- Runs `composer install`, `key:generate`, and `migrate` automatically
+**Cada módulo tem:**
+- `Models/` — Entidades Eloquent
+- `Http/Controllers/` — Controllers (JSON responders)
+- `Http/Requests/` — Form Requests (validação)
+- `Http/Resources/` — API Resources (transformação)
+- `Services/` — Lógica de negócio
+- `Policies/` — Autorização
+- `Routes/` — API + Web routes
+- `Database/` — Migrations & Seeders
+- `Tests/` — Testes (Web + API)
 
-**Production:**
+## 🛠️ Setup Rápido
+
+### Pré-requisitos
+- Docker & Docker Compose
+- Git
+
+### Instalação
+
+1. **Clone o repositório:**
+```bash
+git clone <repo-url> new-project-setup
+cd new-project-setup
+```
+
+2. **Execute o setup (automático):**
+```bash
+./setup.sh          # Desenvolvimento
+./setup.sh --prod   # Produção
+```
+
+O script fará:
+- ✅ Criar `.env` com valores aleatórios
+- ✅ Gerar chaves OAuth do Passport
+- ✅ Rodar migrations
+- ✅ Fazer seed de roles/permissions/usuários
+
+3. **Inicie os containers:**
+```bash
+docker compose up -d
+```
+
+4. **Acesse:**
+- **API**: http://localhost:8000/api
+- **Web**: http://localhost:8000
+- **Mailpit** (emails): http://localhost:1025
+
+## 📚 Credenciais Padrão (após seed)
+
+| Email | Senha | Role |
+|-------|-------|------|
+| `admin@example.com` | `password` | admin (15 permissions) |
+| `user@example.com` | `password` | user (2 permissions) |
+
+## 🔑 Autenticação
+
+### API (OAuth 2.0 - Passport)
+
+**Login:**
+```bash
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@example.com",
+    "password": "password"
+  }'
+```
+
+**Resposta:**
+```json
+{
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+  "user": {
+    "id": 1,
+    "name": "Admin",
+    "email": "admin@example.com",
+    "roles": [{"id": 1, "name": "admin"}]
+  }
+}
+```
+
+**Usar token em requisições:**
+```bash
+curl -H "Authorization: Bearer {token}" http://localhost:8000/api/users
+```
+
+### Web (Session-based)
+
+A autenticação web é handleada pelo **Fortify** (forms HTML). Rotas web exigem middleware `auth` (session).
+
+## 🔐 Permissões & Roles
+
+### Roles Padrão
+
+| Role | Permissions | Uso |
+|------|-------------|-----|
+| **admin** | Todas (15) | Acesso total |
+| **user** | `user.list`, `user.view` | Apenas leitura |
+
+### Permissions
+
+Organizadas por domínio (3 "módulos" de negócio):
+
+**User:**
+- `user.list` — Listar usuários
+- `user.view` — Ver usuário
+- `user.create` — Criar usuário
+- `user.update` — Editar usuário
+- `user.delete` — Deletar usuário
+
+**Role:**
+- `role.list`, `role.view`, `role.create`, `role.update`, `role.delete`
+
+**Permission:**
+- `permission.list`, `permission.view`, `permission.create`, `permission.update`, `permission.delete`
+
+### Verificar Permissão em Código
+
+```php
+// In Controller or Service
+if ($user->hasPermissionTo('user.create')) {
+    // Fazer algo
+}
+
+// In Policy
+public function create(User $user): bool {
+    return $user->hasPermissionTo('user.create');
+}
+```
+
+## 📡 API Endpoints
+
+### Auth
+
+| Método | Rota | Autenticação | Descrição |
+|--------|------|--------------|-----------|
+| POST | `/api/auth/login` | ❌ | Login |
+| POST | `/api/auth/register` | ❌ | Registrar |
+| POST | `/api/auth/forgot-password` | ❌ | Solicitar reset |
+| POST | `/api/auth/reset-password` | ❌ | Confirmar reset |
+| POST | `/api/auth/logout` | ✅ Passport | Logout |
+
+### Users
+
+| Método | Rota | Autenticação | Permission |
+|--------|------|--------------|-----------|
+| GET | `/api/users` | ✅ | `user.list` |
+| POST | `/api/users` | ✅ | `user.create` |
+| GET | `/api/users/{id}` | ✅ | `user.view` |
+| PUT | `/api/users/{id}` | ✅ | `user.update` |
+| DELETE | `/api/users/{id}` | ✅ | `user.delete` |
+
+### Roles
+
+| Método | Rota | Autenticação | Permission |
+|--------|------|--------------|-----------|
+| GET | `/api/permissions/roles` | ✅ | `role.list` |
+| POST | `/api/permissions/roles` | ✅ | `role.create` |
+| GET | `/api/permissions/roles/{id}` | ✅ | `role.view` |
+| PUT | `/api/permissions/roles/{id}` | ✅ | `role.update` |
+| DELETE | `/api/permissions/roles/{id}` | ✅ | `role.delete` |
+
+### Permissions
+
+| Método | Rota | Autenticação | Permission |
+|--------|------|--------------|-----------|
+| GET | `/api/permissions/permissions` | ✅ | `permission.list` |
+| POST | `/api/permissions/permissions` | ✅ | `permission.create` |
+| GET | `/api/permissions/permissions/{id}` | ✅ | `permission.view` |
+| PUT | `/api/permissions/permissions/{id}` | ✅ | `permission.update` |
+| DELETE | `/api/permissions/permissions/{id}` | ✅ | `permission.delete` |
+
+### Notifications
+
+| Método | Rota | Autenticação | Descrição |
+|--------|------|--------------|-----------|
+| GET | `/api/notifications` | ✅ | Listar notificações do usuário |
+| GET | `/api/notifications/unread` | ✅ | Apenas não lidas |
+| GET | `/api/notifications/{id}` | ✅ | Detalhe |
+| PATCH | `/api/notifications/{id}/read` | ✅ | Marcar como lida |
+| POST | `/api/notifications/read-all` | ✅ | Marcar todas como lidas |
+| DELETE | `/api/notifications/{id}` | ✅ | Deletar notificação |
+
+## 🪵 Rotas Web
+
+As mesmas rotas API estão disponíveis como web routes (session auth):
+
+- `/users` — CRUD usuários
+- `/permissions/roles` — CRUD roles
+- `/permissions/permissions` — CRUD permissions
+- `/notifications` — Notificações
+
+Exemplo:
+```bash
+# Login via formulário
+POST /login (Fortify)
+
+# Acessar via session
+GET /users (Middleware: auth)
+```
+
+## 🧪 Testes
+
+**153 testes passando** (API + Web + Authentication):
+
+```bash
+# Rodar todos os testes
+make test
+
+# Ou via Docker
+docker compose exec app php artisan test
+
+# Com cobertura
+docker compose exec app php artisan test --coverage
+```
+
+**Suites:**
+- `Unit` — Testes unitários (tests/Unit/)
+- `Feature` — Testes de feature (tests/Feature/)
+- `Auth-Web` — Auth via web/session
+- `Auth-Api` — Auth via API/Passport
+- `User` — CRUD usuários
+- `Permission` — CRUD roles/permissions
+- `Notification` — Notificações
+
+## 📦 Makefile (Atalhos)
+
+```bash
+make setup              # Setup dev
+make setup-prod         # Setup produção
+make up                 # Subir containers
+make down               # Derrubar containers
+make restart            # Reiniciar
+make logs               # Ver logs (PHP)
+make logs-nginx         # Ver logs (Nginx)
+make shell              # Interactive shell
+make migrate            # Rodar migrations
+make migrate-fresh      # Resetar + migrate + seed
+make seed               # Apenas seed
+make artisan CMD=...    # Rodar artisan command
+make tinker             # Laravel Tinker
+make npm CMD=...        # Rodar npm
+make composer CMD=...   # Rodar composer
+make cache-clear        # Limpar cache
+make cache-warm         # Esquentar cache (prod)
+```
+
+Exemplos:
+```bash
+make artisan CMD="make:migration create_posts_table"
+make composer CMD="require symfony/console"
+make npm CMD="run build"
+```
+
+## 🗄️ Database
+
+### Migrations
+
+Todas em `src/database/migrations/` e `src/modules/*/Database/Migrations/`:
+
+```bash
+# Rodar todas
+docker compose exec app php artisan migrate
+
+# Rodar fresh + seed
+docker compose exec app php artisan migrate:fresh --seed
+
+# Reverter última batch
+docker compose exec app php artisan migrate:rollback
+```
+
+### Seeders
+
+Executados com `migrate:fresh --seed`:
+
+1. **PermissionSeeder** — 15 permissions × 2 guards (api, web)
+2. **RoleSeeder** — admin (15 perms), user (2 perms) × 2 guards
+3. **DatabaseSeeder** — 2 usuários (admin@, user@)
+
+Adicionar new seeder:
+```bash
+docker compose exec app php artisan make:seeder YourSeeder
+# Editar src/database/seeders/YourSeeder.php
+# Chamar em DatabaseSeeder::run()
+```
+
+## 🔧 Desenvolvimento
+
+### Estrutura de Pastas
+
+```
+src/
+├── app/
+│   ├── Http/
+│   │   └── Controllers/    # Controllers globais (se houver)
+│   └── Providers/
+│       └── AppServiceProvider.php
+├── bootstrap/
+│   ├── app.php            # Configuração da app
+│   └── providers.php      # Registro de providers
+├── config/                # Configurações
+├── database/
+│   ├── factories/
+│   ├── migrations/
+│   └── seeders/
+├── modules/               # **Módulos de negócio**
+├── public/
+│   └── index.php
+├── resources/
+│   ├── css/
+│   ├── js/
+│   └── views/            # Blade templates
+├── routes/
+│   ├── console.php
+│   └── web.php
+├── storage/              # Logs, cache, uploads
+└── tests/
+```
+
+### Criar Novo Módulo
+
+```bash
+# 1. Criar diretório
+mkdir -p src/modules/YourModule/{Http/Controllers,Routes,Services,Models,Policies,Tests}
+
+# 2. Criar ServiceProvider
+cat > src/modules/YourModule/Providers/YourModuleServiceProvider.php << 'EOF'
+<?php
+namespace Modules\YourModule\Providers;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
+
+class YourModuleServiceProvider extends ServiceProvider {
+    public function boot(): void {
+        Route::middleware('web')->group(__DIR__ . '/../Routes/web.php');
+        Route::prefix('api')->middleware('api')->group(__DIR__ . '/../Routes/api.php');
+    }
+}
+EOF
+
+# 3. Registrar em src/bootstrap/providers.php
+# Modules\YourModule\Providers\YourModuleServiceProvider::class,
+```
+
+### Conventions
+
+- **Controllers**: `DatumController` (singular), methods: `index`, `store`, `show`, `update`, `destroy`
+- **Requests**: `StoreDatumRequest`, `UpdateDatumRequest`
+- **Resources**: `DatumResource::collection()` para lista
+- **Services**: Lógica de negócio, sem dependências HTTP
+- **Policies**: Autorização via `$user->can()` ou middleware `authorize()`
+- **Models**: Use traits `HasFactory`, `Notifiable` quando precisar
+
+### Exemplo: Criar CRUD Rápido
+
+```bash
+# 1. Create model + migration
+docker compose exec app php artisan make:model Post -m
+
+# 2. Edit migration
+# 3. Create factory
+docker compose exec app php artisan make:factory PostFactory
+
+# 4. Create service
+# 5. Create controller
+# 6. Create requests
+# 7. Create resource
+# 8. Create policy
+docker compose exec app php artisan make:policy PostPolicy --model=Post
+
+# 9. Register routes
+# 10. Write tests
+```
+
+## 📝 Environment Variables
+
+Ver `.env.example`:
+
+```env
+# App
+APP_NAME=Laravel
+APP_ENV=local              # local|staging|production
+APP_DEBUG=true             # false em PROD
+APP_KEY=...                # Gerado automaticamente
+APP_URL=http://localhost
+
+# Database
+DB_HOST=db
+DB_PORT=5432
+DB_DATABASE=app
+DB_USERNAME=app
+DB_PASSWORD=...            # Gerado aleatoriamente
+
+# Redis
+REDIS_HOST=redis
+REDIS_PORT=6379
+
+# Passport
+PASSPORT_PERSONAL_ACCESS_CLIENT_ID=...
+PASSPORT_PERSONAL_ACCESS_CLIENT_SECRET=...
+
+# Mail (Mailpit)
+MAIL_HOST=mailpit
+MAIL_PORT=1025
+```
+
+## 🚀 Deployment
+
+### Build Production
 
 ```bash
 ./setup.sh --prod
+
+# Ou manualmente:
+docker build -f docker/php/Dockerfile -t myapp:latest .
 ```
 
-Differences in `--prod` mode:
-- Skips `node` and `mailpit` containers (no override)
-- `composer install --no-dev --optimize-autoloader`
-- Sets `APP_ENV=production`, `APP_DEBUG=false`, `LOG_LEVEL=error`, `SESSION_SECURE_COOKIE=true` in `src/.env`
-- Runs `config:cache`, `route:cache`, `view:cache`
-- Uses `php.production.ini` (OPcache without timestamp validation)
+**Multi-stage Dockerfile:**
+- **Builder**: Instala deps, compila assets
+- **Production**: Slim runtime, apenas o necessário
 
----
-
-## Project Structure
-
-```
-├── docker-compose.yml              # Base services (production)
-├── docker-compose.override.yml     # Dev services (node + mailpit) — auto-loaded
-├── setup.sh                        # One-command setup (--prod for production)
-├── rename.sh                       # Rename project (replaces myproject everywhere)
-├── .env.example                    # Docker env template (passwords auto-generated)
-├── docker/
-│   ├── nginx/
-│   │   ├── nginx.conf          # Global Nginx config (prod CSP)
-│   │   ├── nginx.dev.conf      # Global Nginx config (dev CSP with Vite)
-│   │   └── default.conf        # Server block
-│   ├── php/
-│   │   ├── Dockerfile          # Multi-stage build (builder + production)
-│   │   ├── php.local.ini       # PHP config for local dev
-│   │   └── php.production.ini  # PHP config for production
-│   ├── postgres/
-│   │   └── init.sh             # PostgreSQL initialization (uuid-ossp, unaccent, pg_trgm)
-│   └── redis/
-│       └── redis.conf          # Redis configuration
-└── src/                            # Laravel source code
-    ├── app/
-    │   └── Providers/          # AppServiceProvider (Laravel core)
-    ├── config/
-    ├── database/
-    │   ├── migrations/         # Core migrations (cache, jobs)
-    │   └── seeders/            # DatabaseSeeder (entry point)
-    ├── modules/                # Modular architecture
-    │   ├── Auth/
-    │   ├── Notification/
-    │   ├── Permission/
-    │   └── User/
-    ├── routes/
-    └── ...
-```
-
----
-
-## Customising for a New Project
-
-Run the rename script to replace `myproject` across all config templates:
+### Otimizações Production
 
 ```bash
-./rename.sh yadah-productions
+# Cache warming
+docker compose exec app php artisan config:cache
+docker compose exec app php artisan route:cache
+docker compose exec app php artisan view:cache
+
+# Logs centralizados
+# Configure no config/logging.php
 ```
 
-This updates `.env.example`, `src/.env.example`, and `README.md` — converting hyphens to underscores for DB names (`yadah_productions_db`, `yadah_productions_user`).
+## 🐛 Troubleshooting
 
-Then run setup:
-
+### Ports em uso
 ```bash
-./setup.sh
+# Verificar portas
+lsof -i :8000
+lsof -i :5432
+
+# Mudar ports em docker-compose.override.yml
 ```
 
-`setup.sh` automatically sets `POSTGRES_DB=${PROJECT_NAME}_db` and `POSTGRES_USER=${PROJECT_NAME}_user`.
+### Database connection error
+```bash
+# Verificar container
+docker compose ps
 
-For `src/.env`, configure:
+# Logs do PostgreSQL
+docker compose logs db
 
-```env
-APP_NAME="My App"
-APP_TIMEZONE=Europe/Lisbon  # or America/Sao_Paulo, UTC, etc.
+# Reset database
+docker compose exec app php artisan migrate:fresh --seed
 ```
 
-That's it. No more manual find-and-replace across multiple files.
+### Permission denied (file)
+```bash
+# Fix ownership
+docker compose exec app chown -R www-data:www-data /var/www/storage
+```
+
+### Cache/Session issues
+```bash
+make cache-clear
+docker compose exec app php artisan cache:forget key
+```
+
+## 📚 Recursos
+
+- [Laravel Documentation](https://laravel.com/docs)
+- [Spatie Permission Docs](https://spatie.be/docs/laravel-permission)
+- [Laravel Passport Docs](https://laravel.com/docs/passport)
+- [Laravel Fortify Docs](https://laravel.com/docs/fortify)
+- [Vite Documentation](https://vitejs.dev)
+
+## 📄 License
+
+MIT
+
+## 👤 Autor
+
+Criado como boilerplate profissional para Laravel 12.
 
 ---
 
-## Useful Commands
-
-A `Makefile` wraps all common day-to-day operations. Run `make help` for the full list.
-
-```bash
-make setup          # First-time setup (dev)
-make setup-prod     # First-time setup (production)
-
-make up             # Start all containers
-make down           # Stop containers (keep volumes)
-make restart        # Restart all containers
-make build          # Rebuild app image and restart
-
-make ps             # Container status
-make logs           # Follow app logs
-make logs-nginx     # Follow nginx logs
-make logs-queue     # Follow queue worker logs
-
-make shell          # Open shell in app container
-make artisan CMD="migrate:status"
-make composer CMD="require vendor/pkg"
-make npm CMD="install"
-
-make migrate        # Run migrations
-make migrate-fresh  # Drop all tables and re-run ⚠️
-make tinker         # Open Laravel Tinker
-
-make cache-clear    # Clear all caches
-make cache-warm     # Cache config + routes + views (production)
-
-make test           # Run all tests
-make test-unit      # Unit tests only
-make test-feature   # Feature tests only
-
-make reset          # Destroy containers, volumes and .env files ⚠️
-```
-
----
-
-## Infrastructure Notes
-
-### PHP (multi-stage Dockerfile)
-- **Stage 1 — Builder**: compiles extensions (pdo_pgsql, redis, gd, zip, bcmath, pcntl, opcache)
-- **Stage 2 — Production**: lean image with runtime only, no build tools
-- **Stage 3 — Development**: extends production, adds bash and dev tooling
-- Runs as non-root user (UID 1000)
-- Two PHP config files:
-  - `php.local.ini`: `display_errors=On`, `validate_timestamps=1`, `cookie_secure=Off`
-  - `php.production.ini`: `display_errors=Off`, `validate_timestamps=0`, `cookie_secure=On`
-  - Selected automatically via `APP_ENV` in the volume mount
-
-### Nginx
-- `server_tokens off`
-- Security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `CSP`, `Permissions-Policy`
-- Rate limiting: API (`30r/s`), login (`5r/m`)
-- Gzip compression for assets
-- 30-day cache for static files
-- Blocks access to hidden files (`.env`, `.git`) and sensitive extensions (`.sql`, `.log`, `.sh`)
-- Allowed HTTP methods: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`
-
-### PostgreSQL
-- Pre-installed extensions: `uuid-ossp`, `unaccent`, `pg_trgm`
-- Healthcheck with `pg_isready`
-
-### Redis
-- 3 separate databases: cache (db0), queues (db1), sessions (db2)
-- Eviction policy: `allkeys-lru`
-- AOF persistence with `appendfsync everysec`
-- Password via environment variable
-
-### Queue Worker
-- Processes jobs via Redis with auto-retry (`--tries=3`)
-- Max 1000 jobs or 1 hour per worker (`--max-jobs=1000 --max-time=3600`)
-
-### Scheduler
-- Runs `php artisan schedule:work`
-
-### Node/Vite *(dev only)*
-- Defined in `docker-compose.override.yml`, auto-loaded in dev
-- Runs `npm install` only if `node_modules` is missing, then starts Vite with HMR
-- For production: build assets with `npm run build` inside the container, and commit `public/build/`
-
-### Mailpit *(dev only)*
-- Catches all outgoing emails — nothing reaches the internet
-- Web UI at `http://localhost:8025`
-- SMTP on port `1025`, pre-configured in `src/.env`
-
-### Dev vs Production
-
-| File | Loaded | Contents |
-|------|--------|----------|
-| `docker-compose.yml` | Always | app, nginx, postgres, redis, queue, scheduler |
-| `docker-compose.override.yml` | Dev (auto) | node (Vite), mailpit, dev nginx CSP |
-| `nginx.conf` | Production | Strict CSP (`'self'`) |
-| `nginx.dev.conf` | Dev (via override) | CSP with `http://localhost:5173` |
-| `php.local.ini` | Dev | `display_errors=On`, timestamp revalidation |
-| `php.production.ini` | Production | `display_errors=Off`, OPcache fully optimised |
-
-### Resource Limits
-
-| Service   | Env  | CPU max | Memory max |
-|-----------|------|---------|------------|
-| App       | base | 1.0     | 512M       |
-| Nginx     | base | 0.5     | 128M       |
-| PostgreSQL| base | 1.0     | 512M       |
-| Redis     | base | 0.5     | 256M       |
-| Queue     | base | 0.5     | 256M       |
-| Scheduler | base | 0.5     | 256M       |
-| Node      | dev  | 0.5     | 512M       |
-| Mailpit   | dev  | 0.25    | 64M        |
+**Status:** Production-ready ✅  
+**Testes:** 153 passing  
+**Última atualização:** Março 2026
 
