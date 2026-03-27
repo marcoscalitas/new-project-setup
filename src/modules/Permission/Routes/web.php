@@ -5,7 +5,7 @@ use Modules\Permission\Http\Controllers\RoleController;
 use Modules\Permission\Http\Controllers\PermissionController;
 
 Route::prefix('permissions')
-    ->middleware(['auth'])
+    ->middleware(['auth', 'throttle:60,1'])
     ->group(function () {
         Route::get('/roles',            [RoleController::class, 'index'])->name('roles.index');
         Route::post('/roles',           [RoleController::class, 'store'])->name('roles.store');

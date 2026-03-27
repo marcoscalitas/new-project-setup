@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\User\Http\Controllers\UserController;
 
 Route::prefix('users')
-    ->middleware(['auth'])
+    ->middleware(['auth', 'throttle:60,1'])
     ->group(function () {
         Route::get('/',        [UserController::class, 'index'])->name('users.index');
         Route::post('/',       [UserController::class, 'store'])->name('users.store');

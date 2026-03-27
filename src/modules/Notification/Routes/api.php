@@ -3,7 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Notification\Http\Controllers\NotificationController;
 
-Route::middleware('auth:api')->prefix('notifications')->group(function () {
+// Rate limiting: 60 requests/minute for authenticated users
+Route::middleware(['auth:api', 'throttle:60,1'])->prefix('notifications')->group(function () {
     Route::get('/',          [NotificationController::class, 'index']);
     Route::get('/unread',    [NotificationController::class, 'unread']);
     Route::get('/{id}',      [NotificationController::class, 'show']);
