@@ -22,7 +22,9 @@ class StoreNotificationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'type'    => ['required', 'string', 'max:255'],
+            'data'    => ['required', 'array'],
+            'user_id' => ['required', 'integer', 'exists:users,id'],
         ];
     }
 }

@@ -22,7 +22,7 @@ class UpdateNotificationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'data' => ['sometimes', 'array'],
         ];
     }
 }
