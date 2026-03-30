@@ -2,9 +2,6 @@
 
 namespace Modules\Permission\Services;
 
-use Modules\Permission\Actions\CreatePermission;
-use Modules\Permission\Actions\DeletePermission;
-use Modules\Permission\Actions\UpdatePermission;
 use Modules\Permission\Events\PermissionCreated;
 use Modules\Permission\Events\PermissionDeleted;
 use Modules\Permission\Events\PermissionUpdated;
@@ -12,12 +9,6 @@ use Modules\Permission\Models\Permission;
 
 class PermissionService
 {
-    public function __construct(
-        private CreatePermission $createPermission,
-        private UpdatePermission $updatePermission,
-        private DeletePermission $deletePermission,
-    ) {}
-
     public function getAll()
     {
         return Permission::all();
@@ -30,7 +21,7 @@ class PermissionService
 
     public function create(array $data): Permission
     {
-        $permission = $this->createPermission->execute($data);
+        $permission = Permission::create(['name' => $data['name'], 'guard_name' => 'api']);
 
         PermissionCreated::dispatch($permission);
 
@@ -42,7 +33,7 @@ class PermissionService
         $permission = Permission::findOrFail($id);
         $oldName = $permission->name;
 
-        $permission = $this->updatePermission->execute($permission, $data);
+        $permission->update(['name' => $data['name']]);
 
         PermissionUpdated::dispatch($permission->name, $oldName);
 
@@ -55,7 +46,7 @@ class PermissionService
         $permissionId = $permission->id;
         $permissionName = $permission->name;
 
-        $this->deletePermission->execute($permission);
+        $permission->delete();
 
         PermissionDeleted::dispatch($permissionId, $permissionName);
     }
