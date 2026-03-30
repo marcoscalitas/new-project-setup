@@ -2,13 +2,23 @@
 
 namespace Modules\User\Services;
 
-use Illuminate\Support\Facades\Hash;
 use Modules\Permission\Events\RoleAssigned;
+use Modules\User\Actions\CreateUser;
+use Modules\User\Actions\DeleteUser;
+use Modules\User\Actions\UpdateUser;
+use Modules\User\Events\UserDeleted;
+use Modules\User\Events\UserUpdated;
 use Modules\User\Models\User;
 use Spatie\Permission\Models\Role;
 
 class UserService
 {
+    public function __construct(
+        private CreateUser $createUser,
+        private UpdateUser $updateUser,
+        private DeleteUser $deleteUser,
+    ) {}
+
     public function getAll()
     {
         return User::with('roles')->get();
@@ -21,51 +31,45 @@ class UserService
 
     public function create(array $data): User
     {
-        $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
-        ]);
+        $user = $this->createUser->execute($data);
 
         if (!empty($data['roles'])) {
-            $this->assignRolesToUser($user, $data['roles']);
+            $this->dispatchRoleAssignedEvents($user, $data['roles']);
         }
 
-        return $user->load('roles');
+        return $user;
     }
 
     public function update(int $id, array $data): User
     {
         $user = User::findOrFail($id);
+        $user = $this->updateUser->execute($user, $data);
 
-        $fields = ['name' => $data['name'] ?? $user->name, 'email' => $data['email'] ?? $user->email];
-
-        if (!empty($data['password'])) {
-            $fields['password'] = Hash::make($data['password']);
+        if (array_key_exists('roles', $data) && !empty($data['roles'])) {
+            $this->dispatchRoleAssignedEvents($user, $data['roles']);
         }
 
-        $user->update($fields);
+        UserUpdated::dispatch($user);
 
-        if (array_key_exists('roles', $data)) {
-            $this->assignRolesToUser($user, $data['roles'] ?? []);
-        }
-
-        return $user->load('roles');
+        return $user;
     }
 
     public function delete(int $id): void
     {
-        User::findOrFail($id)->delete();
+        $user = User::findOrFail($id);
+        $userId = $user->id;
+        $userEmail = $user->email;
+
+        $this->deleteUser->execute($user);
+
+        UserDeleted::dispatch($userId, $userEmail);
     }
 
     /**
-     * Assign roles to a user and dispatch events.
+     * Dispatch RoleAssigned events for each assigned role.
      */
-    private function assignRolesToUser(User $user, array $roleNames): void
+    private function dispatchRoleAssignedEvents(User $user, array $roleNames): void
     {
-        $user->syncRoles($roleNames);
-
-        // Dispatch event for each assigned role
         foreach ($roleNames as $roleName) {
             $role = Role::where('name', $roleName)->first();
             if ($role) {
