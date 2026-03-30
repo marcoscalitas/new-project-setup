@@ -2,10 +2,19 @@
 
 namespace Modules\Permission\Services;
 
+use Modules\Permission\Actions\CreateRole;
+use Modules\Permission\Actions\DeleteRole;
+use Modules\Permission\Actions\UpdateRole;
 use Modules\Permission\Models\Role;
 
 class RoleService
 {
+    public function __construct(
+        private CreateRole $createRole,
+        private UpdateRole $updateRole,
+        private DeleteRole $deleteRole,
+    ) {}
+
     public function getAll()
     {
         return Role::with('permissions')->get();
@@ -18,29 +27,20 @@ class RoleService
 
     public function create(array $data): Role
     {
-        $role = Role::create(['name' => $data['name'], 'guard_name' => 'api']);
-
-        if (!empty($data['permissions'])) {
-            $role->syncPermissions($data['permissions']);
-        }
-
-        return $role->load('permissions');
+        return $this->createRole->execute($data);
     }
 
     public function update(int $id, array $data): Role
     {
         $role = Role::findOrFail($id);
-        $role->update(['name' => $data['name']]);
 
-        if (array_key_exists('permissions', $data)) {
-            $role->syncPermissions($data['permissions'] ?? []);
-        }
-
-        return $role->load('permissions');
+        return $this->updateRole->execute($role, $data);
     }
 
     public function delete(int $id): void
     {
-        Role::findOrFail($id)->delete();
+        $role = Role::findOrFail($id);
+
+        $this->deleteRole->execute($role);
     }
 }
