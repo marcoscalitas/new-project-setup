@@ -117,7 +117,11 @@ test-feature: ## Run feature tests only
 
 reset: ## Destroy containers, volumes and .env files ⚠️
 	@read -p "Tens a certeza? Isto apaga volumes e .env files. [y/N] " ans && [ "$$ans" = "y" ]
-	$(DC) down -v
+	@if [ -f .env ]; then \
+		$(DC) down -v; \
+	else \
+		echo "  .env não existe — a ignorar docker compose down."; \
+	fi
 	rm -f .env src/.env
 
 # ============================================
