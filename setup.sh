@@ -20,6 +20,57 @@ info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERRO]${NC} $1"; exit 1; }
 
+# --- Renomear Projecto ---
+OLD_NAME="myproject"
+OLD_SLUG="myproject"
+
+echo ""
+echo "============================================"
+echo "  Configuração do Projecto"
+echo "============================================"
+echo ""
+read -rp "Nome do projecto (ex: yadah-productions): " NEW_NAME
+
+# Validar que não está vazio
+[ -z "$NEW_NAME" ] && error "Nome do projecto não pode estar vazio."
+
+# Validar formato: apenas letras minúsculas, números, hífens e underscores
+if ! echo "$NEW_NAME" | grep -qE '^[a-z0-9][a-z0-9_-]*[a-z0-9]$'; then
+    error "Nome inválido: '$NEW_NAME'\nUsa apenas letras minúsculas, números, hífens e underscores. Ex: yadah-productions"
+fi
+
+NEW_SLUG=$(echo "$NEW_NAME" | tr '-' '_')
+
+# Verificar ficheiros necessários para renomeação
+for f in .env.example src/.env.example README.md; do
+    [ -f "$f" ] || error "Ficheiro '$f' não encontrado. Estás na raiz do projecto?"
+done
+
+info "A renomear projecto para: $NEW_NAME"
+
+# .env.example
+sed -i \
+    -e "s|PROJECT_NAME=${OLD_NAME}|PROJECT_NAME=${NEW_NAME}|g" \
+    -e "s|POSTGRES_DB=${OLD_SLUG}_db|POSTGRES_DB=${NEW_SLUG}_db|g" \
+    -e "s|POSTGRES_USER=${OLD_SLUG}_user|POSTGRES_USER=${NEW_SLUG}_user|g" \
+    .env.example
+info ".env.example actualizado"
+
+# src/.env.example
+sed -i \
+    -e "s|DB_DATABASE=${OLD_SLUG}_db|DB_DATABASE=${NEW_SLUG}_db|g" \
+    -e "s|DB_USERNAME=${OLD_SLUG}_user|DB_USERNAME=${NEW_SLUG}_user|g" \
+    src/.env.example
+info "src/.env.example actualizado"
+
+# README.md
+sed -i "s|PROJECT_NAME=${OLD_NAME}|PROJECT_NAME=${NEW_NAME}|g" README.md
+info "README.md actualizado"
+
+echo ""
+info "Projecto renomeado para: $NEW_NAME"
+echo ""
+
 # --- Verificar Docker ---
 command -v docker >/dev/null 2>&1 || error "Docker não encontrado. Instale o Docker primeiro."
 docker compose version >/dev/null 2>&1 || error "Docker Compose não encontrado."
