@@ -48,24 +48,32 @@ done
 
 info "A renomear projecto para: $NEW_NAME"
 
-# .env.example
+# --- Copiar templates para ficheiros de trabalho ---
+[ ! -f .env.example ] && error "Ficheiro .env.example não encontrado."
+[ ! -f src/.env.example ] && error "Ficheiro src/.env.example não encontrado."
+
+cp .env.example .env
+info "Ficheiro .env criado a partir do .env.example"
+
+cp src/.env.example src/.env
+info "Ficheiro src/.env criado a partir do src/.env.example"
+
+# --- Substituir nomes nos ficheiros gerados (nunca nos templates) ---
+
+# .env
 sed -i \
     -e "s|PROJECT_NAME=${OLD_NAME}|PROJECT_NAME=${NEW_NAME}|g" \
     -e "s|POSTGRES_DB=${OLD_SLUG}_db|POSTGRES_DB=${NEW_SLUG}_db|g" \
     -e "s|POSTGRES_USER=${OLD_SLUG}_user|POSTGRES_USER=${NEW_SLUG}_user|g" \
-    .env.example
-info ".env.example actualizado"
+    .env
+info ".env actualizado"
 
-# src/.env.example
+# src/.env
 sed -i \
     -e "s|DB_DATABASE=${OLD_SLUG}_db|DB_DATABASE=${NEW_SLUG}_db|g" \
     -e "s|DB_USERNAME=${OLD_SLUG}_user|DB_USERNAME=${NEW_SLUG}_user|g" \
-    src/.env.example
-info "src/.env.example actualizado"
-
-# README.md
-sed -i "s|PROJECT_NAME=${OLD_NAME}|PROJECT_NAME=${NEW_NAME}|g" README.md
-info "README.md actualizado"
+    src/.env
+info "src/.env actualizado"
 
 echo ""
 info "Projecto renomeado para: $NEW_NAME"
@@ -75,40 +83,24 @@ echo ""
 command -v docker >/dev/null 2>&1 || error "Docker não encontrado. Instale o Docker primeiro."
 docker compose version >/dev/null 2>&1 || error "Docker Compose não encontrado."
 
-# --- .env da raiz (Docker) ---
-if [ ! -f .env ]; then
-    [ ! -f .env.example ] && error "Ficheiro .env.example não encontrado."
-    cp .env.example .env
-    info "Ficheiro .env criado a partir do .env.example"
+# --- .env da raiz (Docker) — gerar passwords e configurar ambiente ---
 
-    # Derivar credenciais a partir do PROJECT_NAME
-    PROJECT_NAME=$(grep '^PROJECT_NAME=' .env | cut -d= -f2)
-    PROJECT_NAME=${PROJECT_NAME:-myproject}
-    sed -i "s|^POSTGRES_DB=.*|POSTGRES_DB=${PROJECT_NAME}_db|" .env
-    sed -i "s|^POSTGRES_USER=.*|POSTGRES_USER=${PROJECT_NAME}_user|" .env
+# Definir ambiente
+if $PROD; then
+    sed -i "s|^APP_ENV=.*|APP_ENV=production|" .env
+    info "Modo produção activado."
+fi
 
-    # Definir ambiente
-    if $PROD; then
-        sed -i "s|^APP_ENV=.*|APP_ENV=production|" .env
-        info "Modo produção activado."
-    fi
-
-    # Auto-gerar passwords seguras se estiverem vazias
-    if grep -qE '^POSTGRES_PASSWORD=\s*$' .env; then
-        GENERATED_PG=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
-        sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${GENERATED_PG}|" .env
-        info "POSTGRES_PASSWORD gerado automaticamente."
-    fi
-    if grep -qE '^REDIS_PASSWORD=\s*$' .env; then
-        GENERATED_RD=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
-        sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${GENERATED_RD}|" .env
-        info "REDIS_PASSWORD gerado automaticamente."
-    fi
-else
-    info "Ficheiro .env já existe — a usar configuração existente."
-    if $PROD && ! grep -q '^APP_ENV=production' .env; then
-        warn "Flag --prod activa mas .env tem APP_ENV != production."
-    fi
+# Auto-gerar passwords seguras se estiverem vazias
+if grep -qE '^POSTGRES_PASSWORD=\s*$' .env; then
+    GENERATED_PG=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
+    sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${GENERATED_PG}|" .env
+    info "POSTGRES_PASSWORD gerado automaticamente."
+fi
+if grep -qE '^REDIS_PASSWORD=\s*$' .env; then
+    GENERATED_RD=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
+    sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${GENERATED_RD}|" .env
+    info "REDIS_PASSWORD gerado automaticamente."
 fi
 
 # --- Carregar variáveis do .env ---
@@ -123,32 +115,21 @@ else
     DCMD="docker compose"
 fi
 
-# --- .env do Laravel (src/) ---
-if [ ! -f src/.env ]; then
-    if [ ! -f src/.env.example ]; then
-        error "Ficheiro src/.env.example não encontrado."
-    fi
-    cp src/.env.example src/.env
+# --- src/.env — sincronizar credenciais e configurar ambiente ---
+sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${POSTGRES_DB}|" src/.env
+sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${POSTGRES_USER}|" src/.env
+sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${POSTGRES_PASSWORD}|" src/.env
+sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASSWORD}|" src/.env
+sed -i "s|^APP_URL=.*|APP_URL=http://localhost:${APP_PORT:-8080}|" src/.env
 
-    # Sincronizar valores do .env da raiz para o src/.env
-    sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${POSTGRES_DB}|" src/.env
-    sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${POSTGRES_USER}|" src/.env
-    sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${POSTGRES_PASSWORD}|" src/.env
-    sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASSWORD}|" src/.env
-    sed -i "s|^APP_URL=.*|APP_URL=http://localhost:${APP_PORT:-8080}|" src/.env
-
-    # Ajustar valores para produção
-    if $PROD; then
-        sed -i "s|^APP_ENV=.*|APP_ENV=production|" src/.env
-        sed -i "s|^APP_DEBUG=.*|APP_DEBUG=false|" src/.env
-        sed -i "s|^LOG_LEVEL=.*|LOG_LEVEL=error|" src/.env
-        sed -i "s|^SESSION_SECURE_COOKIE=.*|SESSION_SECURE_COOKIE=true|" src/.env
-    fi
-
-    info "Ficheiro src/.env criado e sincronizado com as credenciais do .env"
-else
-    info "Ficheiro src/.env já existe — a usar configuração existente."
+if $PROD; then
+    sed -i "s|^APP_ENV=.*|APP_ENV=production|" src/.env
+    sed -i "s|^APP_DEBUG=.*|APP_DEBUG=false|" src/.env
+    sed -i "s|^LOG_LEVEL=.*|LOG_LEVEL=error|" src/.env
+    sed -i "s|^SESSION_SECURE_COOKIE=.*|SESSION_SECURE_COOKIE=true|" src/.env
 fi
+
+info "src/.env sincronizado com as credenciais do .env"
 
 # --- Subir containers ---
 info "A construir e iniciar os containers..."
