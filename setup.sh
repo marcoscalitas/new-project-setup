@@ -131,8 +131,8 @@ fi
 
 info "src/.env sincronizado com as credenciais do .env"
 
-# --- Verificar portas disponíveis ---
-check_port() {
+# --- Verificar e resolver portas disponíveis ---
+is_port_in_use() {
     local port=$1
     local project=$2
     # Verifica se a porta está em uso
@@ -148,6 +148,25 @@ check_port() {
     return 0 # porta em uso por outro processo
 }
 
+find_free_port() {
+    local port=$1
+    local max_attempts=50
+    local attempt=0
+    while [ $attempt -lt $max_attempts ]; do
+        if ! is_port_in_use "$port" "$PROJECT_NAME"; then
+            echo "$port"
+            return 0
+        fi
+        port=$((port + 1))
+        # Evitar portas acima do intervalo válido
+        if [ "$port" -gt 65535 ]; then
+            return 1
+        fi
+        attempt=$((attempt + 1))
+    done
+    return 1
+}
+
 PORTS_TO_CHECK="APP_PORT:${APP_PORT:-8080}:Nginx"
 PORTS_TO_CHECK="${PORTS_TO_CHECK} REDIS_PORT:${REDIS_PORT:-6379}:Redis"
 
@@ -157,23 +176,32 @@ if ! $PROD; then
     PORTS_TO_CHECK="${PORTS_TO_CHECK} MAILPIT_SMTP_PORT:${MAILPIT_SMTP_PORT:-1025}:Mailpit-SMTP"
 fi
 
-CONFLICTS=""
+REASSIGNED=""
 for entry in $PORTS_TO_CHECK; do
     VAR_NAME=$(echo "$entry" | cut -d: -f1)
     PORT_NUM=$(echo "$entry" | cut -d: -f2)
     SERVICE=$(echo "$entry" | cut -d: -f3)
-    if check_port "$PORT_NUM" "$PROJECT_NAME"; then
-        CONFLICTS="${CONFLICTS}  - Porta ${PORT_NUM} (${SERVICE}) já está em uso — variável: ${VAR_NAME}\n"
+    if is_port_in_use "$PORT_NUM" "$PROJECT_NAME"; then
+        NEW_PORT=$(find_free_port "$((PORT_NUM + 1))")
+        if [ -z "$NEW_PORT" ]; then
+            error "Não foi possível encontrar uma porta livre para ${SERVICE} (a partir de ${PORT_NUM})."
+        fi
+        warn "Porta ${PORT_NUM} (${SERVICE}) ocupada — a usar porta ${NEW_PORT}"
+        # Actualizar no .env
+        sed -i "s|^${VAR_NAME}=.*|${VAR_NAME}=${NEW_PORT}|" .env
+        # Actualizar variável em memória
+        eval "${VAR_NAME}=${NEW_PORT}"
+        REASSIGNED="${REASSIGNED}  ${SERVICE}: ${PORT_NUM} → ${NEW_PORT}\n"
     fi
 done
 
-if [ -n "$CONFLICTS" ]; then
+# Sincronizar APP_URL com a porta final do APP_PORT
+sed -i "s|^APP_URL=.*|APP_URL=http://localhost:${APP_PORT}|" src/.env
+
+if [ -n "$REASSIGNED" ]; then
     echo ""
-    warn "Conflitos de portas detectados:"
-    echo -e "$CONFLICTS"
-    warn "Ajuste as portas no ficheiro .env e execute novamente."
-    echo ""
-    exit 1
+    info "Portas reatribuídas automaticamente:"
+    echo -e "$REASSIGNED"
 fi
 
 info "Todas as portas estão disponíveis."
