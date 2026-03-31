@@ -16,6 +16,7 @@ services:
             context: .
             dockerfile: docker/php/Dockerfile
             target: production
+        pull_policy: build
         container_name: ${PROJECT_NAME}_app
         restart: unless-stopped
         working_dir: /var/www
@@ -33,7 +34,7 @@ services:
             redis:
                 condition: service_healthy
         healthcheck:
-            test: ["CMD-SHELL", "php-fpm -t || exit 1"]
+            test: [ "CMD-SHELL", "php-fpm -t || exit 1" ]
             interval: 30s
             timeout: 5s
             retries: 3
@@ -67,7 +68,7 @@ services:
         networks:
             - app_network
         healthcheck:
-            test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1/ || exit 1"]
+            test: [ "CMD-SHELL", "wget -qO /dev/null http://127.0.0.1/ || exit 1" ]
             interval: 30s
             timeout: 5s
             retries: 3
@@ -91,11 +92,7 @@ services:
         container_name: ${PROJECT_NAME}_postgres
         restart: unless-stopped
         command: >
-            postgres
-            -c shared_buffers=128MB
-            -c effective_cache_size=256MB
-            -c work_mem=4MB
-            -c maintenance_work_mem=64MB
+            postgres -c shared_buffers=128MB -c effective_cache_size=256MB -c work_mem=4MB -c maintenance_work_mem=64MB
         environment:
             POSTGRES_DB: ${POSTGRES_DB}
             POSTGRES_USER: ${POSTGRES_USER}
@@ -106,7 +103,7 @@ services:
         networks:
             - app_network
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+            test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
             interval: 10s
             timeout: 5s
             retries: 5
@@ -137,7 +134,7 @@ services:
         networks:
             - app_network
         healthcheck:
-            test: ["CMD-SHELL", "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping"]
+            test: [ "CMD-SHELL", "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping" ]
             interval: 10s
             timeout: 5s
             retries: 5
@@ -175,7 +172,7 @@ services:
             redis:
                 condition: service_healthy
         healthcheck:
-            test: ["CMD-SHELL", "pgrep -f 'queue:work' || exit 1"]
+            test: [ "CMD-SHELL", "pgrep -f 'queue:work' || exit 1" ]
             interval: 30s
             timeout: 5s
             retries: 3
@@ -213,7 +210,7 @@ services:
             redis:
                 condition: service_healthy
         healthcheck:
-            test: ["CMD-SHELL", "pgrep -f 'schedule:work' || exit 1"]
+            test: [ "CMD-SHELL", "pgrep -f 'schedule:work' || exit 1" ]
             interval: 30s
             timeout: 5s
             retries: 3
