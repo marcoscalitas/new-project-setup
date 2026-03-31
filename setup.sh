@@ -29,7 +29,7 @@ echo "============================================"
 echo "  Configuração do Projecto"
 echo "============================================"
 echo ""
-read -rp "Nome do projecto (ex: yadah-productions): " NEW_NAME
+read -rp "Nome do projecto: " NEW_NAME
 
 # Validar que não está vazio
 [ -z "$NEW_NAME" ] && error "Nome do projecto não pode estar vazio."
