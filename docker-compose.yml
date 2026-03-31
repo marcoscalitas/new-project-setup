@@ -16,8 +16,9 @@ services:
             context: .
             dockerfile: docker/php/Dockerfile
             target: production
-        pull_policy: build
-        container_name: ${PROJECT_NAME}_app
+        image: ${PROJECT_NAME}-app
+        pull_policy: never
+        container_name: ${PROJECT_NAME}-app
         restart: unless-stopped
         working_dir: /var/www
         volumes:
@@ -54,7 +55,7 @@ services:
 
     nginx:
         image: nginx:1-alpine
-        container_name: ${PROJECT_NAME}_nginx
+        container_name: ${PROJECT_NAME}-nginx
         restart: unless-stopped
         ports:
             - "127.0.0.1:${APP_PORT}:80"
@@ -89,7 +90,7 @@ services:
 
     postgres:
         image: postgres:17-alpine
-        container_name: ${PROJECT_NAME}_postgres
+        container_name: ${PROJECT_NAME}-postgres
         restart: unless-stopped
         command: >
             postgres -c shared_buffers=128MB -c effective_cache_size=256MB -c work_mem=4MB -c maintenance_work_mem=64MB
@@ -123,7 +124,7 @@ services:
 
     redis:
         image: redis:7-alpine
-        container_name: ${PROJECT_NAME}_redis
+        container_name: ${PROJECT_NAME}-redis
         restart: unless-stopped
         command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
         ports:
@@ -153,8 +154,9 @@ services:
                     memory: 64M
 
     queue:
-        image: ${PROJECT_NAME}_app
-        container_name: ${PROJECT_NAME}_queue
+        image: ${PROJECT_NAME}-app
+        pull_policy: never
+        container_name: ${PROJECT_NAME}-queue
         restart: unless-stopped
         working_dir: /var/www
         command: >
@@ -191,8 +193,9 @@ services:
                     memory: 64M
 
     scheduler:
-        image: ${PROJECT_NAME}_app
-        container_name: ${PROJECT_NAME}_scheduler
+        image: ${PROJECT_NAME}-app
+        pull_policy: never
+        container_name: ${PROJECT_NAME}-scheduler
         restart: unless-stopped
         working_dir: /var/www
         command: >
