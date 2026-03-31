@@ -140,7 +140,7 @@ info "A aguardar que os serviços fiquem prontos..."
 TIMEOUT=120
 ELAPSED=0
 while [ $ELAPSED -lt $TIMEOUT ]; do
-    APP_HEALTH=$(docker inspect --format='{{.State.Health.Status}}' "${PROJECT_NAME:-myproject}_app" 2>/dev/null || echo "starting")
+    APP_HEALTH=$(docker inspect --format='{{.State.Health.Status}}' "${PROJECT_NAME:-myproject}-app" 2>/dev/null || echo "starting")
     if [ "$APP_HEALTH" = "healthy" ]; then
         break
     fi
