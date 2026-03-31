@@ -131,6 +131,53 @@ fi
 
 info "src/.env sincronizado com as credenciais do .env"
 
+# --- Verificar portas disponíveis ---
+check_port() {
+    local port=$1
+    local project=$2
+    # Verifica se a porta está em uso
+    if ! ss -tln 2>/dev/null | awk '{print $4}' | grep -qE ":${port}$"; then
+        return 1 # porta livre
+    fi
+    # Se a porta está em uso, verifica se é um container do próprio projecto
+    local container_id
+    container_id=$(docker ps --filter "publish=${port}" --format '{{.Names}}' 2>/dev/null)
+    if [ -n "$container_id" ] && echo "$container_id" | grep -q "^${project}-"; then
+        return 1 # porta usada pelo próprio projecto — ignorar
+    fi
+    return 0 # porta em uso por outro processo
+}
+
+PORTS_TO_CHECK="APP_PORT:${APP_PORT:-8080}:Nginx"
+PORTS_TO_CHECK="${PORTS_TO_CHECK} REDIS_PORT:${REDIS_PORT:-6379}:Redis"
+
+if ! $PROD; then
+    PORTS_TO_CHECK="${PORTS_TO_CHECK} VITE_PORT:${VITE_PORT:-5173}:Node/Vite"
+    PORTS_TO_CHECK="${PORTS_TO_CHECK} MAILPIT_PORT:${MAILPIT_PORT:-8025}:Mailpit-UI"
+    PORTS_TO_CHECK="${PORTS_TO_CHECK} MAILPIT_SMTP_PORT:${MAILPIT_SMTP_PORT:-1025}:Mailpit-SMTP"
+fi
+
+CONFLICTS=""
+for entry in $PORTS_TO_CHECK; do
+    VAR_NAME=$(echo "$entry" | cut -d: -f1)
+    PORT_NUM=$(echo "$entry" | cut -d: -f2)
+    SERVICE=$(echo "$entry" | cut -d: -f3)
+    if check_port "$PORT_NUM" "$PROJECT_NAME"; then
+        CONFLICTS="${CONFLICTS}  - Porta ${PORT_NUM} (${SERVICE}) já está em uso — variável: ${VAR_NAME}\n"
+    fi
+done
+
+if [ -n "$CONFLICTS" ]; then
+    echo ""
+    warn "Conflitos de portas detectados:"
+    echo -e "$CONFLICTS"
+    warn "Ajuste as portas no ficheiro .env e execute novamente."
+    echo ""
+    exit 1
+fi
+
+info "Todas as portas estão disponíveis."
+
 # --- Subir containers ---
 info "A construir e iniciar os containers..."
 $DCMD up -d --build
