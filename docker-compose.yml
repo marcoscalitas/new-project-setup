@@ -16,6 +16,9 @@ services:
             context: .
             dockerfile: docker/php/Dockerfile
             target: production
+            args:
+                UID: ${UID:-1000}
+                GID: ${GID:-1000}
         image: ${PROJECT_NAME}-app
         pull_policy: never
         container_name: ${PROJECT_NAME}-app
@@ -35,7 +38,7 @@ services:
             redis:
                 condition: service_healthy
         healthcheck:
-            test: [ "CMD-SHELL", "php-fpm -t || exit 1" ]
+            test: [ "CMD-SHELL", "php-fpm -t && kill -0 1" ]
             interval: 30s
             timeout: 5s
             retries: 3
@@ -73,7 +76,7 @@ services:
             interval: 30s
             timeout: 5s
             retries: 3
-            start_period: 30s
+            start_period: 60s
         logging:
             driver: json-file
             options:
@@ -160,7 +163,7 @@ services:
         restart: unless-stopped
         working_dir: /var/www
         command: >
-            sh -c "while [ ! -f /var/www/artisan ]; do sleep 1; done && php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600 --max-jobs=1000"
+            sh -c "timeout=60; elapsed=0; while [ ! -f /var/www/artisan ] && [ $$elapsed -lt $$timeout ]; do sleep 1; elapsed=$$((elapsed + 1)); done; [ -f /var/www/artisan ] || exit 1; php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600 --max-jobs=1000 --memory=128"
         volumes:
             - ./src:/var/www
             - ./docker/php/php.${APP_ENV:-local}.ini:/usr/local/etc/php/conf.d/custom.ini
@@ -174,7 +177,7 @@ services:
             redis:
                 condition: service_healthy
         healthcheck:
-            test: [ "CMD-SHELL", "pgrep -f 'queue:work' || exit 1" ]
+            test: [ "CMD-SHELL", "pgrep -x 'php' || exit 1" ]
             interval: 30s
             timeout: 5s
             retries: 3
@@ -199,7 +202,7 @@ services:
         restart: unless-stopped
         working_dir: /var/www
         command: >
-            sh -c "while [ ! -f /var/www/artisan ]; do sleep 1; done && php artisan schedule:work"
+            sh -c "timeout=60; elapsed=0; while [ ! -f /var/www/artisan ] && [ $$elapsed -lt $$timeout ]; do sleep 1; elapsed=$$((elapsed + 1)); done; [ -f /var/www/artisan ] || exit 1; php artisan schedule:work"
         volumes:
             - ./src:/var/www
             - ./docker/php/php.${APP_ENV:-local}.ini:/usr/local/etc/php/conf.d/custom.ini
@@ -213,7 +216,7 @@ services:
             redis:
                 condition: service_healthy
         healthcheck:
-            test: [ "CMD-SHELL", "pgrep -f 'schedule:work' || exit 1" ]
+            test: [ "CMD-SHELL", "pgrep -x 'php' || exit 1" ]
             interval: 30s
             timeout: 5s
             retries: 3
