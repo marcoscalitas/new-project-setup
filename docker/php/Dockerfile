@@ -54,9 +54,11 @@ RUN apk add --no-cache \
     freetype \
     && rm -rf /var/cache/apk/*
 
-# Utilizador não root
-RUN addgroup -g 1000 appuser && \
-    adduser -u 1000 -s /bin/sh -D -G appuser appuser
+# Utilizador não root (UID/GID configurável para evitar mismatch com o host)
+ARG UID=1000
+ARG GID=1000
+RUN addgroup -g ${GID} appuser && \
+    adduser -u ${UID} -s /bin/sh -D -G appuser appuser
 
 # Directório da aplicação
 WORKDIR /var/www
