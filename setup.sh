@@ -30,7 +30,13 @@ sedi() {
 }
 
 # --- Lock contra execução concorrente ---
-LOCKFILE="/tmp/setup-$(echo "$(pwd)" | md5sum | cut -d' ' -f1).lock"
+if command -v md5sum >/dev/null 2>&1; then
+    LOCKFILE="/tmp/setup-$(echo "$(pwd)" | md5sum | cut -d' ' -f1).lock"
+elif command -v md5 >/dev/null 2>&1; then
+    LOCKFILE="/tmp/setup-$(echo "$(pwd)" | md5 -q).lock"
+else
+    LOCKFILE="/tmp/setup-$(echo "$(pwd)" | tr '/' '_').lock"
+fi
 if command -v flock >/dev/null 2>&1; then
     exec 9>"$LOCKFILE"
     if ! flock -n 9; then
