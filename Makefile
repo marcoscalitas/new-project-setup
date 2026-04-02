@@ -102,10 +102,11 @@ cache-warm: ## Cache config, routes and views (production)
 # Database
 # ============================================
 
-db-dump: ## Dump database to backups/ — usage: make db-dump
+db-dump: ## Dump database — usage: make db-dump [FILE=backups/custom.sql.gz]
 	@mkdir -p backups
-	$(DC) exec -T postgres pg_dump -U $(POSTGRES_USER) $(POSTGRES_DB) | gzip > backups/$(POSTGRES_DB)_$(shell date +%Y%m%d_%H%M%S).sql.gz
-	@echo "  Backup: backups/$(POSTGRES_DB)_$(shell date +%Y%m%d_%H%M%S).sql.gz"
+	$(eval DUMP_FILE := $(or $(FILE),backups/$(POSTGRES_DB)_$(shell date +%Y%m%d_%H%M%S).sql.gz))
+	$(DC) exec -T postgres pg_dump -U $(POSTGRES_USER) $(POSTGRES_DB) | gzip > $(DUMP_FILE)
+	@echo "  Backup: $(DUMP_FILE)"
 
 db-restore: ## Restore database from file — usage: make db-restore FILE=backups/dump.sql.gz
 	@[ -n "$(FILE)" ] || (echo "  Uso: make db-restore FILE=backups/dump.sql.gz" && exit 1)
