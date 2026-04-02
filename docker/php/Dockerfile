@@ -36,7 +36,20 @@ RUN pecl install redis && docker-php-ext-enable redis
 COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 
 # ============================================
-# STAGE 2 — Production (imagem final leve)
+# STAGE 2 — Node (compila assets para produção)
+# ============================================
+FROM node:22-alpine AS node-builder
+
+WORKDIR /var/www
+
+COPY src/package.json src/package-lock.json* ./
+RUN npm ci
+
+COPY src/ .
+RUN npm run build
+
+# ============================================
+# STAGE 3 — Production (imagem final leve)
 # ============================================
 FROM php:8.4-fpm-alpine AS production
 
@@ -70,13 +83,16 @@ RUN chown -R appuser:appuser /var/www
 RUN mkdir -p /var/www/storage/logs && \
     chown -R appuser:appuser /var/www/storage
 
+# Copiar assets compilados pelo Node (JS/CSS minificados)
+COPY --from=node-builder --chown=appuser:appuser /var/www/public/build /var/www/public/build
+
 # Mudar para utilizador não root
 USER appuser
 
 EXPOSE 9000
 
 # ============================================
-# STAGE 3 — Development (ferramentas extra)
+# STAGE 4 — Development (ferramentas extra)
 # ============================================
 FROM production AS development
 
