@@ -5,6 +5,9 @@
 # --- Ambiente ---
 .env
 
+# --- Backups ---
+backups/
+
 # --- Laravel ---
 src/vendor/
 src/node_modules/
