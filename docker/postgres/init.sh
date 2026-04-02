@@ -3,6 +3,8 @@
 # PostgreSQL Initialization
 # ============================================
 
+set -e
+
 psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<-EOSQL
     -- --- Extensions ---
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp";  -- UUID generation
