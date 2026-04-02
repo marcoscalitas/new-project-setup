@@ -99,6 +99,21 @@ cache-warm: ## Cache config, routes and views (production)
 	$(DC) exec app php artisan view:cache
 
 # ============================================
+# Database
+# ============================================
+
+db-dump: ## Dump database to backups/ — usage: make db-dump
+	@mkdir -p backups
+	$(DC) exec -T postgres pg_dump -U $(POSTGRES_USER) $(POSTGRES_DB) | gzip > backups/$(POSTGRES_DB)_$(shell date +%Y%m%d_%H%M%S).sql.gz
+	@echo "  Backup: backups/$(POSTGRES_DB)_$(shell date +%Y%m%d_%H%M%S).sql.gz"
+
+db-restore: ## Restore database from file — usage: make db-restore FILE=backups/dump.sql.gz
+	@[ -n "$(FILE)" ] || (echo "  Uso: make db-restore FILE=backups/dump.sql.gz" && exit 1)
+	@[ -f "$(FILE)" ] || (echo "  Ficheiro '$(FILE)' não encontrado." && exit 1)
+	gunzip -c $(FILE) | $(DC) exec -T postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
+	@echo "  Base de dados restaurada a partir de $(FILE)"
+
+# ============================================
 # Testing
 # ============================================
 
@@ -133,4 +148,4 @@ help: ## Show this help
 
 .PHONY: setup setup-prod up down restart build ps logs logs-nginx logs-queue \
         shell artisan migrate migrate-fresh tinker composer npm \
-        cache-clear cache-warm test test-unit test-feature reset help
+        cache-clear cache-warm db-dump db-restore test test-unit test-feature reset help
