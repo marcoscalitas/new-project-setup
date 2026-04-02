@@ -20,6 +20,67 @@ info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERRO]${NC} $1"; exit 1; }
 
+# --- sed portável (Linux GNU sed vs macOS BSD sed) ---
+sedi() {
+    if sed --version >/dev/null 2>&1; then
+        sed -i "$@"
+    else
+        sed -i '' "$@"
+    fi
+}
+
+# --- Lock contra execução concorrente ---
+LOCKFILE="/tmp/setup-$(echo "$(pwd)" | md5sum | cut -d' ' -f1).lock"
+if command -v flock >/dev/null 2>&1; then
+    exec 9>"$LOCKFILE"
+    if ! flock -n 9; then
+        error "Outro setup já está a correr neste directório."
+    fi
+fi
+
+# --- Limpeza em caso de interrupção (Ctrl+C) ---
+CLEANUP_NEEDED=false
+cleanup() {
+    echo ""
+    warn "Setup interrompido pelo utilizador."
+    if $CLEANUP_NEEDED; then
+        warn "A parar containers parcialmente criados..."
+        if $PROD; then
+            docker compose -f docker-compose.yml down 2>/dev/null || true
+        else
+            docker compose down 2>/dev/null || true
+        fi
+    fi
+    exit 130
+}
+trap cleanup INT TERM
+
+# --- Verificar se o projecto já foi configurado ---
+if [ -f .env ]; then
+    warn "Este projecto já foi configurado (.env já existe)."
+    warn "Continuar irá sobrescrever as configurações actuais (passwords, portas, etc.)."
+    read -rp "Continuar mesmo assim? (s/N): " CONFIRM
+    case "$CONFIRM" in
+        s|S|sim|SIM) info "A reconfigurar projecto..." ;;
+        *) info "Setup cancelado."; exit 0 ;;
+    esac
+    echo ""
+fi
+
+# --- Verificar Docker ---
+command -v docker >/dev/null 2>&1 || error "Docker não encontrado. Instale o Docker primeiro."
+docker compose version >/dev/null 2>&1 || error "Docker Compose não encontrado."
+
+# Verificar se o Docker daemon está a correr
+if ! docker info >/dev/null 2>&1; then
+    error "Docker daemon não está a correr.\nInicia com: sudo systemctl start docker"
+fi
+
+# Verificar permissões do utilizador
+if ! docker ps >/dev/null 2>&1; then
+    error "Sem permissões para usar o Docker.\nAdiciona o teu utilizador ao grupo docker: sudo usermod -aG docker \$USER\nDepois faz logout e login novamente."
+fi
+
 # --- Renomear Projecto ---
 OLD_NAME="myproject"
 OLD_SLUG="myproject"
@@ -34,12 +95,40 @@ read -rp "Nome do projecto: " NEW_NAME
 # Validar que não está vazio
 [ -z "$NEW_NAME" ] && error "Nome do projecto não pode estar vazio."
 
-# Validar formato: apenas letras minúsculas, números, hífens e underscores
-if ! echo "$NEW_NAME" | grep -qE '^[a-z0-9][a-z0-9_-]*[a-z0-9]$'; then
-    error "Nome inválido: '$NEW_NAME'\nUsa apenas letras minúsculas, números, hífens e underscores. Ex: yadah-productions"
+# Validar formato: apenas letras minúsculas, números, hífens e underscores (mínimo 2 caracteres)
+if ! echo "$NEW_NAME" | grep -qE '^[a-z0-9]([a-z0-9_-]*[a-z0-9])?$'; then
+    error "Nome inválido: '$NEW_NAME'\nUsa apenas letras minúsculas, números, hífens e underscores (mínimo 1 caractere).\nNão pode começar ou terminar com hífen/underscore. Ex: yadah-productions"
 fi
 
 NEW_SLUG=$(echo "$NEW_NAME" | tr '-' '_')
+
+# Verificar se já existe um projecto Docker com este nome
+if docker compose ls --format json 2>/dev/null | grep -q "\"Name\":\"${NEW_NAME}\""; then
+    EXISTING_DIR=$(docker compose ls --format json 2>/dev/null \
+        | grep -o "\"Name\":\"${NEW_NAME}\"[^}]*\"ConfigFiles\":\"[^\"]*\"" \
+        | grep -o '"ConfigFiles":"[^"]*"' | cut -d'"' -f4 | xargs dirname 2>/dev/null)
+    if [ -n "$EXISTING_DIR" ] && [ "$EXISTING_DIR" != "$(pwd)" ]; then
+        error "Já existe um projecto Docker com o nome '${NEW_NAME}' em:\n  ${EXISTING_DIR}\n\nEscolhe um nome diferente para evitar conflitos de containers, volumes e rede."
+    fi
+fi
+
+# Verificar volumes órfãos de projecto anterior com mesmo nome
+ORPHAN_VOLS=$(docker volume ls --format '{{.Name}}' 2>/dev/null | grep -E "^${NEW_NAME}_(postgres|redis)_data$" || true)
+if [ -n "$ORPHAN_VOLS" ]; then
+    warn "Existem volumes de um projecto anterior com o nome '${NEW_NAME}':"
+    echo "$ORPHAN_VOLS" | while read -r vol; do echo "  - $vol"; done
+    read -rp "Remover volumes antigos? Os dados serão perdidos. (s/N): " REMOVE_VOLS
+    case "$REMOVE_VOLS" in
+        s|S|sim|SIM)
+            for vol in $ORPHAN_VOLS; do
+                docker volume rm "$vol" 2>/dev/null && info "Volume '$vol' removido." || warn "Não foi possível remover '$vol' (pode estar em uso)."
+            done
+            ;;
+        *)
+            warn "Volumes antigos mantidos — o novo projecto irá usar a base de dados existente."
+            ;;
+    esac
+fi
 
 # Verificar ficheiros necessários para renomeação
 for f in .env.example src/.env.example README.md; do
@@ -53,15 +142,17 @@ info "A renomear projecto para: $NEW_NAME"
 [ ! -f src/.env.example ] && error "Ficheiro src/.env.example não encontrado."
 
 cp .env.example .env
+chmod 600 .env
 info "Ficheiro .env criado a partir do .env.example"
 
 cp src/.env.example src/.env
+chmod 600 src/.env
 info "Ficheiro src/.env criado a partir do src/.env.example"
 
 # --- Substituir nomes nos ficheiros gerados (nunca nos templates) ---
 
 # .env
-sed -i \
+sedi \
     -e "s|PROJECT_NAME=${OLD_NAME}|PROJECT_NAME=${NEW_NAME}|g" \
     -e "s|POSTGRES_DB=${OLD_SLUG}_db|POSTGRES_DB=${NEW_SLUG}_db|g" \
     -e "s|POSTGRES_USER=${OLD_SLUG}_user|POSTGRES_USER=${NEW_SLUG}_user|g" \
@@ -69,7 +160,7 @@ sed -i \
 info ".env actualizado"
 
 # src/.env
-sed -i \
+sedi \
     -e "s|DB_DATABASE=${OLD_SLUG}_db|DB_DATABASE=${NEW_SLUG}_db|g" \
     -e "s|DB_USERNAME=${OLD_SLUG}_user|DB_USERNAME=${NEW_SLUG}_user|g" \
     src/.env
@@ -79,34 +170,38 @@ echo ""
 info "Projecto renomeado para: $NEW_NAME"
 echo ""
 
-# --- Verificar Docker ---
-command -v docker >/dev/null 2>&1 || error "Docker não encontrado. Instale o Docker primeiro."
-docker compose version >/dev/null 2>&1 || error "Docker Compose não encontrado."
-
 # --- .env da raiz (Docker) — gerar passwords e configurar ambiente ---
 
 # Definir ambiente
 if $PROD; then
-    sed -i "s|^APP_ENV=.*|APP_ENV=production|" .env
+    sedi "s|^APP_ENV=.*|APP_ENV=production|" .env
     info "Modo produção activado."
 fi
 
 # Auto-gerar passwords seguras se estiverem vazias
 if grep -qE '^POSTGRES_PASSWORD=\s*$' .env; then
     GENERATED_PG=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
-    sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${GENERATED_PG}|" .env
+    sedi "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${GENERATED_PG}|" .env
     info "POSTGRES_PASSWORD gerado automaticamente."
 fi
 if grep -qE '^REDIS_PASSWORD=\s*$' .env; then
     GENERATED_RD=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
-    sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${GENERATED_RD}|" .env
+    sedi "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${GENERATED_RD}|" .env
     info "REDIS_PASSWORD gerado automaticamente."
 fi
 
 # --- Carregar variáveis do .env ---
+set +e
 set -a
 . ./.env
 set +a
+set -e
+
+# --- Validar que o ficheiro PHP ini para o APP_ENV existe ---
+PHP_INI="docker/php/php.${APP_ENV:-local}.ini"
+if [ ! -f "$PHP_INI" ]; then
+    error "Ficheiro '$PHP_INI' não encontrado.\nValores válidos de APP_ENV: local, production (correspondem a docker/php/php.*.ini)."
+fi
 
 # Comando docker compose para o modo actual
 if $PROD; then
@@ -116,17 +211,17 @@ else
 fi
 
 # --- src/.env — sincronizar credenciais e configurar ambiente ---
-sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${POSTGRES_DB}|" src/.env
-sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${POSTGRES_USER}|" src/.env
-sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${POSTGRES_PASSWORD}|" src/.env
-sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASSWORD}|" src/.env
-sed -i "s|^APP_URL=.*|APP_URL=http://localhost:${APP_PORT:-8080}|" src/.env
+sedi "s|^DB_DATABASE=.*|DB_DATABASE=${POSTGRES_DB}|" src/.env
+sedi "s|^DB_USERNAME=.*|DB_USERNAME=${POSTGRES_USER}|" src/.env
+sedi "s|^DB_PASSWORD=.*|DB_PASSWORD=${POSTGRES_PASSWORD}|" src/.env
+sedi "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASSWORD}|" src/.env
+sedi "s|^APP_URL=.*|APP_URL=http://localhost:${APP_PORT:-8080}|" src/.env
 
 if $PROD; then
-    sed -i "s|^APP_ENV=.*|APP_ENV=production|" src/.env
-    sed -i "s|^APP_DEBUG=.*|APP_DEBUG=false|" src/.env
-    sed -i "s|^LOG_LEVEL=.*|LOG_LEVEL=error|" src/.env
-    sed -i "s|^SESSION_SECURE_COOKIE=.*|SESSION_SECURE_COOKIE=true|" src/.env
+    sedi "s|^APP_ENV=.*|APP_ENV=production|" src/.env
+    sedi "s|^APP_DEBUG=.*|APP_DEBUG=false|" src/.env
+    sedi "s|^LOG_LEVEL=.*|LOG_LEVEL=error|" src/.env
+    warn "SESSION_SECURE_COOKIE=false — activa manualmente se usares HTTPS (reverse proxy)."
 fi
 
 info "src/.env sincronizado com as credenciais do .env"
@@ -188,7 +283,7 @@ for entry in $PORTS_TO_CHECK; do
         fi
         warn "Porta ${PORT_NUM} (${SERVICE}) ocupada — a usar porta ${NEW_PORT}"
         # Actualizar no .env
-        sed -i "s|^${VAR_NAME}=.*|${VAR_NAME}=${NEW_PORT}|" .env
+        sedi "s|^${VAR_NAME}=.*|${VAR_NAME}=${NEW_PORT}|" .env
         # Actualizar variável em memória
         eval "${VAR_NAME}=${NEW_PORT}"
         REASSIGNED="${REASSIGNED}  ${SERVICE}: ${PORT_NUM} → ${NEW_PORT}\n"
@@ -196,7 +291,7 @@ for entry in $PORTS_TO_CHECK; do
 done
 
 # Sincronizar APP_URL com a porta final do APP_PORT
-sed -i "s|^APP_URL=.*|APP_URL=http://localhost:${APP_PORT}|" src/.env
+sedi "s|^APP_URL=.*|APP_URL=http://localhost:${APP_PORT}|" src/.env
 
 if [ -n "$REASSIGNED" ]; then
     echo ""
@@ -206,9 +301,47 @@ fi
 
 info "Todas as portas estão disponíveis."
 
+# --- Verificar espaço em disco ---
+AVAILABLE_MB=$(df -m . 2>/dev/null | awk 'NR==2 {print $4}')
+if [ -n "$AVAILABLE_MB" ] && [ "$AVAILABLE_MB" -lt 2048 ]; then
+    warn "Espaço em disco baixo: ${AVAILABLE_MB}MB disponíveis (mínimo recomendado: 2GB)."
+    read -rp "Continuar mesmo assim? (s/N): " CONFIRM_DISK
+    case "$CONFIRM_DISK" in
+        s|S|sim|SIM) ;;
+        *) info "Setup cancelado."; exit 0 ;;
+    esac
+fi
+
+# --- Verificar acesso à internet ---
+if ! curl -s --max-time 5 --head https://registry-1.docker.io >/dev/null 2>&1 && \
+   ! wget -q --spider --timeout=5 https://registry-1.docker.io 2>/dev/null; then
+    warn "Sem acesso à internet ou ao Docker Hub."
+    warn "O build poderá falhar se as imagens não estiverem em cache local."
+    read -rp "Continuar mesmo assim? (s/N): " CONFIRM_NET
+    case "$CONFIRM_NET" in
+        s|S|sim|SIM) ;;
+        *) info "Setup cancelado."; exit 0 ;;
+    esac
+fi
+
+# --- Parar containers anteriores do mesmo projecto ---
+if $DCMD ps -q 2>/dev/null | grep -q .; then
+    warn "Containers do projecto já estão a correr. A parar antes de reconstruir..."
+    $DCMD down 2>/dev/null || true
+fi
+
 # --- Subir containers ---
-info "A construir e iniciar os containers..."
-$DCMD up -d --build
+SETUP_START=$(date +%s)
+CLEANUP_NEEDED=true
+
+# Passar UID/GID do host para evitar problemas de permissões nos volumes
+export UID=$(id -u)
+export GID=$(id -g)
+
+info "A construir e iniciar os containers (UID=${UID}, GID=${GID})..."
+if ! $DCMD up -d --build; then
+    error "Falha ao construir/iniciar os containers.\nExecuta '$DCMD logs' para ver os erros."
+fi
 
 # --- Aguardar serviços ficarem healthy ---
 info "A aguardar que os serviços fiquem prontos..."
@@ -233,9 +366,13 @@ fi
 # --- Instalar dependências PHP ---
 info "A instalar dependências do Composer..."
 if $PROD; then
-    $DCMD exec -T app composer install --no-interaction --no-dev --optimize-autoloader
+    if ! $DCMD exec -T app composer install --no-interaction --no-dev --optimize-autoloader; then
+        error "Falha ao instalar dependências do Composer.\nExecuta '$DCMD exec app composer install' manualmente para ver os erros."
+    fi
 else
-    $DCMD exec -T app composer install --no-interaction --prefer-dist
+    if ! $DCMD exec -T app composer install --no-interaction --prefer-dist; then
+        error "Falha ao instalar dependências do Composer.\nExecuta '$DCMD exec app composer install' manualmente para ver os erros."
+    fi
 fi
 
 # --- Gerar APP_KEY (só se estiver vazio) ---
@@ -248,12 +385,20 @@ fi
 
 # --- Executar migrations ---
 info "A executar migrations..."
-$DCMD exec -T app php artisan migrate --force
+if ! $DCMD exec -T app php artisan migrate --force; then
+    error "Falha ao executar migrations.\nVerifica a ligação à base de dados e executa '$DCMD exec app php artisan migrate' manualmente."
+fi
 
 # --- Passport: chaves de criptografia e client ---
 info "A configurar Passport..."
 $DCMD exec -T app php artisan passport:keys --force
-$DCMD exec -T app php artisan passport:client --personal --name="Personal Access Client" --no-interaction
+# Só cria o client se não existir nenhum personal access client
+EXISTING_CLIENTS=$($DCMD exec -T app php artisan passport:client --personal --name="Personal Access Client" --no-interaction 2>&1) || true
+if echo "$EXISTING_CLIENTS" | grep -qi "created\|client id"; then
+    info "Personal Access Client configurado."
+else
+    info "Personal Access Client já existente ou nenhuma acção necessária."
+fi
 
 # --- Cache de produção ---
 if $PROD; then
@@ -268,9 +413,15 @@ info "A criar symlink do storage..."
 $DCMD exec -T app php artisan storage:link 2>/dev/null || true
 
 # --- Resultado ---
+CLEANUP_NEEDED=false
+SETUP_END=$(date +%s)
+SETUP_DURATION=$(( SETUP_END - SETUP_START ))
+SETUP_MIN=$(( SETUP_DURATION / 60 ))
+SETUP_SEC=$(( SETUP_DURATION % 60 ))
+
 echo ""
 echo "============================================"
-info "Setup concluído com sucesso!"
+info "Setup concluído com sucesso! (${SETUP_MIN}m ${SETUP_SEC}s)"
 echo "============================================"
 echo ""
 echo "  App: http://localhost:${APP_PORT:-8080}"
