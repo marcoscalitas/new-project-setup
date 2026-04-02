@@ -45,6 +45,8 @@ src/
 └── database/              # Migrations & Seeders
 ```
 
+> **Nota:** Estes 4 módulos são o **esqueleto base** (infraestrutura). Os teus módulos de negócio ficam ao lado destes — ex: `modules/Product/`, `modules/Order/`, etc.
+
 **Cada módulo tem:**
 - `Models/` — Entidades Eloquent
 - `Http/Controllers/` — Controllers (JSON responders)
@@ -61,6 +63,7 @@ src/
 ### Pré-requisitos
 - Docker & Docker Compose
 - Git
+- Make (opcional — para atalhos CLI via `Makefile`)
 
 ### Instalação
 
@@ -101,6 +104,8 @@ O script fará automaticamente:
 |-------|-------|------|
 | `admin@example.com` | `password` | admin (15 permissions) |
 | `user@example.com` | `password` | user (2 permissions) |
+
+> ⚠️ **Produção:** O `setup.sh --prod` **não executa seed** — estas credenciais padrão nunca existem em produção. Se precisares de dados iniciais, cria um seeder dedicado com passwords seguras.
 
 ## 🔑 Autenticação
 
@@ -299,6 +304,7 @@ make composer CMD=...   # Rodar composer
 make cache-clear        # Limpar cache (config, route, view)
 make cache-warm         # Esquentar cache (prod)
 make db-dump            # Backup da base de dados (gzip)
+make db-dump FILE=...   # Backup com nome customizado
 make db-restore FILE=.. # Restaurar backup
 make test               # Rodar todos os testes
 make test-unit          # Testes unitários
@@ -336,8 +342,11 @@ Executados com `migrate:fresh --seed`:
 ### Backup & Restore
 
 ```bash
-# Criar backup (ficheiro comprimido em backups/)
+# Criar backup (nome automático em backups/)
 make db-dump
+
+# Backup com nome customizado
+make db-dump FILE=backups/pre-deploy.sql.gz
 
 # Restaurar a partir de um backup
 make db-restore FILE=backups/mydb_20260402_143000.sql.gz

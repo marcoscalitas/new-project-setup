@@ -395,6 +395,15 @@ if ! $DCMD exec -T app php artisan migrate --force; then
     error "Falha ao executar migrations.\nVerifica a ligação à base de dados e executa '$DCMD exec app php artisan migrate' manualmente."
 fi
 
+# --- Seed (apenas em desenvolvimento) ---
+if $PROD; then
+    warn "Seed NÃO executado em produção (credenciais padrão são inseguras)."
+    warn "Para popular a base de dados manualmente: $DCMD exec app php artisan db:seed"
+else
+    info "A popular base de dados (seed)..."
+    $DCMD exec -T app php artisan db:seed --force || warn "Seed falhou — podes executar manualmente: $DCMD exec app php artisan db:seed"
+fi
+
 # --- Passport: chaves de criptografia e client ---
 info "A configurar Passport..."
 $DCMD exec -T app php artisan passport:keys --force
