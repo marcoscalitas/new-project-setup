@@ -271,6 +271,8 @@ make npm CMD=...        # Rodar npm
 make composer CMD=...   # Rodar composer
 make cache-clear        # Limpar cache
 make cache-warm         # Esquentar cache (prod)
+make db-dump            # Backup da base de dados
+make db-restore FILE=.. # Restaurar backup
 ```
 
 Exemplos:
@@ -304,6 +306,18 @@ Executados com `migrate:fresh --seed`:
 1. **PermissionSeeder** — 15 permissions × 2 guards (api, web)
 2. **RoleSeeder** — admin (15 perms), user (2 perms) × 2 guards
 3. **DatabaseSeeder** — 2 usuários (admin@, user@)
+
+### Backup & Restore
+
+```bash
+# Criar backup (ficheiro comprimido em backups/)
+make db-dump
+
+# Restaurar a partir de um backup
+make db-restore FILE=backups/mydb_20260402_143000.sql.gz
+```
+
+Os backups são guardados em `backups/` (já incluído no `.gitignore`).
 
 Adicionar new seeder:
 ```bash
@@ -433,6 +447,20 @@ MAIL_PORT=1025
 ```
 
 ## 🚀 Deployment
+
+### HTTPS / SSL
+
+Este boilerplate **não inclui HTTPS** — o Nginx interno ouve apenas na porta 80. Isso é intencional: em produção, o SSL deve ser terminado por um reverse proxy externo:
+
+- **Traefik** — auto-provisioning de certificados Let's Encrypt
+- **Caddy** — HTTPS automático sem configuração
+- **Cloudflare** — SSL na edge, sem certificado no servidor
+- **Nginx externo** — com Certbot/Let's Encrypt
+
+Após configurar HTTPS, activa o cookie seguro no `src/.env`:
+```env
+SESSION_SECURE_COOKIE=true
+```
 
 ### Build Production
 
