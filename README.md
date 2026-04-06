@@ -141,7 +141,7 @@ curl -H "Authorization: Bearer {token}" http://localhost:${APP_PORT}/api/users
 
 ### Web (Session-based)
 
-A autenticação web é handleada pelo **Fortify** (forms HTML). Rotas web exigem middleware `auth` (session).
+A autenticação web é handleada pelo **Fortify** (API-only, sem views). Rotas web retornam JSON e exigem middleware `auth` (session). Não há templates Blade para login/register — os formulários devem ser criados no frontend (SPA ou Blade custom).
 
 ## 🔐 Permissões & Roles
 

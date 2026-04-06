@@ -18,6 +18,7 @@ RUN apk add --no-cache \
     libpng-dev \
     libjpeg-turbo-dev \
     freetype-dev \
+    icu-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
         pdo \
@@ -27,7 +28,8 @@ RUN apk add --no-cache \
         gd \
         bcmath \
         pcntl \
-        opcache
+        opcache \
+        intl
 
 # Redis extension
 RUN pecl install redis && docker-php-ext-enable redis
@@ -65,6 +67,7 @@ RUN apk add --no-cache \
     libpng \
     libjpeg-turbo \
     freetype \
+    icu-libs \
     && rm -rf /var/cache/apk/*
 
 # Utilizador não root (UID/GID configurável para evitar mismatch com o host)

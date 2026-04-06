@@ -1,9 +1,8 @@
 # ============================================
 # Docker Build Context — Exclusions
 # ============================================
-# The PHP image never COPYs source from the host
-# (src/ is mounted as a volume at runtime).
-# Only docker/php/Dockerfile needs to be in context.
+# The node-builder stage needs src/ to compile
+# Vite assets. Exclude only heavy/sensitive dirs.
 # ============================================
 
 # Git
@@ -11,8 +10,11 @@
 .gitignore
 .gitattributes
 
-# Source code (mounted as volume, not baked in)
-src/
+# Heavy directories (not needed in build)
+src/vendor/
+src/node_modules/
+src/storage/logs/
+src/.phpunit.cache/
 
 # Environment files (never expose to build daemon)
 .env
@@ -27,6 +29,9 @@ docker/redis
 # Documentation
 *.md
 LICENSE*
+
+# Backups
+backups/
 
 # Editor / OS artefacts
 .vscode

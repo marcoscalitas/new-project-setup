@@ -70,6 +70,9 @@ migrate: ## Run database migrations
 migrate-fresh: ## Drop all tables and re-run migrations ⚠️
 	$(DC) exec app php artisan migrate:fresh
 
+seed: ## Run database seeders
+	$(DC) exec app php artisan db:seed
+
 tinker: ## Open Laravel Tinker
 	$(DC) exec app php artisan tinker
 
@@ -148,5 +151,5 @@ help: ## Show this help
 	@awk 'BEGIN {FS=":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .PHONY: setup setup-prod up down restart build ps logs logs-nginx logs-queue \
-        shell artisan migrate migrate-fresh tinker composer npm \
+        shell artisan migrate migrate-fresh seed tinker composer npm \
         cache-clear cache-warm db-dump db-restore test test-unit test-feature reset help

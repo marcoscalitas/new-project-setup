@@ -7,6 +7,7 @@
 set -e
 
 PROD=false
+CLEANUP_NEEDED=false
 for arg in "$@"; do
     [ "$arg" = "--prod" ] && PROD=true
 done
@@ -18,7 +19,18 @@ NC='\033[0m'
 
 info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERRO]${NC} $1"; exit 1; }
+error() {
+    echo -e "${RED}[ERRO]${NC} $1"
+    if $CLEANUP_NEEDED; then
+        warn "A limpar containers parciais..."
+        if $PROD; then
+            docker compose -f docker-compose.yml down 2>/dev/null || true
+        else
+            docker compose down 2>/dev/null || true
+        fi
+    fi
+    exit 1
+}
 
 # --- sed portável (Linux GNU sed vs macOS BSD sed) ---
 sedi() {
@@ -45,7 +57,6 @@ if command -v flock >/dev/null 2>&1; then
 fi
 
 # --- Limpeza em caso de interrupção (Ctrl+C) ---
-CLEANUP_NEEDED=false
 cleanup() {
     echo ""
     warn "Setup interrompido pelo utilizador."
@@ -369,6 +380,16 @@ if [ $ELAPSED -ge $TIMEOUT ]; then
     $DCMD ps
 fi
 
+# --- Extrair assets Vite compilados (produção) ---
+# Em prod, os assets são compilados no Dockerfile (node-builder stage)
+# mas o volume ./src:/var/www cobre-os. Copiamos da imagem para o host.
+if $PROD; then
+    info "A extrair assets compilados da imagem..."
+    docker cp "${PROJECT_NAME}-app:/var/www/public/build" ./src/public/build 2>/dev/null \
+        && info "Assets Vite copiados para src/public/build/" \
+        || warn "Não foi possível extrair assets Vite (pode não haver build configurado)."
+fi
+
 # --- Instalar dependências PHP ---
 info "A instalar dependências do Composer..."
 if $PROD; then
@@ -407,12 +428,13 @@ fi
 # --- Passport: chaves de criptografia e client ---
 info "A configurar Passport..."
 $DCMD exec -T app php artisan passport:keys --force
-# Só cria o client se não existir nenhum personal access client
-EXISTING_CLIENTS=$($DCMD exec -T app php artisan passport:client --personal --name="Personal Access Client" --no-interaction 2>&1) || true
-if echo "$EXISTING_CLIENTS" | grep -qi "created\|client id"; then
-    info "Personal Access Client configurado."
+# Verificar se Personal Access Client já existe antes de criar
+HAS_CLIENT=$($DCMD exec -T app php artisan tinker --execute="echo \Laravel\Passport\Client::where('personal_access_client', true)->count();" 2>/dev/null | grep -E '^[0-9]+$' | tail -1)
+if [ "${HAS_CLIENT:-0}" = "0" ]; then
+    $DCMD exec -T app php artisan passport:client --personal --name="Personal Access Client" --no-interaction 2>&1 || true
+    info "Personal Access Client criado."
 else
-    info "Personal Access Client já existente ou nenhuma acção necessária."
+    info "Personal Access Client já existente — a ignorar."
 fi
 
 # --- Cache de produção ---
