@@ -9,6 +9,11 @@ use Modules\Permission\Models\Permission;
 
 class PermissionService
 {
+    private function resolveGuardName(): string
+    {
+        return auth('api')->check() ? 'api' : 'web';
+    }
+
     public function getAll()
     {
         return Permission::all();
@@ -21,7 +26,7 @@ class PermissionService
 
     public function create(array $data): Permission
     {
-        $permission = Permission::create(['name' => $data['name'], 'guard_name' => 'api']);
+        $permission = Permission::create(['name' => $data['name'], 'guard_name' => $this->resolveGuardName()]);
 
         PermissionCreated::dispatch($permission);
 
