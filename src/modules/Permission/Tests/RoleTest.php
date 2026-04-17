@@ -35,6 +35,17 @@ class RoleTest extends TestCase
 
         $this->user = User::factory()->create();
         $this->token = $this->user->createToken('test')->accessToken;
+
+        $this->grantPermissions();
+    }
+
+    private function grantPermissions(): void
+    {
+        $perms = [];
+        foreach (['role.list', 'role.view', 'role.create', 'role.update', 'role.delete'] as $name) {
+            $perms[] = Permission::firstOrCreate(['name' => $name, 'guard_name' => 'api']);
+        }
+        $this->user->givePermissionTo($perms);
     }
 
     private function authHeaders(): array
