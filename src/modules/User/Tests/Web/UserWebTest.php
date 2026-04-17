@@ -3,6 +3,7 @@
 namespace Modules\User\Tests\Web;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Permission\Models\Permission;
 use Modules\User\Models\User;
 use Tests\TestCase;
 
@@ -17,6 +18,17 @@ class UserWebTest extends TestCase
         parent::setUp();
 
         $this->user = User::factory()->create();
+
+        $this->grantPermissions();
+    }
+
+    private function grantPermissions(): void
+    {
+        $perms = [];
+        foreach (['user.list', 'user.view', 'user.create', 'user.update', 'user.delete'] as $name) {
+            $perms[] = Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+        }
+        $this->user->givePermissionTo($perms);
     }
 
     // == LIST ==
