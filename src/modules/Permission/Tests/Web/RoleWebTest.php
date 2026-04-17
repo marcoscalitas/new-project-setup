@@ -19,6 +19,17 @@ class RoleWebTest extends TestCase
         parent::setUp();
 
         $this->user = User::factory()->create();
+
+        $this->grantPermissions();
+    }
+
+    private function grantPermissions(): void
+    {
+        $perms = [];
+        foreach (['role.list', 'role.view', 'role.create', 'role.update', 'role.delete'] as $name) {
+            $perms[] = Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+        }
+        $this->user->givePermissionTo($perms);
     }
 
     // == LIST ==
