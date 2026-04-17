@@ -1,0 +1,504 @@
+<?php
+
+namespace Tests\Feature;
+
+use Tests\TestCase;
+
+class MakeModuleCommandTest extends TestCase
+{
+    private string $modulePath;
+    private string $providersBackup;
+    private string $phpunitBackup;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->modulePath = base_path('modules/Dummy');
+        $this->providersBackup = file_get_contents(base_path('bootstrap/providers.php'));
+        $this->phpunitBackup = file_get_contents(base_path('phpunit.xml'));
+    }
+
+    protected function tearDown(): void
+    {
+        $this->cleanupModule('Dummy');
+        $this->cleanupModule('DummyTwo');
+        $this->cleanupModule('Category');
+        file_put_contents(base_path('bootstrap/providers.php'), $this->providersBackup);
+        file_put_contents(base_path('phpunit.xml'), $this->phpunitBackup);
+
+        parent::tearDown();
+    }
+
+    // == CREATION ==
+
+    public function test_creates_module_with_all_directories(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy'])
+            ->assertSuccessful();
+
+        $expectedDirs = [
+            'Actions',
+            'Database/Migrations',
+            'Database/Seeders',
+            'Events',
+            'Http/Controllers',
+            'Http/Requests',
+            'Http/Resources',
+            'Listeners',
+            'Models',
+            'Policies',
+            'Providers',
+            'Routes',
+            'Services',
+            'Tests/Web',
+        ];
+
+        foreach ($expectedDirs as $dir) {
+            $this->assertDirectoryExists("{$this->modulePath}/{$dir}");
+        }
+    }
+
+    public function test_creates_all_expected_files(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy'])
+            ->assertSuccessful();
+
+        $expectedFiles = [
+            'Providers/DummyServiceProvider.php',
+            'Models/Dummy.php',
+            'Http/Controllers/DummyController.php',
+            'Http/Requests/StoreDummyRequest.php',
+            'Http/Requests/UpdateDummyRequest.php',
+            'Http/Resources/DummyResource.php',
+            'Policies/DummyPolicy.php',
+            'Services/DummyService.php',
+            'Routes/api.php',
+            'Routes/web.php',
+            'Tests/DummyTest.php',
+            'Tests/Web/DummyWebTest.php',
+        ];
+
+        foreach ($expectedFiles as $file) {
+            $this->assertFileExists("{$this->modulePath}/{$file}");
+        }
+    }
+
+    public function test_creates_gitkeep_only_in_empty_directories(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy'])
+            ->assertSuccessful();
+
+        $shouldHaveGitkeep = [
+            'Actions',
+            'Database/Migrations',
+            'Database/Seeders',
+            'Events',
+            'Listeners',
+        ];
+
+        $shouldNotHaveGitkeep = [
+            'Http/Controllers',
+            'Http/Requests',
+            'Http/Resources',
+            'Models',
+            'Policies',
+            'Providers',
+            'Routes',
+            'Services',
+        ];
+
+        foreach ($shouldHaveGitkeep as $dir) {
+            $this->assertFileExists("{$this->modulePath}/{$dir}/.gitkeep");
+        }
+
+        foreach ($shouldNotHaveGitkeep as $dir) {
+            $this->assertFileDoesNotExist("{$this->modulePath}/{$dir}/.gitkeep");
+        }
+    }
+
+    // == PROVIDER REGISTRATION ==
+
+    public function test_registers_provider_in_bootstrap_providers(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy'])
+            ->assertSuccessful();
+
+        $providers = file_get_contents(base_path('bootstrap/providers.php'));
+
+        $this->assertStringContainsString(
+            'Modules\Dummy\Providers\DummyServiceProvider::class',
+            $providers,
+        );
+    }
+
+    public function test_does_not_duplicate_provider_on_second_run(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+        $this->cleanupModule('Dummy');
+
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $providers = file_get_contents(base_path('bootstrap/providers.php'));
+        $count = substr_count($providers, 'Modules\Dummy\Providers\DummyServiceProvider::class');
+
+        $this->assertSame(1, $count);
+    }
+
+    // == NAMESPACES ==
+
+    public function test_generated_files_have_correct_namespaces(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy'])
+            ->assertSuccessful();
+
+        $this->assertFileContains('namespace Modules\Dummy\Providers;', 'Providers/DummyServiceProvider.php');
+        $this->assertFileContains('namespace Modules\Dummy\Models;', 'Models/Dummy.php');
+        $this->assertFileContains('namespace Modules\Dummy\Http\Controllers;', 'Http/Controllers/DummyController.php');
+        $this->assertFileContains('namespace Modules\Dummy\Services;', 'Services/DummyService.php');
+        $this->assertFileContains('namespace Modules\Dummy\Policies;', 'Policies/DummyPolicy.php');
+        $this->assertFileContains('namespace Modules\Dummy\Http\Requests;', 'Http/Requests/StoreDummyRequest.php');
+        $this->assertFileContains('namespace Modules\Dummy\Http\Resources;', 'Http/Resources/DummyResource.php');
+    }
+
+    // == VALIDATION ==
+
+    public function test_fails_if_module_already_exists(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $this->artisan('make:module', ['name' => 'Dummy'])
+            ->assertFailed();
+    }
+
+    // == NAME NORMALIZATION ==
+
+    public function test_normalizes_module_name_to_studly_case(): void
+    {
+        $this->artisan('make:module', ['name' => 'dummy-two'])
+            ->assertSuccessful();
+
+        $this->assertDirectoryExists(base_path('modules/DummyTwo'));
+        $this->assertFileExists(base_path('modules/DummyTwo/Models/DummyTwo.php'));
+    }
+
+    // == FILE CONTENT ==
+
+    public function test_generated_files_are_valid_php(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $phpFiles = [
+            'Providers/DummyServiceProvider.php',
+            'Models/Dummy.php',
+            'Http/Controllers/DummyController.php',
+            'Http/Requests/StoreDummyRequest.php',
+            'Http/Requests/UpdateDummyRequest.php',
+            'Http/Resources/DummyResource.php',
+            'Policies/DummyPolicy.php',
+            'Services/DummyService.php',
+        ];
+
+        foreach ($phpFiles as $file) {
+            $content = file_get_contents("{$this->modulePath}/{$file}");
+            $this->assertStringStartsWith('<?php', $content, "File {$file} does not start with <?php");
+        }
+    }
+
+    public function test_controller_injects_service_and_uses_resource(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $content = file_get_contents("{$this->modulePath}/Http/Controllers/DummyController.php");
+
+        $this->assertStringContainsString('use Modules\Dummy\Services\DummyService;', $content);
+        $this->assertStringContainsString('use Modules\Dummy\Http\Resources\DummyResource;', $content);
+        $this->assertStringContainsString('private DummyService $dummyService', $content);
+        $this->assertStringContainsString('DummyResource::collection', $content);
+        $this->assertStringContainsString('new DummyResource(', $content);
+    }
+
+    public function test_service_uses_correct_model(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $content = file_get_contents("{$this->modulePath}/Services/DummyService.php");
+
+        $this->assertStringContainsString('use Modules\Dummy\Models\Dummy;', $content);
+        $this->assertStringContainsString('Dummy::all()', $content);
+        $this->assertStringContainsString('Dummy::findOrFail($id)', $content);
+        $this->assertStringContainsString('Dummy::create($data)', $content);
+    }
+
+    public function test_policy_uses_snake_case_permissions(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $content = file_get_contents("{$this->modulePath}/Policies/DummyPolicy.php");
+
+        $this->assertStringContainsString("'dummy.list'", $content);
+        $this->assertStringContainsString("'dummy.view'", $content);
+        $this->assertStringContainsString("'dummy.create'", $content);
+        $this->assertStringContainsString("'dummy.update'", $content);
+        $this->assertStringContainsString("'dummy.delete'", $content);
+    }
+
+    public function test_routes_use_plural_kebab_slug(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $apiContent = file_get_contents("{$this->modulePath}/Routes/api.php");
+        $webContent = file_get_contents("{$this->modulePath}/Routes/web.php");
+
+        $this->assertStringContainsString("apiResource('dummies'", $apiContent);
+        $this->assertStringContainsString("prefix('dummies')", $webContent);
+        $this->assertStringContainsString("name('dummies.", $webContent);
+    }
+
+    public function test_provider_loads_routes_and_migrations(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $content = file_get_contents("{$this->modulePath}/Providers/DummyServiceProvider.php");
+
+        $this->assertStringContainsString("Routes/web.php", $content);
+        $this->assertStringContainsString("Routes/api.php", $content);
+        $this->assertStringContainsString('loadMigrationsFrom', $content);
+    }
+
+    public function test_multi_word_module_has_correct_snake_case_permissions(): void
+    {
+        $this->artisan('make:module', ['name' => 'dummy-two']);
+
+        $content = file_get_contents(base_path('modules/DummyTwo/Policies/DummyTwoPolicy.php'));
+
+        $this->assertStringContainsString("'dummy_two.list'", $content);
+        $this->assertStringContainsString("'dummy_two.create'", $content);
+    }
+
+    public function test_irregular_plural_in_routes(): void
+    {
+        $this->cleanupModule('Category');
+
+        $this->artisan('make:module', ['name' => 'Category']);
+
+        $apiContent = file_get_contents(base_path('modules/Category/Routes/api.php'));
+        $webContent = file_get_contents(base_path('modules/Category/Routes/web.php'));
+
+        $this->assertStringContainsString("apiResource('categories'", $apiContent);
+        $this->assertStringContainsString("prefix('categories')", $webContent);
+
+        $this->cleanupModule('Category');
+    }
+
+    public function test_generated_test_files_have_correct_structure(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $apiTest = file_get_contents("{$this->modulePath}/Tests/DummyTest.php");
+        $webTest = file_get_contents("{$this->modulePath}/Tests/Web/DummyWebTest.php");
+
+        $this->assertStringContainsString('namespace Modules\Dummy\Tests;', $apiTest);
+        $this->assertStringContainsString('class DummyTest extends TestCase', $apiTest);
+        $this->assertStringContainsString('use RefreshDatabase;', $apiTest);
+
+        $this->assertStringContainsString('namespace Modules\Dummy\Tests\Web;', $webTest);
+        $this->assertStringContainsString('class DummyWebTest extends TestCase', $webTest);
+        $this->assertStringContainsString('use RefreshDatabase;', $webTest);
+    }
+
+    public function test_generated_tests_are_decoupled_from_auth(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $apiTest = file_get_contents("{$this->modulePath}/Tests/DummyTest.php");
+        $webTest = file_get_contents("{$this->modulePath}/Tests/Web/DummyWebTest.php");
+
+        $this->assertStringNotContainsString('Passport', $apiTest);
+        $this->assertStringNotContainsString('Passport', $webTest);
+        $this->assertStringNotContainsString('createToken', $apiTest);
+    }
+
+    // == NAME VALIDATION ==
+
+    public function test_fails_with_empty_name(): void
+    {
+        $this->artisan('make:module', ['name' => ''])
+            ->assertFailed();
+    }
+
+    public function test_fails_with_invalid_characters_in_name(): void
+    {
+        $this->artisan('make:module', ['name' => 'my/module'])
+            ->assertFailed();
+
+        $this->assertDirectoryDoesNotExist(base_path('modules/My'));
+    }
+
+    // == FILE STRUCTURE DETAILS ==
+
+    public function test_controller_has_all_crud_methods(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $content = file_get_contents("{$this->modulePath}/Http/Controllers/DummyController.php");
+
+        $this->assertStringContainsString('public function index()', $content);
+        $this->assertStringContainsString('public function store(StoreDummyRequest $request)', $content);
+        $this->assertStringContainsString('public function show(int $id)', $content);
+        $this->assertStringContainsString('public function update(UpdateDummyRequest $request, int $id)', $content);
+        $this->assertStringContainsString('public function destroy(int $id)', $content);
+    }
+
+    public function test_api_routes_use_resource_without_prefix_duplication(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $content = file_get_contents("{$this->modulePath}/Routes/api.php");
+
+        $this->assertStringContainsString("apiResource('dummies'", $content);
+        $this->assertStringNotContainsString("->prefix(", $content);
+    }
+
+    public function test_web_routes_define_all_named_crud_routes(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $content = file_get_contents("{$this->modulePath}/Routes/web.php");
+
+        $this->assertStringContainsString("name('dummies.index')", $content);
+        $this->assertStringContainsString("name('dummies.store')", $content);
+        $this->assertStringContainsString("name('dummies.show')", $content);
+        $this->assertStringContainsString("name('dummies.update')", $content);
+        $this->assertStringContainsString("name('dummies.destroy')", $content);
+    }
+
+    public function test_routes_have_correct_middleware(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $api = file_get_contents("{$this->modulePath}/Routes/api.php");
+        $web = file_get_contents("{$this->modulePath}/Routes/web.php");
+
+        $this->assertStringContainsString("'auth:api'", $api);
+        $this->assertStringContainsString("'throttle:60,1'", $api);
+        $this->assertStringContainsString("'auth'", $web);
+        $this->assertStringContainsString("'throttle:60,1'", $web);
+    }
+
+    public function test_model_has_correct_base_class_and_traits(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $content = file_get_contents("{$this->modulePath}/Models/Dummy.php");
+
+        $this->assertStringContainsString('extends Model', $content);
+        $this->assertStringContainsString('use HasFactory;', $content);
+        $this->assertStringContainsString('protected $fillable', $content);
+    }
+
+    public function test_provider_has_register_and_boot_methods(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $content = file_get_contents("{$this->modulePath}/Providers/DummyServiceProvider.php");
+
+        $this->assertStringContainsString('extends ServiceProvider', $content);
+        $this->assertStringContainsString('public function register(): void', $content);
+        $this->assertStringContainsString('public function boot(): void', $content);
+    }
+
+    public function test_form_requests_extend_form_request_with_required_methods(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        foreach (['StoreDummyRequest.php', 'UpdateDummyRequest.php'] as $file) {
+            $content = file_get_contents("{$this->modulePath}/Http/Requests/{$file}");
+
+            $this->assertStringContainsString('extends FormRequest', $content, "{$file} must extend FormRequest");
+            $this->assertStringContainsString('public function authorize(): bool', $content, "{$file} must have authorize");
+            $this->assertStringContainsString('public function rules(): array', $content, "{$file} must have rules");
+        }
+    }
+
+    public function test_resource_extends_json_resource_with_to_array(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $content = file_get_contents("{$this->modulePath}/Http/Resources/DummyResource.php");
+
+        $this->assertStringContainsString('extends JsonResource', $content);
+        $this->assertStringContainsString('public function toArray(Request $request): array', $content);
+        $this->assertStringContainsString("'id' => \$this->id", $content);
+    }
+
+    // == PHPUNIT.XML REGISTRATION ==
+
+    public function test_registers_test_suite_in_phpunit_xml(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy'])
+            ->assertSuccessful();
+
+        $phpunit = file_get_contents(base_path('phpunit.xml'));
+
+        $this->assertStringContainsString('name="Dummy"', $phpunit);
+        $this->assertStringContainsString('modules/Dummy/Tests', $phpunit);
+    }
+
+    public function test_does_not_duplicate_test_suite_on_second_run(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+        $this->cleanupModule('Dummy');
+
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $phpunit = file_get_contents(base_path('phpunit.xml'));
+        $count = substr_count($phpunit, 'name="Dummy"');
+
+        $this->assertSame(1, $count);
+    }
+
+    // == MULTI-MODULE ==
+
+    public function test_multiple_modules_registered_correctly(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+        $this->artisan('make:module', ['name' => 'DummyTwo']);
+
+        $providers = file_get_contents(base_path('bootstrap/providers.php'));
+        $phpunit = file_get_contents(base_path('phpunit.xml'));
+
+        $this->assertStringContainsString('DummyServiceProvider::class', $providers);
+        $this->assertStringContainsString('DummyTwoServiceProvider::class', $providers);
+        $this->assertStringContainsString('name="Dummy"', $phpunit);
+        $this->assertStringContainsString('name="DummyTwo"', $phpunit);
+    }
+
+    // == HELPERS ==
+
+    private function assertFileContains(string $expected, string $relativePath): void
+    {
+        $content = file_get_contents("{$this->modulePath}/{$relativePath}");
+        $this->assertStringContainsString($expected, $content);
+    }
+
+    private function cleanupModule(string $name): void
+    {
+        $path = base_path("modules/{$name}");
+
+        if (!is_dir($path)) {
+            return;
+        }
+
+        $items = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST,
+        );
+
+        foreach ($items as $item) {
+            $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
+        }
+
+        rmdir($path);
+    }
+}
