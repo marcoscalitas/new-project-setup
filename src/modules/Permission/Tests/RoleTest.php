@@ -60,7 +60,7 @@ class RoleTest extends TestCase
         Role::create(['name' => 'admin', 'guard_name' => 'api']);
         Role::create(['name' => 'editor', 'guard_name' => 'api']);
 
-        $response = $this->getJson('/api/permissions/roles', $this->authHeaders());
+        $response = $this->getJson('/api/roles', $this->authHeaders());
 
         $response->assertOk()
             ->assertJsonCount(2);
@@ -68,7 +68,7 @@ class RoleTest extends TestCase
 
     public function test_unauthenticated_user_cannot_list_roles(): void
     {
-        $response = $this->getJson('/api/permissions/roles');
+        $response = $this->getJson('/api/roles');
 
         $response->assertUnauthorized();
     }
@@ -77,7 +77,7 @@ class RoleTest extends TestCase
 
     public function test_user_can_create_role(): void
     {
-        $response = $this->postJson('/api/permissions/roles', [
+        $response = $this->postJson('/api/roles', [
             'name' => 'admin',
         ], $this->authHeaders());
 
@@ -92,7 +92,7 @@ class RoleTest extends TestCase
         Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
         Permission::create(['name' => 'user.create', 'guard_name' => 'api']);
 
-        $response = $this->postJson('/api/permissions/roles', [
+        $response = $this->postJson('/api/roles', [
             'name'        => 'admin',
             'permissions' => ['user.list', 'user.create'],
         ], $this->authHeaders());
@@ -103,7 +103,7 @@ class RoleTest extends TestCase
 
     public function test_create_role_requires_name(): void
     {
-        $response = $this->postJson('/api/permissions/roles', [], $this->authHeaders());
+        $response = $this->postJson('/api/roles', [], $this->authHeaders());
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
@@ -113,7 +113,7 @@ class RoleTest extends TestCase
     {
         Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
-        $response = $this->postJson('/api/permissions/roles', [
+        $response = $this->postJson('/api/roles', [
             'name' => 'admin',
         ], $this->authHeaders());
 
@@ -123,7 +123,7 @@ class RoleTest extends TestCase
 
     public function test_create_role_validates_permissions_exist(): void
     {
-        $response = $this->postJson('/api/permissions/roles', [
+        $response = $this->postJson('/api/roles', [
             'name'        => 'admin',
             'permissions' => ['nonexistent.permission'],
         ], $this->authHeaders());
@@ -138,7 +138,7 @@ class RoleTest extends TestCase
     {
         $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
-        $response = $this->getJson("/api/permissions/roles/{$role->id}", $this->authHeaders());
+        $response = $this->getJson("/api/roles/{$role->id}", $this->authHeaders());
 
         $response->assertOk()
             ->assertJsonPath('name', 'admin');
@@ -146,7 +146,7 @@ class RoleTest extends TestCase
 
     public function test_view_role_returns_404_for_invalid_id(): void
     {
-        $response = $this->getJson('/api/permissions/roles/999', $this->authHeaders());
+        $response = $this->getJson('/api/roles/999', $this->authHeaders());
 
         $response->assertNotFound();
     }
@@ -157,7 +157,7 @@ class RoleTest extends TestCase
     {
         $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
-        $response = $this->putJson("/api/permissions/roles/{$role->id}", [
+        $response = $this->putJson("/api/roles/{$role->id}", [
             'name' => 'super-admin',
         ], $this->authHeaders());
 
@@ -173,7 +173,7 @@ class RoleTest extends TestCase
         Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
         Permission::create(['name' => 'user.create', 'guard_name' => 'api']);
 
-        $response = $this->putJson("/api/permissions/roles/{$role->id}", [
+        $response = $this->putJson("/api/roles/{$role->id}", [
             'name'        => 'admin',
             'permissions' => ['user.list'],
         ], $this->authHeaders());
@@ -187,7 +187,7 @@ class RoleTest extends TestCase
         Role::create(['name' => 'admin', 'guard_name' => 'api']);
         $role = Role::create(['name' => 'editor', 'guard_name' => 'api']);
 
-        $response = $this->putJson("/api/permissions/roles/{$role->id}", [
+        $response = $this->putJson("/api/roles/{$role->id}", [
             'name' => 'admin',
         ], $this->authHeaders());
 
@@ -201,7 +201,7 @@ class RoleTest extends TestCase
     {
         $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
-        $response = $this->deleteJson("/api/permissions/roles/{$role->id}", [], $this->authHeaders());
+        $response = $this->deleteJson("/api/roles/{$role->id}", [], $this->authHeaders());
 
         $response->assertNoContent();
         $this->assertDatabaseMissing('roles', ['id' => $role->id]);
@@ -209,7 +209,7 @@ class RoleTest extends TestCase
 
     public function test_delete_role_returns_404_for_invalid_id(): void
     {
-        $response = $this->deleteJson('/api/permissions/roles/999', [], $this->authHeaders());
+        $response = $this->deleteJson('/api/roles/999', [], $this->authHeaders());
 
         $response->assertNotFound();
     }

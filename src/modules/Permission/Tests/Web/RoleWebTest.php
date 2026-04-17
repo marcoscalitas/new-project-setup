@@ -40,7 +40,7 @@ class RoleWebTest extends TestCase
         Role::create(['name' => 'editor', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
-            ->getJson('/permissions/roles');
+            ->getJson('/roles');
 
         $response->assertOk()
             ->assertJsonCount(2);
@@ -48,7 +48,7 @@ class RoleWebTest extends TestCase
 
     public function test_unauthenticated_user_cannot_list_roles(): void
     {
-        $response = $this->getJson('/permissions/roles');
+        $response = $this->getJson('/roles');
 
         $response->assertUnauthorized();
     }
@@ -58,7 +58,7 @@ class RoleWebTest extends TestCase
     public function test_user_can_create_role(): void
     {
         $response = $this->actingAs($this->user)
-            ->postJson('/permissions/roles', ['name' => 'admin']);
+            ->postJson('/roles', ['name' => 'admin']);
 
         $response->assertCreated()
             ->assertJsonPath('name', 'admin');
@@ -72,7 +72,7 @@ class RoleWebTest extends TestCase
         $p2 = Permission::create(['name' => 'user.view', 'guard_name' => 'web']);
 
         $response = $this->actingAs($this->user)
-            ->postJson('/permissions/roles', [
+            ->postJson('/roles', [
                 'name'        => 'admin',
                 'permissions' => [$p1->name, $p2->name],
             ]);
@@ -84,7 +84,7 @@ class RoleWebTest extends TestCase
     public function test_create_role_validates_required_fields(): void
     {
         $response = $this->actingAs($this->user)
-            ->postJson('/permissions/roles', []);
+            ->postJson('/roles', []);
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
@@ -97,7 +97,7 @@ class RoleWebTest extends TestCase
         $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
-            ->getJson("/permissions/roles/{$role->id}");
+            ->getJson("/roles/{$role->id}");
 
         $response->assertOk()
             ->assertJsonPath('name', 'admin');
@@ -110,7 +110,7 @@ class RoleWebTest extends TestCase
         $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
-            ->putJson("/permissions/roles/{$role->id}", ['name' => 'super-admin']);
+            ->putJson("/roles/{$role->id}", ['name' => 'super-admin']);
 
         $response->assertOk()
             ->assertJsonPath('name', 'super-admin');
@@ -125,7 +125,7 @@ class RoleWebTest extends TestCase
         $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
-            ->deleteJson("/permissions/roles/{$role->id}");
+            ->deleteJson("/roles/{$role->id}");
 
         $response->assertNoContent();
         $this->assertDatabaseMissing('roles', ['id' => $role->id]);
