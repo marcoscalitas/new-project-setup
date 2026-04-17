@@ -352,7 +352,8 @@ SETUP_START=$(date +%s)
 CLEANUP_NEEDED=true
 
 # Passar UID/GID do host para evitar problemas de permissões nos volumes
-export UID=$(id -u)
+# UID é read-only no Bash — exportar sem reatribuir
+export UID
 export GID=$(id -g)
 
 info "A construir e iniciar os containers (UID=${UID}, GID=${GID})..."
