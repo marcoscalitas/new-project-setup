@@ -18,6 +18,17 @@ class PermissionWebTest extends TestCase
         parent::setUp();
 
         $this->user = User::factory()->create();
+
+        $this->grantPermissions();
+    }
+
+    private function grantPermissions(): void
+    {
+        $perms = [];
+        foreach (['permission.list', 'permission.view', 'permission.create', 'permission.update', 'permission.delete'] as $name) {
+            $perms[] = Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+        }
+        $this->user->givePermissionTo($perms);
     }
 
     // == LIST ==
@@ -31,7 +42,7 @@ class PermissionWebTest extends TestCase
             ->getJson('/permissions/permissions');
 
         $response->assertOk()
-            ->assertJsonCount(2);
+            ->assertJsonCount(7);
     }
 
     public function test_unauthenticated_user_cannot_list_permissions(): void
