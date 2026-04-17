@@ -39,7 +39,7 @@ class PermissionWebTest extends TestCase
         Permission::create(['name' => 'user.view', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
-            ->getJson('/permissions/permissions');
+            ->getJson('/permissions');
 
         $response->assertOk()
             ->assertJsonCount(7);
@@ -47,7 +47,7 @@ class PermissionWebTest extends TestCase
 
     public function test_unauthenticated_user_cannot_list_permissions(): void
     {
-        $response = $this->getJson('/permissions/permissions');
+        $response = $this->getJson('/permissions');
 
         $response->assertUnauthorized();
     }
@@ -57,7 +57,7 @@ class PermissionWebTest extends TestCase
     public function test_user_can_create_permission(): void
     {
         $response = $this->actingAs($this->user)
-            ->postJson('/permissions/permissions', ['name' => 'user.list']);
+            ->postJson('/permissions', ['name' => 'user.list']);
 
         $response->assertCreated()
             ->assertJsonPath('name', 'user.list');
@@ -68,7 +68,7 @@ class PermissionWebTest extends TestCase
     public function test_create_permission_validates_required_fields(): void
     {
         $response = $this->actingAs($this->user)
-            ->postJson('/permissions/permissions', []);
+            ->postJson('/permissions', []);
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
@@ -81,7 +81,7 @@ class PermissionWebTest extends TestCase
         $permission = Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
-            ->getJson("/permissions/permissions/{$permission->id}");
+            ->getJson("/permissions/{$permission->id}");
 
         $response->assertOk()
             ->assertJsonPath('name', 'user.list');
@@ -94,7 +94,7 @@ class PermissionWebTest extends TestCase
         $permission = Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
-            ->putJson("/permissions/permissions/{$permission->id}", ['name' => 'user.view']);
+            ->putJson("/permissions/{$permission->id}", ['name' => 'user.view']);
 
         $response->assertOk()
             ->assertJsonPath('name', 'user.view');
@@ -109,7 +109,7 @@ class PermissionWebTest extends TestCase
         $permission = Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
-            ->deleteJson("/permissions/permissions/{$permission->id}");
+            ->deleteJson("/permissions/{$permission->id}");
 
         $response->assertNoContent();
         $this->assertDatabaseMissing('permissions', ['id' => $permission->id]);
