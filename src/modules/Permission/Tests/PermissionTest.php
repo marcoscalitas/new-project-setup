@@ -34,6 +34,17 @@ class PermissionTest extends TestCase
 
         $this->user = User::factory()->create();
         $this->token = $this->user->createToken('test')->accessToken;
+
+        $this->grantPermissions();
+    }
+
+    private function grantPermissions(): void
+    {
+        $perms = [];
+        foreach (['permission.list', 'permission.view', 'permission.create', 'permission.update', 'permission.delete'] as $name) {
+            $perms[] = Permission::firstOrCreate(['name' => $name, 'guard_name' => 'api']);
+        }
+        $this->user->givePermissionTo($perms);
     }
 
     private function authHeaders(): array
@@ -51,7 +62,7 @@ class PermissionTest extends TestCase
         $response = $this->getJson('/api/permissions/permissions', $this->authHeaders());
 
         $response->assertOk()
-            ->assertJsonCount(2);
+            ->assertJsonCount(7);
     }
 
     public function test_unauthenticated_user_cannot_list_permissions(): void
