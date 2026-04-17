@@ -3,6 +3,7 @@
 namespace Modules\User\Services;
 
 use Illuminate\Support\Facades\Hash;
+use Modules\Auth\Events\UserCreated;
 use Modules\Permission\Events\RoleAssigned;
 use Modules\User\Events\UserDeleted;
 use Modules\User\Events\UserUpdated;
@@ -32,6 +33,8 @@ class UserService
         if (!empty($data['roles'])) {
             $this->assignRolesToUser($user, $data['roles']);
         }
+
+        UserCreated::dispatch($user);
 
         return $user->load('roles');
     }
