@@ -6,6 +6,11 @@ use Modules\Permission\Models\Role;
 
 class RoleService
 {
+    private function resolveGuardName(): string
+    {
+        return auth('api')->check() ? 'api' : 'web';
+    }
+
     public function getAll()
     {
         return Role::with('permissions')->get();
@@ -18,7 +23,7 @@ class RoleService
 
     public function create(array $data): Role
     {
-        $role = Role::create(['name' => $data['name'], 'guard_name' => 'api']);
+        $role = Role::create(['name' => $data['name'], 'guard_name' => $this->resolveGuardName()]);
 
         if (!empty($data['permissions'])) {
             $role->syncPermissions($data['permissions']);
