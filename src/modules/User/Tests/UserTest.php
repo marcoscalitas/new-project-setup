@@ -4,6 +4,7 @@ namespace Modules\User\Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Passport\Client;
+use Modules\Permission\Models\Permission;
 use Modules\Permission\Models\Role;
 use Modules\User\Models\User;
 use Tests\TestCase;
@@ -34,6 +35,17 @@ class UserTest extends TestCase
 
         $this->user = User::factory()->create();
         $this->token = $this->user->createToken('test')->accessToken;
+
+        $this->grantPermissions();
+    }
+
+    private function grantPermissions(): void
+    {
+        $perms = [];
+        foreach (['user.list', 'user.view', 'user.create', 'user.update', 'user.delete'] as $name) {
+            $perms[] = Permission::firstOrCreate(['name' => $name, 'guard_name' => 'api']);
+        }
+        $this->user->givePermissionTo($perms);
     }
 
     private function authHeaders(): array
