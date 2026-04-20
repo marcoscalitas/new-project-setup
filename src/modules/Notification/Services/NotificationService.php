@@ -2,21 +2,21 @@
 
 namespace Modules\Notification\Services;
 
-use Illuminate\Support\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Modules\Notification\Events\NotificationDeleted;
 use Modules\Notification\Events\NotificationRead;
 use Modules\User\Models\User;
 
 class NotificationService
 {
-    public function getAll(User $user): Collection
+    public function getAll(User $user, int $perPage = 15): LengthAwarePaginator
     {
-        return $user->notifications;
+        return $user->notifications()->paginate($perPage);
     }
 
-    public function getUnread(User $user): Collection
+    public function getUnread(User $user, int $perPage = 15): LengthAwarePaginator
     {
-        return $user->unreadNotifications;
+        return $user->unreadNotifications()->paginate($perPage);
     }
 
     public function findById(User $user, string $id)

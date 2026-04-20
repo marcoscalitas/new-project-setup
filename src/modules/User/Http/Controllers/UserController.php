@@ -3,6 +3,7 @@
 namespace Modules\User\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Modules\User\Http\Requests\StoreUserRequest;
 use Modules\User\Http\Requests\UpdateUserRequest;
@@ -15,14 +16,15 @@ class UserController
 {
     public function __construct(private UserService $userService) {}
 
-    public function index(): JsonResponse|\Illuminate\View\View
+    public function index(Request $request): JsonResponse|\Illuminate\View\View
     {
         Gate::authorize('viewAny', User::class);
 
-        $users = $this->userService->getAll();
+        $perPage = min((int) $request->query('per_page', 15), 100);
+        $users = $this->userService->getAll($perPage);
 
-        if (request()->expectsJson()) {
-            return response()->json(UserResource::collection($users));
+        if ($request->expectsJson()) {
+            return UserResource::collection($users)->response();
         }
 
         return view('user::users.index', compact('users'));

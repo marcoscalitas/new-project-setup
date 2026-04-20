@@ -224,7 +224,7 @@ class MakeModuleCommandTest extends TestCase
         $content = file_get_contents("{$this->modulePath}/Services/DummyService.php");
 
         $this->assertStringContainsString('use Modules\Dummy\Models\Dummy;', $content);
-        $this->assertStringContainsString('Dummy::all()', $content);
+        $this->assertStringContainsString('Dummy::paginate(', $content);
         $this->assertStringContainsString('Dummy::findOrFail($id)', $content);
         $this->assertStringContainsString('Dummy::create($data)', $content);
     }
@@ -342,7 +342,7 @@ class MakeModuleCommandTest extends TestCase
 
         $content = file_get_contents("{$this->modulePath}/Http/Controllers/DummyController.php");
 
-        $this->assertStringContainsString('public function index()', $content);
+        $this->assertStringContainsString('public function index(Request $request)', $content);
         $this->assertStringContainsString('public function store(StoreDummyRequest $request)', $content);
         $this->assertStringContainsString('public function show(int $id)', $content);
         $this->assertStringContainsString('public function update(UpdateDummyRequest $request, int $id)', $content);

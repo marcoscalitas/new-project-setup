@@ -63,7 +63,8 @@ class NotificationTest extends TestCase
         $response = $this->getJson('/api/notifications', $this->authHeaders());
 
         $response->assertOk()
-            ->assertJsonCount(2);
+            ->assertJsonStructure(['data', 'links', 'meta'])
+            ->assertJsonCount(2, 'data');
     }
 
     public function test_unauthenticated_user_cannot_list_notifications(): void
@@ -83,7 +84,7 @@ class NotificationTest extends TestCase
         $response = $this->getJson('/api/notifications', $this->authHeaders());
 
         $response->assertOk()
-            ->assertJsonCount(1);
+            ->assertJsonCount(1, 'data');
     }
 
     // == UNREAD ==
@@ -96,7 +97,8 @@ class NotificationTest extends TestCase
         $response = $this->getJson('/api/notifications/unread', $this->authHeaders());
 
         $response->assertOk()
-            ->assertJsonCount(1);
+            ->assertJsonStructure(['data', 'links', 'meta'])
+            ->assertJsonCount(1, 'data');
     }
 
     // == SHOW ==

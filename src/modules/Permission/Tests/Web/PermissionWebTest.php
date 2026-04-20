@@ -42,7 +42,7 @@ class PermissionWebTest extends TestCase
             ->getJson('/permissions');
 
         $response->assertOk()
-            ->assertJsonCount(7);
+            ->assertJsonCount(7, 'data');
     }
 
     public function test_unauthenticated_user_cannot_list_permissions(): void

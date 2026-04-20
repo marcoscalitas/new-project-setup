@@ -41,7 +41,7 @@ class UserWebTest extends TestCase
             ->getJson('/users');
 
         $response->assertOk()
-            ->assertJsonCount(4);
+            ->assertJsonCount(4, 'data');
     }
 
     public function test_unauthenticated_user_cannot_list_users(): void

@@ -13,10 +13,11 @@ class NotificationController
 
     public function index(Request $request): JsonResponse|\Illuminate\View\View
     {
-        $notifications = $this->notificationService->getAll($request->user());
+        $perPage = min((int) $request->query('per_page', 15), 100);
+        $notifications = $this->notificationService->getAll($request->user(), $perPage);
 
         if (request()->expectsJson()) {
-            return response()->json(NotificationResource::collection($notifications));
+            return NotificationResource::collection($notifications)->response();
         }
 
         return view('notification::notifications.index', compact('notifications'));
@@ -24,10 +25,11 @@ class NotificationController
 
     public function unread(Request $request): JsonResponse|\Illuminate\View\View
     {
-        $notifications = $this->notificationService->getUnread($request->user());
+        $perPage = min((int) $request->query('per_page', 15), 100);
+        $notifications = $this->notificationService->getUnread($request->user(), $perPage);
 
         if (request()->expectsJson()) {
-            return response()->json(NotificationResource::collection($notifications));
+            return NotificationResource::collection($notifications)->response();
         }
 
         return view('notification::notifications.index', compact('notifications'));

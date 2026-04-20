@@ -62,7 +62,8 @@ class PermissionTest extends TestCase
         $response = $this->getJson('/api/permissions', $this->authHeaders());
 
         $response->assertOk()
-            ->assertJsonCount(7);
+            ->assertJsonStructure(['data', 'links', 'meta'])
+            ->assertJsonCount(7, 'data');
     }
 
     public function test_unauthenticated_user_cannot_list_permissions(): void

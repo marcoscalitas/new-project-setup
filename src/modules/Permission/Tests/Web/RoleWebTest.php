@@ -43,7 +43,7 @@ class RoleWebTest extends TestCase
             ->getJson('/roles');
 
         $response->assertOk()
-            ->assertJsonCount(2);
+            ->assertJsonCount(2, 'data');
     }
 
     public function test_unauthenticated_user_cannot_list_roles(): void

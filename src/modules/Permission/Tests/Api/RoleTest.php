@@ -63,7 +63,8 @@ class RoleTest extends TestCase
         $response = $this->getJson('/api/roles', $this->authHeaders());
 
         $response->assertOk()
-            ->assertJsonCount(2);
+            ->assertJsonStructure(['data', 'links', 'meta'])
+            ->assertJsonCount(2, 'data');
     }
 
     public function test_unauthenticated_user_cannot_list_roles(): void

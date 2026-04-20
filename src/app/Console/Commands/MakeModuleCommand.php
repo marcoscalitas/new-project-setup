@@ -183,6 +183,7 @@ class MakeModuleCommand extends Command
         namespace Modules\\{$this->module}\Http\Controllers;
 
         use Illuminate\Http\JsonResponse;
+        use Illuminate\Http\Request;
         use Modules\\{$this->module}\Http\Requests\Store{$this->module}Request;
         use Modules\\{$this->module}\Http\Requests\Update{$this->module}Request;
         use Modules\\{$this->module}\Http\Resources\\{$this->module}Resource;
@@ -194,11 +195,12 @@ class MakeModuleCommand extends Command
             {
             }
 
-            public function index(): JsonResponse
+            public function index(Request \$request): JsonResponse
             {
-                \$items = \$this->{$lower}Service->getAll();
+                \$perPage = min((int) \$request->query('per_page', 15), 100);
+                \$items = \$this->{$lower}Service->getAll(\$perPage);
 
-                return response()->json({$this->module}Resource::collection(\$items));
+                return {$this->module}Resource::collection(\$items)->response();
             }
 
             public function store(Store{$this->module}Request \$request): JsonResponse
@@ -245,6 +247,7 @@ class MakeModuleCommand extends Command
 
         use Illuminate\Http\JsonResponse;
         use Illuminate\Http\RedirectResponse;
+        use Illuminate\Http\Request;
         use Illuminate\View\View;
         use Modules\\{$this->module}\Http\Requests\Store{$this->module}Request;
         use Modules\\{$this->module}\Http\Requests\Update{$this->module}Request;
@@ -257,12 +260,13 @@ class MakeModuleCommand extends Command
             {
             }
 
-            public function index(): JsonResponse|View
+            public function index(Request \$request): JsonResponse|View
             {
-                \$items = \$this->{$lower}Service->getAll();
+                \$perPage = min((int) \$request->query('per_page', 15), 100);
+                \$items = \$this->{$lower}Service->getAll(\$perPage);
 
-                if (request()->expectsJson()) {
-                    return response()->json({$this->module}Resource::collection(\$items));
+                if (\$request->expectsJson()) {
+                    return {$this->module}Resource::collection(\$items)->response();
                 }
 
                 return view('{$namespace}::{$slug}.index', compact('items'));
@@ -338,9 +342,9 @@ class MakeModuleCommand extends Command
 
         class {$this->module}Service
         {
-            public function getAll()
+            public function getAll(int \$perPage = 15): \\Illuminate\\Contracts\\Pagination\\LengthAwarePaginator
             {
-                return {$this->module}::all();
+                return {$this->module}::paginate(\$perPage);
             }
 
             public function findById(int \$id): {$this->module}

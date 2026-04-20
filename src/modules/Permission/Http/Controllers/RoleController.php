@@ -3,6 +3,7 @@
 namespace Modules\Permission\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Modules\Permission\Http\Requests\StoreRoleRequest;
 use Modules\Permission\Http\Requests\UpdateRoleRequest;
@@ -15,14 +16,15 @@ class RoleController
 {
     public function __construct(private RoleService $roleService) {}
 
-    public function index(): JsonResponse|\Illuminate\View\View
+    public function index(Request $request): JsonResponse|\Illuminate\View\View
     {
         Gate::authorize('viewAny', Role::class);
 
-        $roles = $this->roleService->getAll();
+        $perPage = min((int) $request->query('per_page', 15), 100);
+        $roles = $this->roleService->getAll($perPage);
 
-        if (request()->expectsJson()) {
-            return response()->json(RoleResource::collection($roles));
+        if ($request->expectsJson()) {
+            return RoleResource::collection($roles)->response();
         }
 
         return view('permission::roles.index', compact('roles'));

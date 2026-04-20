@@ -43,7 +43,7 @@ class NotificationWebTest extends TestCase
             ->getJson('/notifications');
 
         $response->assertOk()
-            ->assertJsonCount(2);
+            ->assertJsonCount(2, 'data');
     }
 
     public function test_unauthenticated_user_cannot_list_notifications(): void
@@ -63,7 +63,7 @@ class NotificationWebTest extends TestCase
             ->getJson('/notifications');
 
         $response->assertOk()
-            ->assertJsonCount(1);
+            ->assertJsonCount(1, 'data');
     }
 
     // == UNREAD ==
@@ -78,7 +78,7 @@ class NotificationWebTest extends TestCase
             ->getJson('/notifications/unread');
 
         $response->assertOk()
-            ->assertJsonCount(1);
+            ->assertJsonCount(1, 'data');
     }
 
     // == SHOW ==

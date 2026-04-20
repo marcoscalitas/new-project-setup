@@ -3,6 +3,7 @@
 namespace Modules\Permission\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Modules\Permission\Http\Requests\StorePermissionRequest;
 use Modules\Permission\Http\Requests\UpdatePermissionRequest;
@@ -14,14 +15,15 @@ class PermissionController
 {
     public function __construct(private PermissionService $permissionService) {}
 
-    public function index(): JsonResponse|\Illuminate\View\View
+    public function index(Request $request): JsonResponse|\Illuminate\View\View
     {
         Gate::authorize('viewAny', Permission::class);
 
-        $permissions = $this->permissionService->getAll();
+        $perPage = min((int) $request->query('per_page', 15), 100);
+        $permissions = $this->permissionService->getAll($perPage);
 
-        if (request()->expectsJson()) {
-            return response()->json(PermissionResource::collection($permissions));
+        if ($request->expectsJson()) {
+            return PermissionResource::collection($permissions)->response();
         }
 
         return view('permission::permissions.index', compact('permissions'));

@@ -62,7 +62,8 @@ class UserTest extends TestCase
         $response = $this->getJson('/api/users', $this->authHeaders());
 
         $response->assertOk()
-            ->assertJsonCount(4); // 3 + setUp user
+            ->assertJsonStructure(['data', 'links', 'meta'])
+            ->assertJsonCount(4, 'data'); // 3 + setUp user
     }
 
     public function test_unauthenticated_user_cannot_list_users(): void
