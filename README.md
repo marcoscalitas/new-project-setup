@@ -39,7 +39,7 @@ src/
 │   ├── Auth/              # Autenticação (Login, Register, 2FA, Fortify)
 │   ├── User/              # CRUD de usuários
 │   ├── Permission/        # RBAC (Roles & Permissions → Spatie)
-│   └── Notification/      # Notificações (DatabaseNotification nativa)
+│   └── Notification/      # Notificações + hub cross-module (Events/Listeners)
 ├── routes/                # Rotas globais
 ├── config/                # Configurações
 └── database/              # Migrations & Seeders
@@ -53,10 +53,16 @@ src/
 - `Http/Requests/` — Form Requests (validação)
 - `Http/Resources/` — API Resources (transformação)
 - `Services/` — Lógica de negócio
-- `Policies/` — Autorização
+- `Events/` — Domain events (ex: `UserCreated`, `RoleDeleted`)
+- `Listeners/` — Event listeners (log, notificação, etc.)
+- `Policies/` — Autorização (`Gate::authorize()` nos controllers)
+- `Providers/` — ServiceProvider do módulo (routes, policies, events)
 - `Routes/` — API + Web routes
 - `Database/` — Migrations & Seeders
-- `Tests/` — Testes (Web + API)
+- `Tests/Api/` — Testes de endpoints API (Passport)
+- `Tests/Web/` — Testes de endpoints Web (Session)
+
+> **Nota:** `Actions/` existe apenas no módulo Auth (requisito Fortify). Os demais módulos colocam a lógica de negócio em `Services/`.
 
 ## 🛠️ Setup Rápido
 
@@ -172,18 +178,71 @@ Organizadas por domínio (3 "módulos" de negócio):
 ### Verificar Permissão em Código
 
 ```php
-// In Controller or Service
-if ($user->hasPermissionTo('user.create')) {
-    // Fazer algo
-}
+// In Controller (padrão do projecto — usa Gate + Policy)
+Gate::authorize('viewAny', User::class);
+Gate::authorize('update', $user);
 
 // In Policy
 public function create(User $user): bool {
     return $user->hasPermissionTo('user.create');
 }
+
+// Directo (alternativa)
+if ($user->hasPermissionTo('user.create')) {
+    // Fazer algo
+}
 ```
 
-## 📡 API Endpoints
+## � Events & Notifications (Cross-Module)
+
+O projecto usa uma **arquitetura event-driven**. Cada módulo despacha domain events, e o módulo **Notification** reage automaticamente para notificar admins.
+
+### Events por Módulo
+
+| Módulo | Events |
+|--------|--------|
+| **User** | `UserCreated`, `UserUpdated`, `UserDeleted`, `RoleAssigned` |
+| **Permission** | `PermissionCreated`, `PermissionUpdated`, `PermissionDeleted`, `RoleCreated`, `RoleUpdated`, `RoleDeleted` |
+| **Notification** | `NotificationRead`, `NotificationDeleted` |
+
+### Fluxo
+
+```
+Service → dispatch(Event) → Listeners no mesmo módulo (log)
+                           → Listeners no módulo Notification (notifica admins)
+```
+
+**Exemplo concreto:**
+1. `UserService::create()` → `UserCreated::dispatch($user)`
+2. `LogUserCreation` (User module) → registra no log
+3. `NotifyOnUserCreated` (Notification module) → cria `ActivityNotification` para todos os admins
+
+### Onde os Events são Registados
+
+Cada módulo regista os seus eventos no próprio **ServiceProvider** via `Event::listen()` — não existe um `EventServiceProvider` centralizado.
+
+```php
+// Ex: Modules\User\Providers\UserServiceProvider::boot()
+Event::listen(UserCreated::class, LogUserCreation::class);
+```
+
+O módulo Notification regista listeners cross-module no `NotificationServiceProvider`:
+```php
+Event::listen(UserCreated::class, NotifyOnUserCreated::class);
+Event::listen(RoleCreated::class, NotifyOnRoleCreated::class);
+// ... etc
+```
+
+### ActivityNotification
+
+A classe `Modules\Notification\Notifications\ActivityNotification` é a notificação genérica que guarda:
+- `type` — tipo da acção (ex: `user.created`, `role.deleted`)
+- `message` — descrição legível
+- `metadata` — dados adicionais (JSON)
+
+As notificações são guardadas via `notify()` do Laravel (tabela `notifications`) e acessíveis nos endpoints `/api/notifications`.
+
+## �📡 API Endpoints
 
 ### Auth
 
@@ -209,21 +268,21 @@ public function create(User $user): bool {
 
 | Método | Rota | Autenticação | Permission |
 |--------|------|--------------|-----------|
-| GET | `/api/permissions/roles` | ✅ | `role.list` |
-| POST | `/api/permissions/roles` | ✅ | `role.create` |
-| GET | `/api/permissions/roles/{id}` | ✅ | `role.view` |
-| PUT | `/api/permissions/roles/{id}` | ✅ | `role.update` |
-| DELETE | `/api/permissions/roles/{id}` | ✅ | `role.delete` |
+| GET | `/api/roles` | ✅ | `role.list` |
+| POST | `/api/roles` | ✅ | `role.create` |
+| GET | `/api/roles/{id}` | ✅ | `role.view` |
+| PUT | `/api/roles/{id}` | ✅ | `role.update` |
+| DELETE | `/api/roles/{id}` | ✅ | `role.delete` |
 
 ### Permissions
 
 | Método | Rota | Autenticação | Permission |
 |--------|------|--------------|-----------|
-| GET | `/api/permissions/permissions` | ✅ | `permission.list` |
-| POST | `/api/permissions/permissions` | ✅ | `permission.create` |
-| GET | `/api/permissions/permissions/{id}` | ✅ | `permission.view` |
-| PUT | `/api/permissions/permissions/{id}` | ✅ | `permission.update` |
-| DELETE | `/api/permissions/permissions/{id}` | ✅ | `permission.delete` |
+| GET | `/api/permissions` | ✅ | `permission.list` |
+| POST | `/api/permissions` | ✅ | `permission.create` |
+| GET | `/api/permissions/{id}` | ✅ | `permission.view` |
+| PUT | `/api/permissions/{id}` | ✅ | `permission.update` |
+| DELETE | `/api/permissions/{id}` | ✅ | `permission.delete` |
 
 ### Notifications
 
@@ -241,8 +300,8 @@ public function create(User $user): bool {
 As mesmas rotas API estão disponíveis como web routes (session auth):
 
 - `/users` — CRUD usuários
-- `/permissions/roles` — CRUD roles
-- `/permissions/permissions` — CRUD permissions
+- `/roles` — CRUD roles
+- `/permissions` — CRUD permissions
 - `/notifications` — Notificações
 
 Exemplo:
@@ -275,9 +334,18 @@ docker compose exec app php artisan test --coverage
 - `Feature` — Testes de feature (tests/Feature/)
 - `Auth-Web` — Auth via web/session
 - `Auth-Api` — Auth via API/Passport
-- `User` — CRUD usuários
-- `Permission` — CRUD roles/permissions
-- `Notification` — Notificações
+- `User-Web` — CRUD usuários (web)
+- `User-Api` — CRUD usuários (API)
+- `Permission-Web` — CRUD roles/permissions (web)
+- `Permission-Api` — CRUD roles/permissions (API)
+- `Notification-Web` — Notificações (web)
+- `Notification-Api` — Notificações (API)
+
+Rodar suite específica:
+```bash
+make artisan CMD="test --testsuite=User-Api"
+make artisan CMD="test --testsuite=Permission-Web"
+```
 
 ## 📦 Makefile (Atalhos)
 
@@ -415,54 +483,52 @@ make artisan CMD="make:seeder YourSeeder"
 
 ### Criar Novo Módulo
 
+O boilerplate inclui comandos Artisan para gerar e remover módulos completos:
+
 ```bash
-# 1. Criar diretório
-mkdir -p src/modules/YourModule/{Http/Controllers,Routes,Services,Models,Policies,Tests}
+# Gerar módulo com toda a estrutura (Controller, Service, Model, Routes, Tests, etc.)
+make artisan CMD="make:module Product"
 
-# 2. Criar ServiceProvider
-cat > src/modules/YourModule/Providers/YourModuleServiceProvider.php << 'EOF'
-<?php
-namespace Modules\YourModule\Providers;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\ServiceProvider;
-
-class YourModuleServiceProvider extends ServiceProvider {
-    public function boot(): void {
-        Route::middleware('web')->group(__DIR__ . '/../Routes/web.php');
-        Route::prefix('api')->middleware('api')->group(__DIR__ . '/../Routes/api.php');
-    }
-}
-EOF
-
-# 3. Registrar em src/bootstrap/providers.php
-# Modules\YourModule\Providers\YourModuleServiceProvider::class,
+# Remover módulo (apaga diretório + limpa providers.php + remove suites phpunit.xml)
+make artisan CMD="remove:module Product"
 ```
+
+O `make:module` cria automaticamente:
+- `Http/Controllers/`, `Http/Requests/`, `Http/Resources/`
+- `Models/`, `Services/`, `Policies/`
+- `Events/`, `Listeners/`
+- `Providers/` (ServiceProvider com routes, policies e events)
+- `Routes/` (api.php + web.php)
+- `Database/Migrations/`, `Database/Seeders/`
+- `Tests/Api/`, `Tests/Web/` (stubs com testes iniciais)
+- Regista automaticamente o provider em `bootstrap/providers.php`
+- Cria test suites `{Module}-Api` e `{Module}-Web` em `phpunit.xml`
 
 ### Conventions
 
 - **Controllers**: `DatumController` (singular), methods: `index`, `store`, `show`, `update`, `destroy`
 - **Requests**: `StoreDatumRequest`, `UpdateDatumRequest`
 - **Resources**: `DatumResource::collection()` para lista
-- **Services**: Lógica de negócio, sem dependências HTTP
-- **Policies**: Autorização via `$user->can()` ou middleware `authorize()`
+- **Services**: Lógica de negócio, sem dependências HTTP. Despacham domain events
+- **Policies**: Autorização via `Gate::authorize('action', $model)` nos controllers
+- **Events**: Um event por acção de negócio (ex: `UserCreated`, `RoleDeleted`)
+- **Listeners**: Um listener por reacção (ex: `LogUserCreation`, `NotifyOnUserCreated`)
+- **Guards**: `resolveGuardName()` nos Services — detecta `api` vs `web` dinamicamente
 - **Models**: Use traits `HasFactory`, `Notifiable` quando precisar
 
 ### Exemplo: Criar CRUD Rápido
 
 ```bash
-# 1. Criar model + migration
-make artisan CMD="make:model Post -m"
+# 1. Gerar módulo completo (controller, service, model, routes, tests, etc.)
+make artisan CMD="make:module Post"
 
-# 2. Editar migration
-# 3. Criar factory
-make artisan CMD="make:factory PostFactory"
+# 2. Criar migration
+make artisan CMD="make:migration create_posts_table --path=modules/Post/Database/Migrations"
 
-# 4. Criar service, controller, requests, resource
-# 5. Criar policy
-make artisan CMD="make:policy PostPolicy --model=Post"
-
-# 6. Registar routes
-# 7. Escrever testes
+# 3. Editar migration, Model, Service, Controller, Requests, Resource
+# 4. Editar Policy (já criada pelo make:module)
+# 5. Adicionar permissions no seeder
+# 6. Escrever testes em Tests/Api/ e Tests/Web/
 ```
 
 ## 📝 Environment Variables
