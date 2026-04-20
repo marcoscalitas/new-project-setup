@@ -130,4 +130,83 @@ class RoleWebTest extends TestCase
         $response->assertNoContent();
         $this->assertDatabaseMissing('roles', ['id' => $role->id]);
     }
+
+    // == BLADE VIEWS ==
+
+    public function test_index_returns_blade_view_for_browser(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->get('/roles');
+
+        $response->assertOk()
+            ->assertViewIs('permission::roles.index')
+            ->assertViewHas('roles');
+    }
+
+    public function test_show_returns_blade_view_for_browser(): void
+    {
+        $role = Role::create(['name' => 'admin', 'guard_name' => 'web']);
+
+        $response = $this->actingAs($this->user)
+            ->get("/roles/{$role->id}");
+
+        $response->assertOk()
+            ->assertViewIs('permission::roles.show')
+            ->assertViewHas('role');
+    }
+
+    public function test_create_returns_blade_view(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->get('/roles/create');
+
+        $response->assertOk()
+            ->assertViewIs('permission::roles.create')
+            ->assertViewHas('permissions');
+    }
+
+    public function test_edit_returns_blade_view(): void
+    {
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'web']);
+
+        $response = $this->actingAs($this->user)
+            ->get("/roles/{$role->id}/edit");
+
+        $response->assertOk()
+            ->assertViewIs('permission::roles.edit')
+            ->assertViewHas(['role', 'permissions']);
+    }
+
+    public function test_store_redirects_for_browser(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->post('/roles', ['name' => 'manager']);
+
+        $response->assertRedirect(route('roles.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('roles', ['name' => 'manager']);
+    }
+
+    public function test_update_redirects_for_browser(): void
+    {
+        $role = Role::create(['name' => 'admin', 'guard_name' => 'web']);
+
+        $response = $this->actingAs($this->user)
+            ->put("/roles/{$role->id}", ['name' => 'super-admin']);
+
+        $response->assertRedirect(route('roles.index'))
+            ->assertSessionHas('success');
+    }
+
+    public function test_destroy_redirects_for_browser(): void
+    {
+        $role = Role::create(['name' => 'temp', 'guard_name' => 'web']);
+
+        $response = $this->actingAs($this->user)
+            ->delete("/roles/{$role->id}");
+
+        $response->assertRedirect(route('roles.index'))
+            ->assertSessionHas('success');
+    }
 }
