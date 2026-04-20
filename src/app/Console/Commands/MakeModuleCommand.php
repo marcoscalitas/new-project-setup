@@ -58,7 +58,6 @@ class MakeModuleCommand extends Command
     private function createDirectories(): void
     {
         $dirs = [
-            'Actions',
             'Database/Migrations',
             'Database/Seeders',
             'Events',
