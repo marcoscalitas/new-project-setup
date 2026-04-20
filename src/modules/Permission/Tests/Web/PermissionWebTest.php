@@ -192,4 +192,11 @@ class PermissionWebTest extends TestCase
         $response->assertRedirect(route('permissions.index'))
             ->assertSessionHas('success');
     }
+
+    public function test_unauthenticated_browser_is_redirected_to_login(): void
+    {
+        $response = $this->get('/permissions');
+
+        $response->assertRedirect('/auth/login');
+    }
 }

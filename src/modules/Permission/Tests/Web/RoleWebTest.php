@@ -209,4 +209,27 @@ class RoleWebTest extends TestCase
         $response->assertRedirect(route('roles.index'))
             ->assertSessionHas('success');
     }
+
+    public function test_unauthenticated_browser_is_redirected_to_login(): void
+    {
+        $response = $this->get('/roles');
+
+        $response->assertRedirect('/auth/login');
+    }
+
+    public function test_update_with_empty_permissions_removes_all(): void
+    {
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'web']);
+        $perm = Permission::create(['name' => 'test.perm', 'guard_name' => 'web']);
+        $role->givePermissionTo($perm);
+
+        $response = $this->actingAs($this->user)
+            ->put("/roles/{$role->id}", [
+                'name'        => 'editor',
+                'permissions' => '',
+            ]);
+
+        $response->assertRedirect(route('roles.index'));
+        $this->assertCount(0, $role->fresh()->permissions);
+    }
 }

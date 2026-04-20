@@ -217,4 +217,20 @@ class UserWebTest extends TestCase
 
         $response->assertRedirect('/auth/login');
     }
+
+    public function test_update_with_empty_roles_removes_all(): void
+    {
+        $role = \Modules\Permission\Models\Role::create(['name' => 'editor', 'guard_name' => 'web']);
+        $target = User::factory()->create();
+        $target->assignRole($role);
+
+        $response = $this->actingAs($this->user)
+            ->put("/users/{$target->id}", [
+                'name'  => $target->name,
+                'roles' => '',
+            ]);
+
+        $response->assertRedirect(route('users.index'));
+        $this->assertCount(0, $target->fresh()->roles);
+    }
 }
