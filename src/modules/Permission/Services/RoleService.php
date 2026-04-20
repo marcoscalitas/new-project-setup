@@ -2,6 +2,9 @@
 
 namespace Modules\Permission\Services;
 
+use Modules\Permission\Events\RoleCreated;
+use Modules\Permission\Events\RoleDeleted;
+use Modules\Permission\Events\RoleUpdated;
 use Modules\Permission\Models\Role;
 
 class RoleService
@@ -29,23 +32,34 @@ class RoleService
             $role->syncPermissions($data['permissions']);
         }
 
+        RoleCreated::dispatch($role);
+
         return $role->load('permissions');
     }
 
     public function update(int $id, array $data): Role
     {
         $role = Role::findOrFail($id);
+        $oldName = $role->name;
         $role->update(['name' => $data['name']]);
 
         if (array_key_exists('permissions', $data)) {
             $role->syncPermissions($data['permissions'] ?? []);
         }
 
+        RoleUpdated::dispatch($role->name, $oldName);
+
         return $role->load('permissions');
     }
 
     public function delete(int $id): void
     {
-        Role::findOrFail($id)->delete();
+        $role = Role::findOrFail($id);
+        $roleId = $role->id;
+        $roleName = $role->name;
+
+        $role->delete();
+
+        RoleDeleted::dispatch($roleId, $roleName);
     }
 }
