@@ -27,6 +27,8 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'auth');
+
         Event::listen(Registered::class, SendEmailVerificationNotification::class);
         Event::listen(UserCreated::class, [SendWelcomeEmail::class, 'handle']);
         Event::listen(UserCreated::class, [LogUserCreation::class, 'handle']);
