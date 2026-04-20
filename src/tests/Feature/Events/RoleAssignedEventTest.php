@@ -5,7 +5,7 @@ namespace Tests\Feature\Events;
 use Illuminate\Support\Facades\Event;
 use Modules\Permission\Events\RoleAssigned;
 use Modules\User\Models\User;
-use Spatie\Permission\Models\Role;
+use Modules\Permission\Models\Role;
 use Tests\TestCase;
 
 class RoleAssignedEventTest extends TestCase

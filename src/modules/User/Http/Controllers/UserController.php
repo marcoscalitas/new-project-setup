@@ -9,7 +9,7 @@ use Modules\User\Http\Requests\UpdateUserRequest;
 use Modules\User\Http\Resources\UserResource;
 use Modules\User\Models\User;
 use Modules\User\Services\UserService;
-use Spatie\Permission\Models\Role;
+use Modules\Permission\Models\Role;
 
 class UserController
 {

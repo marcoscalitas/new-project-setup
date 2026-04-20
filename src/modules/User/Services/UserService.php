@@ -9,7 +9,7 @@ use Modules\Permission\Events\RoleAssigned;
 use Modules\User\Events\UserDeleted;
 use Modules\User\Events\UserUpdated;
 use Modules\User\Models\User;
-use Spatie\Permission\Models\Role;
+use Modules\Permission\Models\Role;
 
 class UserService
 {

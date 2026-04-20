@@ -9,7 +9,7 @@ use Modules\Permission\Http\Requests\UpdateRoleRequest;
 use Modules\Permission\Http\Resources\RoleResource;
 use Modules\Permission\Models\Role;
 use Modules\Permission\Services\RoleService;
-use Spatie\Permission\Models\Permission;
+use Modules\Permission\Models\Permission;
 
 class RoleController
 {

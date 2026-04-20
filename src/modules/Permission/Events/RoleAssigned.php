@@ -5,7 +5,7 @@ namespace Modules\Permission\Events;
 use Illuminate\Broadcasting\InteractsWithBroadcasting;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use Spatie\Permission\Models\Role;
+use Modules\Permission\Models\Role;
 use Modules\User\Models\User;
 
 class RoleAssigned
