@@ -122,4 +122,99 @@ class UserWebTest extends TestCase
         $response->assertNoContent();
         $this->assertDatabaseMissing('users', ['id' => $target->id]);
     }
+
+    // == BLADE VIEWS ==
+
+    public function test_index_returns_blade_view_for_browser(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->get('/users');
+
+        $response->assertOk()
+            ->assertViewIs('user::users.index')
+            ->assertViewHas('users');
+    }
+
+    public function test_show_returns_blade_view_for_browser(): void
+    {
+        $target = User::factory()->create();
+
+        $response = $this->actingAs($this->user)
+            ->get("/users/{$target->id}");
+
+        $response->assertOk()
+            ->assertViewIs('user::users.show')
+            ->assertViewHas('user');
+    }
+
+    public function test_create_returns_blade_view(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->get('/users/create');
+
+        $response->assertOk()
+            ->assertViewIs('user::users.create')
+            ->assertViewHas('roles');
+    }
+
+    public function test_edit_returns_blade_view(): void
+    {
+        $target = User::factory()->create();
+
+        $response = $this->actingAs($this->user)
+            ->get("/users/{$target->id}/edit");
+
+        $response->assertOk()
+            ->assertViewIs('user::users.edit')
+            ->assertViewHas(['user', 'roles']);
+    }
+
+    public function test_store_redirects_for_browser(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->post('/users', [
+                'name'                  => 'Browser User',
+                'email'                 => 'browser@example.com',
+                'password'              => 'SecurePass1!',
+                'password_confirmation' => 'SecurePass1!',
+            ]);
+
+        $response->assertRedirect(route('users.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('users', ['email' => 'browser@example.com']);
+    }
+
+    public function test_update_redirects_for_browser(): void
+    {
+        $target = User::factory()->create();
+
+        $response = $this->actingAs($this->user)
+            ->put("/users/{$target->id}", [
+                'name' => 'Updated Browser',
+            ]);
+
+        $response->assertRedirect(route('users.index'))
+            ->assertSessionHas('success');
+    }
+
+    public function test_destroy_redirects_for_browser(): void
+    {
+        $target = User::factory()->create();
+
+        $response = $this->actingAs($this->user)
+            ->delete("/users/{$target->id}");
+
+        $response->assertRedirect(route('users.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('users', ['id' => $target->id]);
+    }
+
+    public function test_unauthenticated_browser_is_redirected_to_login(): void
+    {
+        $response = $this->get('/users');
+
+        $response->assertRedirect('/auth/login');
+    }
 }
