@@ -106,6 +106,18 @@ class PermissionTest extends TestCase
             ->assertJsonValidationErrors(['name']);
     }
 
+    public function test_create_permission_allows_same_name_in_different_guard(): void
+    {
+        Permission::create(['name' => 'post.create', 'guard_name' => 'web']);
+
+        $response = $this->postJson('/api/permissions', [
+            'name' => 'post.create',
+        ], $this->authHeaders());
+
+        $response->assertCreated()
+            ->assertJsonPath('name', 'post.create');
+    }
+
     // == SHOW ==
 
     public function test_user_can_view_permission(): void
@@ -152,6 +164,18 @@ class PermissionTest extends TestCase
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
+    }
+
+    public function test_update_permission_allows_keeping_own_name(): void
+    {
+        $permission = Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
+
+        $response = $this->putJson("/api/permissions/{$permission->id}", [
+            'name' => 'user.list',
+        ], $this->authHeaders());
+
+        $response->assertOk()
+            ->assertJsonPath('name', 'user.list');
     }
 
     // == DELETE ==

@@ -121,6 +121,18 @@ class RoleTest extends TestCase
             ->assertJsonValidationErrors(['name']);
     }
 
+    public function test_create_role_allows_same_name_in_different_guard(): void
+    {
+        Role::create(['name' => 'admin', 'guard_name' => 'web']);
+
+        $response = $this->postJson('/api/roles', [
+            'name' => 'admin',
+        ], $this->authHeaders());
+
+        $response->assertCreated()
+            ->assertJsonPath('name', 'admin');
+    }
+
     public function test_create_role_validates_permissions_exist(): void
     {
         $response = $this->postJson('/api/roles', [
@@ -193,6 +205,33 @@ class RoleTest extends TestCase
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
+    }
+
+    public function test_update_role_allows_keeping_own_name(): void
+    {
+        $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
+
+        $response = $this->putJson("/api/roles/{$role->id}", [
+            'name' => 'admin',
+        ], $this->authHeaders());
+
+        $response->assertOk()
+            ->assertJsonPath('name', 'admin');
+    }
+
+    public function test_update_role_with_empty_permissions_removes_all(): void
+    {
+        $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
+        $perm = Permission::create(['name' => 'test.perm', 'guard_name' => 'api']);
+        $role->givePermissionTo($perm);
+
+        $response = $this->putJson("/api/roles/{$role->id}", [
+            'name'        => 'admin',
+            'permissions' => [],
+        ], $this->authHeaders());
+
+        $response->assertOk()
+            ->assertJsonCount(0, 'permissions');
     }
 
     // == DELETE ==
