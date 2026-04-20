@@ -14,48 +14,84 @@ class PermissionController
 {
     public function __construct(private PermissionService $permissionService) {}
 
-    public function index(): JsonResponse
+    public function index(): JsonResponse|\Illuminate\View\View
     {
         Gate::authorize('viewAny', Permission::class);
 
         $permissions = $this->permissionService->getAll();
 
-        return response()->json(PermissionResource::collection($permissions));
+        if (request()->expectsJson()) {
+            return response()->json(PermissionResource::collection($permissions));
+        }
+
+        return view('permission::permissions.index', compact('permissions'));
     }
 
-    public function store(StorePermissionRequest $request): JsonResponse
+    public function create(): \Illuminate\View\View
+    {
+        Gate::authorize('create', Permission::class);
+
+        return view('permission::permissions.create');
+    }
+
+    public function store(StorePermissionRequest $request): JsonResponse|\Illuminate\Http\RedirectResponse
     {
         Gate::authorize('create', Permission::class);
 
         $permission = $this->permissionService->create($request->validated());
 
-        return response()->json(new PermissionResource($permission), 201);
+        if (request()->expectsJson()) {
+            return response()->json(new PermissionResource($permission), 201);
+        }
+
+        return redirect()->route('permissions.index')->with('success', 'Permission created.');
     }
 
-    public function show(int $id): JsonResponse
+    public function show(int $id): JsonResponse|\Illuminate\View\View
     {
         $permission = $this->permissionService->findById($id);
 
         Gate::authorize('view', $permission);
 
-        return response()->json(new PermissionResource($permission));
+        if (request()->expectsJson()) {
+            return response()->json(new PermissionResource($permission));
+        }
+
+        return view('permission::permissions.show', compact('permission'));
     }
 
-    public function update(UpdatePermissionRequest $request, int $id): JsonResponse
+    public function edit(int $id): \Illuminate\View\View
+    {
+        $permission = Permission::findOrFail($id);
+
+        Gate::authorize('update', $permission);
+
+        return view('permission::permissions.edit', compact('permission'));
+    }
+
+    public function update(UpdatePermissionRequest $request, int $id): JsonResponse|\Illuminate\Http\RedirectResponse
     {
         Gate::authorize('update', Permission::findOrFail($id));
 
         $permission = $this->permissionService->update($id, $request->validated());
 
-        return response()->json(new PermissionResource($permission));
+        if (request()->expectsJson()) {
+            return response()->json(new PermissionResource($permission));
+        }
+
+        return redirect()->route('permissions.index')->with('success', 'Permission updated.');
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(int $id): JsonResponse|\Illuminate\Http\RedirectResponse
     {
         Gate::authorize('delete', Permission::findOrFail($id));
 
         $this->permissionService->delete($id);
 
-        return response()->json(null, 204);
+        if (request()->expectsJson()) {
+            return response()->json(null, 204);
+        }
+
+        return redirect()->route('permissions.index')->with('success', 'Permission deleted.');
     }
 }
