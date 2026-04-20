@@ -190,7 +190,8 @@ class RemoveModuleCommandTest extends TestCase
 
         $phpunit = file_get_contents(base_path('phpunit.xml'));
 
-        $this->assertStringNotContainsString('name="Dummy"', $phpunit);
+        $this->assertStringNotContainsString('name="Dummy-Api"', $phpunit);
+        $this->assertStringNotContainsString('name="Dummy-Web"', $phpunit);
         $this->assertStringNotContainsString('modules/Dummy/Tests', $phpunit);
     }
 
@@ -203,9 +204,12 @@ class RemoveModuleCommandTest extends TestCase
 
         $this->assertStringContainsString('name="Feature"', $phpunit);
         $this->assertStringContainsString('name="Auth-Web"', $phpunit);
-        $this->assertStringContainsString('name="User"', $phpunit);
-        $this->assertStringContainsString('name="Permission"', $phpunit);
-        $this->assertStringContainsString('name="Notification"', $phpunit);
+        $this->assertStringContainsString('name="User-Api"', $phpunit);
+        $this->assertStringContainsString('name="User-Web"', $phpunit);
+        $this->assertStringContainsString('name="Permission-Api"', $phpunit);
+        $this->assertStringContainsString('name="Permission-Web"', $phpunit);
+        $this->assertStringContainsString('name="Notification-Api"', $phpunit);
+        $this->assertStringContainsString('name="Notification-Web"', $phpunit);
     }
 
     public function test_full_cycle_restores_exact_phpunit_xml(): void
