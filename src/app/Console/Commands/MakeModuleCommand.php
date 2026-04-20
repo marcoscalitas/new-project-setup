@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 
 class MakeModuleCommand extends Command
 {
-    protected $signature = 'make:module {name : The module name (e.g. Product)}';
+    protected $signature = 'make:module {name : The module name (e.g. Product)} {--with-views : Generate Blade views and dual response controller}';
 
     protected $description = 'Generate a new module following the project pattern';
 
@@ -38,6 +38,11 @@ class MakeModuleCommand extends Command
         $this->createResource();
         $this->createPolicy();
         $this->createRoutes();
+
+        if ($this->option('with-views')) {
+            $this->createViews();
+        }
+
         $this->createTests();
         $this->registerProvider();
         $this->registerTestSuite();
@@ -57,6 +62,8 @@ class MakeModuleCommand extends Command
 
     private function createDirectories(): void
     {
+        $slug = Str::kebab(Str::plural($this->module));
+
         $dirs = [
             'Database/Migrations',
             'Database/Seeders',
@@ -87,6 +94,11 @@ class MakeModuleCommand extends Command
             'Tests/Web',
         ];
 
+        if ($this->option('with-views')) {
+            $dirs[] = "Resources/views/{$slug}";
+            $fileWillExist[] = "Resources/views/{$slug}";
+        }
+
         foreach ($dirs as $dir) {
             $path = "{$this->modulePath}/{$dir}";
             mkdir($path, 0755, true);
@@ -99,6 +111,11 @@ class MakeModuleCommand extends Command
 
     private function createProvider(): void
     {
+        $namespace = Str::lower($this->module);
+        $viewsLine = $this->option('with-views')
+            ? "\n        \$this->loadViewsFrom(__DIR__ . '/../Resources/views', '{$namespace}');"
+            : '';
+
         $this->write('Providers/' . $this->module . 'ServiceProvider.php', <<<PHP
         <?php
 
@@ -123,7 +140,7 @@ class MakeModuleCommand extends Command
                     ->middleware('api')
                     ->group(__DIR__ . '/../Routes/api.php');
 
-                \$this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
+                \$this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');{$viewsLine}
             }
         }
         PHP);
@@ -153,6 +170,11 @@ class MakeModuleCommand extends Command
     private function createController(): void
     {
         $lower = Str::camel($this->module);
+
+        if ($this->option('with-views')) {
+            $this->createDualController();
+            return;
+        }
 
         $this->write("Http/Controllers/{$this->module}Controller.php", <<<PHP
         <?php
@@ -204,6 +226,101 @@ class MakeModuleCommand extends Command
                 \$this->{$lower}Service->delete(\$id);
 
                 return response()->json(null, 204);
+            }
+        }
+        PHP);
+    }
+
+    private function createDualController(): void
+    {
+        $lower = Str::camel($this->module);
+        $slug = Str::kebab(Str::plural($this->module));
+        $namespace = Str::lower($this->module);
+
+        $this->write("Http/Controllers/{$this->module}Controller.php", <<<PHP
+        <?php
+
+        namespace Modules\\{$this->module}\Http\Controllers;
+
+        use Illuminate\Http\JsonResponse;
+        use Illuminate\Http\RedirectResponse;
+        use Illuminate\View\View;
+        use Modules\\{$this->module}\Http\Requests\Store{$this->module}Request;
+        use Modules\\{$this->module}\Http\Requests\Update{$this->module}Request;
+        use Modules\\{$this->module}\Http\Resources\\{$this->module}Resource;
+        use Modules\\{$this->module}\Services\\{$this->module}Service;
+
+        class {$this->module}Controller
+        {
+            public function __construct(private {$this->module}Service \${$lower}Service)
+            {
+            }
+
+            public function index(): JsonResponse|View
+            {
+                \$items = \$this->{$lower}Service->getAll();
+
+                if (request()->expectsJson()) {
+                    return response()->json({$this->module}Resource::collection(\$items));
+                }
+
+                return view('{$namespace}::{$slug}.index', compact('items'));
+            }
+
+            public function create(): View
+            {
+                return view('{$namespace}::{$slug}.create');
+            }
+
+            public function store(Store{$this->module}Request \$request): JsonResponse|RedirectResponse
+            {
+                \$item = \$this->{$lower}Service->create(\$request->validated());
+
+                if (request()->expectsJson()) {
+                    return response()->json(new {$this->module}Resource(\$item), 201);
+                }
+
+                return redirect()->route('{$slug}.index')->with('success', '{$this->module} created successfully.');
+            }
+
+            public function show(int \$id): JsonResponse|View
+            {
+                \$item = \$this->{$lower}Service->findById(\$id);
+
+                if (request()->expectsJson()) {
+                    return response()->json(new {$this->module}Resource(\$item));
+                }
+
+                return view('{$namespace}::{$slug}.show', compact('item'));
+            }
+
+            public function edit(int \$id): View
+            {
+                \$item = \$this->{$lower}Service->findById(\$id);
+
+                return view('{$namespace}::{$slug}.edit', compact('item'));
+            }
+
+            public function update(Update{$this->module}Request \$request, int \$id): JsonResponse|RedirectResponse
+            {
+                \$item = \$this->{$lower}Service->update(\$id, \$request->validated());
+
+                if (request()->expectsJson()) {
+                    return response()->json(new {$this->module}Resource(\$item));
+                }
+
+                return redirect()->route('{$slug}.show', \$item->id)->with('success', '{$this->module} updated successfully.');
+            }
+
+            public function destroy(int \$id): JsonResponse|RedirectResponse
+            {
+                \$this->{$lower}Service->delete(\$id);
+
+                if (request()->expectsJson()) {
+                    return response()->json(null, 204);
+                }
+
+                return redirect()->route('{$slug}.index')->with('success', '{$this->module} deleted successfully.');
             }
         }
         PHP);
@@ -383,6 +500,15 @@ class MakeModuleCommand extends Command
         });
         PHP);
 
+        if ($this->option('with-views')) {
+            $this->createWebRoutesWithViews($slug);
+        } else {
+            $this->createWebRoutes($slug);
+        }
+    }
+
+    private function createWebRoutes(string $slug): void
+    {
         $this->write('Routes/web.php', <<<PHP
         <?php
 
@@ -395,6 +521,28 @@ class MakeModuleCommand extends Command
                 Route::get('/',         [{$this->module}Controller::class, 'index'])->name('{$slug}.index');
                 Route::post('/',        [{$this->module}Controller::class, 'store'])->name('{$slug}.store');
                 Route::get('/{id}',     [{$this->module}Controller::class, 'show'])->name('{$slug}.show');
+                Route::put('/{id}',     [{$this->module}Controller::class, 'update'])->name('{$slug}.update');
+                Route::delete('/{id}',  [{$this->module}Controller::class, 'destroy'])->name('{$slug}.destroy');
+            });
+        PHP);
+    }
+
+    private function createWebRoutesWithViews(string $slug): void
+    {
+        $this->write('Routes/web.php', <<<PHP
+        <?php
+
+        use Illuminate\Support\Facades\Route;
+        use Modules\\{$this->module}\Http\Controllers\\{$this->module}Controller;
+
+        Route::prefix('{$slug}')
+            ->middleware(['auth', 'throttle:60,1'])
+            ->group(function () {
+                Route::get('/',         [{$this->module}Controller::class, 'index'])->name('{$slug}.index');
+                Route::get('/create',   [{$this->module}Controller::class, 'create'])->name('{$slug}.create');
+                Route::post('/',        [{$this->module}Controller::class, 'store'])->name('{$slug}.store');
+                Route::get('/{id}',     [{$this->module}Controller::class, 'show'])->name('{$slug}.show');
+                Route::get('/{id}/edit', [{$this->module}Controller::class, 'edit'])->name('{$slug}.edit');
                 Route::put('/{id}',     [{$this->module}Controller::class, 'update'])->name('{$slug}.update');
                 Route::delete('/{id}',  [{$this->module}Controller::class, 'destroy'])->name('{$slug}.destroy');
             });
@@ -442,6 +590,164 @@ class MakeModuleCommand extends Command
             }
         }
         PHP);
+    }
+
+    private function createViews(): void
+    {
+        $slug = Str::kebab(Str::plural($this->module));
+
+        $this->write("Resources/views/{$slug}/index.blade.php", <<<'BLADE'
+        @extends('layouts.app')
+
+        @section('title', '{{ title }}')
+
+        @section('content')
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ title }}</h1>
+                <a href="{{ route('{{ slug }}.create') }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
+                    Create
+                </a>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Created At</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        @forelse($items as $item)
+                            <tr>
+                                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ $item->id }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $item->created_at->format('Y-m-d H:i') }}</td>
+                                <td class="px-6 py-4 text-right text-sm space-x-2">
+                                    <a href="{{ route('{{ slug }}.show', $item->id) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">View</a>
+                                    <a href="{{ route('{{ slug }}.edit', $item->id) }}" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400">Edit</a>
+                                    <form action="{{ route('{{ slug }}.destroy', $item->id) }}" method="POST" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400" onclick="return confirm('Are you sure?')">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">No records found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endsection
+        BLADE);
+
+        $this->write("Resources/views/{$slug}/show.blade.php", <<<'BLADE'
+        @extends('layouts.app')
+
+        @section('title', '{{ title }} Details')
+
+        @section('content')
+        <div class="max-w-3xl mx-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ title }} Details</h1>
+                <a href="{{ route('{{ slug }}.index') }}" class="text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">&larr; Back to list</a>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <dl class="grid grid-cols-1 gap-4">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">ID</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $item->id }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Created At</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $item->created_at->format('Y-m-d H:i:s') }}</dd>
+                    </div>
+                </dl>
+
+                <div class="mt-6 flex space-x-3">
+                    <a href="{{ route('{{ slug }}.edit', $item->id) }}" class="rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-400">Edit</a>
+                    <form action="{{ route('{{ slug }}.destroy', $item->id) }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500" onclick="return confirm('Are you sure?')">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        @endsection
+        BLADE);
+
+        $this->write("Resources/views/{$slug}/create.blade.php", <<<'BLADE'
+        @extends('layouts.app')
+
+        @section('title', 'Create {{ title }}')
+
+        @section('content')
+        <div class="max-w-3xl mx-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Create {{ title }}</h1>
+                <a href="{{ route('{{ slug }}.index') }}" class="text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">&larr; Back to list</a>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <form action="{{ route('{{ slug }}.store') }}" method="POST" class="space-y-4">
+                    @csrf
+
+                    {{-- Add your form fields here --}}
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        @endsection
+        BLADE);
+
+        $this->write("Resources/views/{$slug}/edit.blade.php", <<<'BLADE'
+        @extends('layouts.app')
+
+        @section('title', 'Edit {{ title }}')
+
+        @section('content')
+        <div class="max-w-3xl mx-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Edit {{ title }}</h1>
+                <a href="{{ route('{{ slug }}.show', $item->id) }}" class="text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">&larr; Back to details</a>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <form action="{{ route('{{ slug }}.update', $item->id) }}" method="POST" class="space-y-4">
+                    @csrf
+                    @method('PUT')
+
+                    {{-- Add your form fields here --}}
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        @endsection
+        BLADE);
+
+        // Replace placeholders with actual values
+        $viewsPath = "{$this->modulePath}/Resources/views/{$slug}";
+        $title = Str::plural($this->module);
+
+        foreach (glob("{$viewsPath}/*.blade.php") as $file) {
+            $content = file_get_contents($file);
+            $content = str_replace('{{ title }}', $title, $content);
+            $content = str_replace('{{ slug }}', $slug, $content);
+            file_put_contents($file, $content);
+        }
     }
 
     private function registerTestSuite(): void
