@@ -269,6 +269,21 @@ class UserTest extends TestCase
             ->assertJsonCount(1, 'roles');
     }
 
+    public function test_update_user_with_empty_roles_removes_all(): void
+    {
+        $target = User::factory()->create();
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'api']);
+        $target->assignRole($role);
+
+        $response = $this->putJson("/api/users/{$target->id}", [
+            'name'  => $target->name,
+            'roles' => [],
+        ], $this->authHeaders());
+
+        $response->assertOk()
+            ->assertJsonCount(0, 'roles');
+    }
+
     public function test_update_user_rejects_duplicate_email(): void
     {
         User::factory()->create(['email' => 'taken@example.com']);
