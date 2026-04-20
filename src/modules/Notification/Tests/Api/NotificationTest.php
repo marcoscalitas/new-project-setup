@@ -165,7 +165,7 @@ class NotificationTest extends TestCase
         $response = $this->deleteJson("/api/notifications/{$notification->id}", [], $this->authHeaders());
 
         $response->assertNoContent();
-        $this->assertDatabaseMissing('notifications', ['id' => $notification->id]);
+        $this->assertSoftDeleted('notifications', ['id' => $notification->id]);
     }
 
     public function test_delete_notification_returns_404_for_invalid_id(): void
@@ -173,5 +173,17 @@ class NotificationTest extends TestCase
         $response = $this->deleteJson('/api/notifications/' . Str::uuid(), [], $this->authHeaders());
 
         $response->assertNotFound();
+    }
+
+    public function test_deleted_notification_is_not_listed(): void
+    {
+        $notification = $this->createNotification();
+        $this->deleteJson("/api/notifications/{$notification->id}", [], $this->authHeaders());
+
+        $response = $this->getJson('/api/notifications', $this->authHeaders());
+
+        $response->assertOk();
+        $ids = collect($response->json('data'))->pluck('id')->all();
+        $this->assertNotContains($notification->id, $ids);
     }
 }

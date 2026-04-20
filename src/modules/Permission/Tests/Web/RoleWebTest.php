@@ -128,7 +128,7 @@ class RoleWebTest extends TestCase
             ->deleteJson("/roles/{$role->id}");
 
         $response->assertNoContent();
-        $this->assertDatabaseMissing('roles', ['id' => $role->id]);
+        $this->assertSoftDeleted('roles', ['id' => $role->id]);
     }
 
     // == BLADE VIEWS ==

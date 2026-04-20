@@ -132,7 +132,7 @@ class NotificationWebTest extends TestCase
             ->deleteJson("/notifications/{$notification->id}");
 
         $response->assertNoContent();
-        $this->assertDatabaseMissing('notifications', ['id' => $notification->id]);
+        $this->assertSoftDeleted('notifications', ['id' => $notification->id]);
     }
 
     // == BLADE VIEW TESTS ==
@@ -207,7 +207,7 @@ class NotificationWebTest extends TestCase
 
         $response->assertRedirect(route('notifications.index'))
             ->assertSessionHas('success');
-        $this->assertDatabaseMissing('notifications', ['id' => $notification->id]);
+        $this->assertSoftDeleted('notifications', ['id' => $notification->id]);
     }
 
     public function test_unauthenticated_browser_is_redirected_to_login(): void

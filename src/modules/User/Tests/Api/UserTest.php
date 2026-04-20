@@ -306,7 +306,7 @@ class UserTest extends TestCase
         $response = $this->deleteJson("/api/users/{$target->id}", [], $this->authHeaders());
 
         $response->assertNoContent();
-        $this->assertDatabaseMissing('users', ['id' => $target->id]);
+        $this->assertSoftDeleted('users', ['id' => $target->id]);
     }
 
     public function test_delete_user_returns_404_for_invalid_id(): void
@@ -375,6 +375,33 @@ class UserTest extends TestCase
         $response = $this->deleteJson("/api/users/{$admin1->id}", [], $this->authHeaders());
 
         $response->assertNoContent();
-        $this->assertDatabaseMissing('users', ['id' => $admin1->id]);
+        $this->assertSoftDeleted('users', ['id' => $admin1->id]);
+    }
+
+    public function test_deleted_user_is_not_listed(): void
+    {
+        $target = User::factory()->create();
+        $this->deleteJson("/api/users/{$target->id}", [], $this->authHeaders());
+
+        $response = $this->getJson('/api/users', $this->authHeaders());
+
+        $response->assertOk();
+        $ids = collect($response->json('data'))->pluck('id')->all();
+        $this->assertNotContains($target->id, $ids);
+    }
+
+    public function test_can_create_user_with_same_email_after_soft_delete(): void
+    {
+        $target = User::factory()->create(['email' => 'reuse@test.com']);
+        $this->deleteJson("/api/users/{$target->id}", [], $this->authHeaders());
+
+        $response = $this->postJson('/api/users', [
+            'name'                  => 'New User',
+            'email'                 => 'reuse@test.com',
+            'password'              => 'password123',
+            'password_confirmation' => 'password123',
+        ], $this->authHeaders());
+
+        $response->assertCreated();
     }
 }

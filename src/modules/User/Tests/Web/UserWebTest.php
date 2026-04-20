@@ -120,7 +120,7 @@ class UserWebTest extends TestCase
             ->deleteJson("/users/{$target->id}");
 
         $response->assertNoContent();
-        $this->assertDatabaseMissing('users', ['id' => $target->id]);
+        $this->assertSoftDeleted('users', ['id' => $target->id]);
     }
 
     // == BLADE VIEWS ==
@@ -208,7 +208,7 @@ class UserWebTest extends TestCase
         $response->assertRedirect(route('users.index'))
             ->assertSessionHas('success');
 
-        $this->assertDatabaseMissing('users', ['id' => $target->id]);
+        $this->assertSoftDeleted('users', ['id' => $target->id]);
     }
 
     public function test_unauthenticated_browser_is_redirected_to_login(): void

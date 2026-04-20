@@ -243,7 +243,7 @@ class RoleTest extends TestCase
         $response = $this->deleteJson("/api/roles/{$role->id}", [], $this->authHeaders());
 
         $response->assertNoContent();
-        $this->assertDatabaseMissing('roles', ['id' => $role->id]);
+        $this->assertSoftDeleted('roles', ['id' => $role->id]);
     }
 
     public function test_cannot_delete_admin_role(): void
@@ -262,5 +262,29 @@ class RoleTest extends TestCase
         $response = $this->deleteJson('/api/roles/999', [], $this->authHeaders());
 
         $response->assertNotFound();
+    }
+
+    public function test_deleted_role_is_not_listed(): void
+    {
+        $role = Role::create(['name' => 'temp-role', 'guard_name' => 'api']);
+        $this->deleteJson("/api/roles/{$role->id}", [], $this->authHeaders());
+
+        $response = $this->getJson('/api/roles', $this->authHeaders());
+
+        $response->assertOk();
+        $names = collect($response->json('data'))->pluck('name')->all();
+        $this->assertNotContains('temp-role', $names);
+    }
+
+    public function test_can_create_role_with_same_name_after_soft_delete(): void
+    {
+        $role = Role::create(['name' => 'reusable', 'guard_name' => 'api']);
+        $this->deleteJson("/api/roles/{$role->id}", [], $this->authHeaders());
+
+        $response = $this->postJson('/api/roles', [
+            'name' => 'reusable',
+        ], $this->authHeaders());
+
+        $response->assertCreated();
     }
 }

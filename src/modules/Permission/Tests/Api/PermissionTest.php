@@ -187,7 +187,7 @@ class PermissionTest extends TestCase
         $response = $this->deleteJson("/api/permissions/{$permission->id}", [], $this->authHeaders());
 
         $response->assertNoContent();
-        $this->assertDatabaseMissing('permissions', ['id' => $permission->id]);
+        $this->assertSoftDeleted('permissions', ['id' => $permission->id]);
     }
 
     public function test_delete_permission_returns_404_for_invalid_id(): void
@@ -195,5 +195,29 @@ class PermissionTest extends TestCase
         $response = $this->deleteJson('/api/permissions/999', [], $this->authHeaders());
 
         $response->assertNotFound();
+    }
+
+    public function test_deleted_permission_is_not_listed(): void
+    {
+        $perm = Permission::create(['name' => 'temp.perm', 'guard_name' => 'api']);
+        $this->deleteJson("/api/permissions/{$perm->id}", [], $this->authHeaders());
+
+        $response = $this->getJson('/api/permissions', $this->authHeaders());
+
+        $response->assertOk();
+        $names = collect($response->json('data'))->pluck('name')->all();
+        $this->assertNotContains('temp.perm', $names);
+    }
+
+    public function test_can_create_permission_with_same_name_after_soft_delete(): void
+    {
+        $perm = Permission::create(['name' => 'reusable.perm', 'guard_name' => 'api']);
+        $this->deleteJson("/api/permissions/{$perm->id}", [], $this->authHeaders());
+
+        $response = $this->postJson('/api/permissions', [
+            'name' => 'reusable.perm',
+        ], $this->authHeaders());
+
+        $response->assertCreated();
     }
 }

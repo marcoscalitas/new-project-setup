@@ -112,7 +112,7 @@ class PermissionWebTest extends TestCase
             ->deleteJson("/permissions/{$permission->id}");
 
         $response->assertNoContent();
-        $this->assertDatabaseMissing('permissions', ['id' => $permission->id]);
+        $this->assertSoftDeleted('permissions', ['id' => $permission->id]);
     }
 
     // == BLADE VIEWS ==
