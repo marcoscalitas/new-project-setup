@@ -1,10 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.guest')
 
 @section('title', 'Register')
 
 @section('content')
-<div class="flex items-center justify-center min-h-[70vh]">
-    <div class="w-full max-w-md">
         <h1 class="text-2xl font-medium mb-6">Register</h1>
 
         <form method="POST" action="{{ route('register') }}" class="flex flex-col gap-4">
@@ -43,6 +41,4 @@
                 Already have an account? <a href="{{ route('login') }}" class="hover:underline underline-offset-4">Login</a>
             </div>
         </form>
-    </div>
-</div>
 @endsection

@@ -1,10 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.guest')
 
 @section('title', 'Reset Password')
 
 @section('content')
-<div class="flex items-center justify-center min-h-[70vh]">
-    <div class="w-full max-w-md">
         <h1 class="text-2xl font-medium mb-6">Reset Password</h1>
 
         <form method="POST" action="{{ route('password.update') }}" class="flex flex-col gap-4">
@@ -35,6 +33,4 @@
                 Reset Password
             </button>
         </form>
-    </div>
-</div>
 @endsection
