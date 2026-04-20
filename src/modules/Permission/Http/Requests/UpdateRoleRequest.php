@@ -13,6 +13,13 @@ class UpdateRoleRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (!is_array($this->permissions)) {
+            $this->merge(['permissions' => []]);
+        }
+    }
+
     public function rules(): array
     {
         $role = Role::findOrFail($this->route('id'));

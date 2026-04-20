@@ -12,6 +12,13 @@ class UpdateUserRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (!is_array($this->roles)) {
+            $this->merge(['roles' => []]);
+        }
+    }
+
     public function rules(): array
     {
         return [
