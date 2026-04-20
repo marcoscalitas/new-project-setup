@@ -315,4 +315,66 @@ class UserTest extends TestCase
 
         $response->assertNotFound();
     }
+
+    // == ADMIN PROTECTION ==
+
+    public function test_cannot_remove_admin_role_from_last_admin(): void
+    {
+        $admin = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'api']);
+        $admin->assignRole($adminRole);
+
+        $response = $this->putJson("/api/users/{$admin->id}", [
+            'name'  => $admin->name,
+            'roles' => [],
+        ], $this->authHeaders());
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['roles']);
+        $this->assertTrue($admin->fresh()->hasRole('admin'));
+    }
+
+    public function test_can_remove_admin_role_when_other_admins_exist(): void
+    {
+        $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'api']);
+        $admin1 = User::factory()->create();
+        $admin1->assignRole($adminRole);
+        $admin2 = User::factory()->create();
+        $admin2->assignRole($adminRole);
+
+        $response = $this->putJson("/api/users/{$admin1->id}", [
+            'name'  => $admin1->name,
+            'roles' => [],
+        ], $this->authHeaders());
+
+        $response->assertOk()
+            ->assertJsonCount(0, 'roles');
+    }
+
+    public function test_cannot_delete_last_admin_user(): void
+    {
+        $admin = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'api']);
+        $admin->assignRole($adminRole);
+
+        $response = $this->deleteJson("/api/users/{$admin->id}", [], $this->authHeaders());
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['user']);
+        $this->assertDatabaseHas('users', ['id' => $admin->id]);
+    }
+
+    public function test_can_delete_admin_when_other_admins_exist(): void
+    {
+        $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'api']);
+        $admin1 = User::factory()->create();
+        $admin1->assignRole($adminRole);
+        $admin2 = User::factory()->create();
+        $admin2->assignRole($adminRole);
+
+        $response = $this->deleteJson("/api/users/{$admin1->id}", [], $this->authHeaders());
+
+        $response->assertNoContent();
+        $this->assertDatabaseMissing('users', ['id' => $admin1->id]);
+    }
 }

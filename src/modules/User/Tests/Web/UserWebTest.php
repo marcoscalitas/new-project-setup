@@ -233,4 +233,33 @@ class UserWebTest extends TestCase
         $response->assertRedirect(route('users.index'));
         $this->assertCount(0, $target->fresh()->roles);
     }
+
+    public function test_cannot_remove_admin_role_from_last_admin_via_browser(): void
+    {
+        $adminRole = \Modules\Permission\Models\Role::create(['name' => 'admin', 'guard_name' => 'web']);
+        $admin = User::factory()->create();
+        $admin->assignRole($adminRole);
+
+        $response = $this->actingAs($this->user)
+            ->put("/users/{$admin->id}", [
+                'name'  => $admin->name,
+                'roles' => '',
+            ]);
+
+        $response->assertSessionHasErrors(['roles']);
+        $this->assertTrue($admin->fresh()->hasRole('admin'));
+    }
+
+    public function test_cannot_delete_last_admin_via_browser(): void
+    {
+        $adminRole = \Modules\Permission\Models\Role::create(['name' => 'admin', 'guard_name' => 'web']);
+        $admin = User::factory()->create();
+        $admin->assignRole($adminRole);
+
+        $response = $this->actingAs($this->user)
+            ->delete("/users/{$admin->id}");
+
+        $response->assertSessionHasErrors(['user']);
+        $this->assertDatabaseHas('users', ['id' => $admin->id]);
+    }
 }

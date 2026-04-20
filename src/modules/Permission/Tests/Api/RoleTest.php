@@ -238,12 +238,23 @@ class RoleTest extends TestCase
 
     public function test_user_can_delete_role(): void
     {
-        $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'api']);
 
         $response = $this->deleteJson("/api/roles/{$role->id}", [], $this->authHeaders());
 
         $response->assertNoContent();
         $this->assertDatabaseMissing('roles', ['id' => $role->id]);
+    }
+
+    public function test_cannot_delete_admin_role(): void
+    {
+        $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
+
+        $response = $this->deleteJson("/api/roles/{$role->id}", [], $this->authHeaders());
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['role']);
+        $this->assertDatabaseHas('roles', ['id' => $role->id]);
     }
 
     public function test_delete_role_returns_404_for_invalid_id(): void

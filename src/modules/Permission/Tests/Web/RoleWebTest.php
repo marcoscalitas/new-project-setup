@@ -122,7 +122,7 @@ class RoleWebTest extends TestCase
 
     public function test_user_can_delete_role(): void
     {
-        $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
             ->deleteJson("/roles/{$role->id}");
@@ -215,6 +215,18 @@ class RoleWebTest extends TestCase
         $response = $this->get('/roles');
 
         $response->assertRedirect('/auth/login');
+    }
+
+    public function test_cannot_delete_admin_role_via_browser(): void
+    {
+        $role = Role::create(['name' => 'admin', 'guard_name' => 'web']);
+
+        $response = $this->actingAs($this->user)
+            ->delete("/roles/{$role->id}");
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors(['role']);
+        $this->assertDatabaseHas('roles', ['id' => $role->id]);
     }
 
     public function test_update_with_empty_permissions_removes_all(): void
