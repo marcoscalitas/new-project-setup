@@ -155,10 +155,11 @@ class MakeModuleCommand extends Command
 
         use Illuminate\Database\Eloquent\Factories\HasFactory;
         use Illuminate\Database\Eloquent\Model;
+        use Illuminate\Database\Eloquent\SoftDeletes;
 
         class {$this->module} extends Model
         {
-            use HasFactory;
+            use HasFactory, SoftDeletes;
 
             protected \$fillable = [
                 //
