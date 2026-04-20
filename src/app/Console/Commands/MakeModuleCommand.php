@@ -71,6 +71,7 @@ class MakeModuleCommand extends Command
             'Providers',
             'Routes',
             'Services',
+            'Tests/Api',
             'Tests/Web',
         ];
 
@@ -83,7 +84,7 @@ class MakeModuleCommand extends Command
             'Providers',
             'Routes',
             'Services',
-            'Tests',
+            'Tests/Api',
             'Tests/Web',
         ];
 
@@ -405,10 +406,10 @@ class MakeModuleCommand extends Command
     {
         $slug = Str::kebab(Str::plural($this->module));
 
-        $this->write("Tests/{$this->module}Test.php", <<<PHP
+        $this->write("Tests/Api/{$this->module}Test.php", <<<PHP
         <?php
 
-        namespace Modules\\{$this->module}\Tests;
+        namespace Modules\\{$this->module}\Tests\Api;
 
         use Illuminate\Foundation\Testing\RefreshDatabase;
         use Tests\TestCase;
@@ -449,13 +450,16 @@ class MakeModuleCommand extends Command
         $phpunitPath = base_path('phpunit.xml');
         $content = file_get_contents($phpunitPath);
 
-        $suiteName = $this->module;
-        if (str_contains($content, "name=\"{$suiteName}\"")) {
+        $apiSuite = "{$this->module}-Api";
+        if (str_contains($content, "name=\"{$apiSuite}\"")) {
             return;
         }
 
-        $suite = "        <testsuite name=\"{$suiteName}\">\n"
-               . "            <directory>modules/{$this->module}/Tests</directory>\n"
+        $suite = "        <testsuite name=\"{$this->module}-Api\">\n"
+               . "            <directory>modules/{$this->module}/Tests/Api</directory>\n"
+               . "        </testsuite>\n"
+               . "        <testsuite name=\"{$this->module}-Web\">\n"
+               . "            <directory>modules/{$this->module}/Tests/Web</directory>\n"
                . "        </testsuite>";
 
         $content = preg_replace(
