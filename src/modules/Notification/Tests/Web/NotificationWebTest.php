@@ -134,4 +134,86 @@ class NotificationWebTest extends TestCase
         $response->assertNoContent();
         $this->assertDatabaseMissing('notifications', ['id' => $notification->id]);
     }
+
+    // == BLADE VIEW TESTS ==
+
+    public function test_index_returns_blade_view_for_browser(): void
+    {
+        $this->createNotification($this->user);
+
+        $response = $this->actingAs($this->user)
+            ->get('/notifications');
+
+        $response->assertOk()
+            ->assertViewIs('notification::notifications.index')
+            ->assertViewHas('notifications');
+    }
+
+    public function test_unread_returns_blade_view_for_browser(): void
+    {
+        $this->createNotification($this->user);
+
+        $response = $this->actingAs($this->user)
+            ->get('/notifications/unread');
+
+        $response->assertOk()
+            ->assertViewIs('notification::notifications.index')
+            ->assertViewHas('notifications');
+    }
+
+    public function test_show_returns_blade_view_for_browser(): void
+    {
+        $notification = $this->createNotification($this->user);
+
+        $response = $this->actingAs($this->user)
+            ->get("/notifications/{$notification->id}");
+
+        $response->assertOk()
+            ->assertViewIs('notification::notifications.show')
+            ->assertViewHas('notification');
+    }
+
+    public function test_mark_as_read_redirects_for_browser(): void
+    {
+        $notification = $this->createNotification($this->user);
+
+        $response = $this->actingAs($this->user)
+            ->patch("/notifications/{$notification->id}/read");
+
+        $response->assertRedirect(route('notifications.index'))
+            ->assertSessionHas('success');
+        $this->assertNotNull($notification->fresh()->read_at);
+    }
+
+    public function test_mark_all_as_read_redirects_for_browser(): void
+    {
+        $this->createNotification($this->user);
+        $this->createNotification($this->user);
+
+        $response = $this->actingAs($this->user)
+            ->post('/notifications/read-all');
+
+        $response->assertRedirect(route('notifications.index'))
+            ->assertSessionHas('success');
+        $this->assertEquals(0, $this->user->unreadNotifications()->count());
+    }
+
+    public function test_destroy_redirects_for_browser(): void
+    {
+        $notification = $this->createNotification($this->user);
+
+        $response = $this->actingAs($this->user)
+            ->delete("/notifications/{$notification->id}");
+
+        $response->assertRedirect(route('notifications.index'))
+            ->assertSessionHas('success');
+        $this->assertDatabaseMissing('notifications', ['id' => $notification->id]);
+    }
+
+    public function test_unauthenticated_browser_is_redirected_to_login(): void
+    {
+        $response = $this->get('/notifications');
+
+        $response->assertRedirect('/auth/login');
+    }
 }
