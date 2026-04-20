@@ -3,6 +3,7 @@
 namespace Modules\Permission\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StorePermissionRequest extends FormRequest
 {
@@ -13,8 +14,10 @@ class StorePermissionRequest extends FormRequest
 
     public function rules(): array
     {
+        $guard = auth('api')->check() ? 'api' : 'web';
+
         return [
-            'name' => ['required', 'string', 'max:255', 'unique:permissions,name'],
+            'name' => ['required', 'string', 'max:255', Rule::unique('permissions')->where('guard_name', $guard)],
         ];
     }
 }
