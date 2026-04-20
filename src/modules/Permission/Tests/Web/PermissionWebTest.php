@@ -114,4 +114,82 @@ class PermissionWebTest extends TestCase
         $response->assertNoContent();
         $this->assertDatabaseMissing('permissions', ['id' => $permission->id]);
     }
+
+    // == BLADE VIEWS ==
+
+    public function test_index_returns_blade_view_for_browser(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->get('/permissions');
+
+        $response->assertOk()
+            ->assertViewIs('permission::permissions.index')
+            ->assertViewHas('permissions');
+    }
+
+    public function test_show_returns_blade_view_for_browser(): void
+    {
+        $permission = Permission::create(['name' => 'post.create', 'guard_name' => 'web']);
+
+        $response = $this->actingAs($this->user)
+            ->get("/permissions/{$permission->id}");
+
+        $response->assertOk()
+            ->assertViewIs('permission::permissions.show')
+            ->assertViewHas('permission');
+    }
+
+    public function test_create_returns_blade_view(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->get('/permissions/create');
+
+        $response->assertOk()
+            ->assertViewIs('permission::permissions.create');
+    }
+
+    public function test_edit_returns_blade_view(): void
+    {
+        $permission = Permission::create(['name' => 'post.create', 'guard_name' => 'web']);
+
+        $response = $this->actingAs($this->user)
+            ->get("/permissions/{$permission->id}/edit");
+
+        $response->assertOk()
+            ->assertViewIs('permission::permissions.edit')
+            ->assertViewHas('permission');
+    }
+
+    public function test_store_redirects_for_browser(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->post('/permissions', ['name' => 'post.create']);
+
+        $response->assertRedirect(route('permissions.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('permissions', ['name' => 'post.create']);
+    }
+
+    public function test_update_redirects_for_browser(): void
+    {
+        $permission = Permission::create(['name' => 'post.create', 'guard_name' => 'web']);
+
+        $response = $this->actingAs($this->user)
+            ->put("/permissions/{$permission->id}", ['name' => 'post.edit']);
+
+        $response->assertRedirect(route('permissions.index'))
+            ->assertSessionHas('success');
+    }
+
+    public function test_destroy_redirects_for_browser(): void
+    {
+        $permission = Permission::create(['name' => 'temp.perm', 'guard_name' => 'web']);
+
+        $response = $this->actingAs($this->user)
+            ->delete("/permissions/{$permission->id}");
+
+        $response->assertRedirect(route('permissions.index'))
+            ->assertSessionHas('success');
+    }
 }
