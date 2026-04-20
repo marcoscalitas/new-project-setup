@@ -73,12 +73,14 @@ class RemoveModuleCommand extends Command
         $content = file_get_contents($phpunitPath);
 
         $escaped = preg_quote($this->module, '/');
-        $pattern = '/\n\s*<testsuite name="' . $escaped . '">\s*<directory>[^<]*<\/directory>\s*<\/testsuite>/s';
 
-        if (!preg_match($pattern, $content)) {
-            return;
+        foreach (['-Api', '-Web'] as $suffix) {
+            $pattern = '/\n\s*<testsuite name="' . $escaped . $suffix . '">\s*<directory>[^<]*<\/directory>\s*<\/testsuite>/s';
+            $content = preg_replace($pattern, '', $content);
         }
 
+        // Legacy: remove single suite without suffix (for older modules)
+        $pattern = '/\n\s*<testsuite name="' . $escaped . '">\s*<directory>[^<]*<\/directory>\s*<\/testsuite>/s';
         $content = preg_replace($pattern, '', $content);
 
         file_put_contents($phpunitPath, $content);
