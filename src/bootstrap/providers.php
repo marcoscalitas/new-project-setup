@@ -2,7 +2,6 @@
 
 return [
     App\Providers\AppServiceProvider::class,
-    App\Providers\EventServiceProvider::class,
     Modules\Auth\Providers\AuthServiceProvider::class,
     Modules\Auth\Providers\FortifyServiceProvider::class,
     Modules\Notification\Providers\NotificationServiceProvider::class,

@@ -2,6 +2,8 @@
 
 namespace Modules\Auth\Providers;
 
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -25,6 +27,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Event::listen(Registered::class, SendEmailVerificationNotification::class);
         Event::listen(UserCreated::class, [SendWelcomeEmail::class, 'handle']);
         Event::listen(UserCreated::class, [LogUserCreation::class, 'handle']);
 
