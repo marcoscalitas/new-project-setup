@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Permission\Tests;
+namespace Modules\Permission\Tests\Api;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Passport\Client;

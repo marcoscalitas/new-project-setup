@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Notification\Tests;
+namespace Modules\Notification\Tests\Api;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\DatabaseNotification;
