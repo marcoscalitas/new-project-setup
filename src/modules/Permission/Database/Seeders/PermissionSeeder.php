@@ -18,10 +18,14 @@ class PermissionSeeder extends Seeder
         foreach ($modules as $module => $actions) {
             foreach ($actions as $action) {
                 foreach (['api', 'web'] as $guard) {
-                    Permission::firstOrCreate([
+                    $permission = Permission::withTrashed()->firstOrCreate([
                         'name'       => "{$module}.{$action}",
                         'guard_name' => $guard,
                     ]);
+
+                    if ($permission->trashed()) {
+                        $permission->restore();
+                    }
                 }
             }
         }
