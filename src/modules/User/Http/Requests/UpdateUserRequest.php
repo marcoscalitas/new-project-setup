@@ -23,10 +23,10 @@ class UpdateUserRequest extends FormRequest
     {
         return [
             'name'     => ['sometimes', 'string', 'max:255'],
-            'email'    => ['sometimes', 'string', 'email', 'max:255', Rule::unique('users')->ignore($this->route('id'))],
+            'email'    => ['sometimes', 'string', 'email', 'max:255', Rule::unique('users')->ignore($this->route('id'))->whereNull('deleted_at')],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'roles'    => ['sometimes', 'array'],
-            'roles.*'  => ['string', 'exists:roles,name'],
+            'roles.*'  => ['string', Rule::exists('roles', 'name')->whereNull('deleted_at')],
         ];
     }
 }

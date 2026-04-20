@@ -17,9 +17,9 @@ class StoreRoleRequest extends FormRequest
         $guard = auth('api')->check() ? 'api' : 'web';
 
         return [
-            'name'          => ['required', 'string', 'max:255', Rule::unique('roles')->where('guard_name', $guard)],
+            'name'          => ['required', 'string', 'max:255', Rule::unique('roles')->where('guard_name', $guard)->whereNull('deleted_at')],
             'permissions'   => ['sometimes', 'array'],
-            'permissions.*' => ['string', 'exists:permissions,name'],
+            'permissions.*' => ['string', Rule::exists('permissions', 'name')->whereNull('deleted_at')],
         ];
     }
 }

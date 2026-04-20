@@ -17,7 +17,7 @@ class StorePermissionRequest extends FormRequest
         $guard = auth('api')->check() ? 'api' : 'web';
 
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique('permissions')->where('guard_name', $guard)],
+            'name' => ['required', 'string', 'max:255', Rule::unique('permissions')->where('guard_name', $guard)->whereNull('deleted_at')],
         ];
     }
 }

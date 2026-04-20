@@ -25,9 +25,9 @@ class UpdateRoleRequest extends FormRequest
         $role = Role::findOrFail($this->route('id'));
 
         return [
-            'name'          => ['required', 'string', 'max:255', Rule::unique('roles')->ignore($role->id)->where('guard_name', $role->guard_name)],
+            'name'          => ['required', 'string', 'max:255', Rule::unique('roles')->ignore($role->id)->where('guard_name', $role->guard_name)->whereNull('deleted_at')],
             'permissions'   => ['sometimes', 'array'],
-            'permissions.*' => ['string', 'exists:permissions,name'],
+            'permissions.*' => ['string', Rule::exists('permissions', 'name')->whereNull('deleted_at')],
         ];
     }
 }
