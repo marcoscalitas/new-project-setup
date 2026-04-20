@@ -40,6 +40,7 @@
 
         <div>
             <label class="block text-sm font-medium mb-2">Roles</label>
+            <input type="hidden" name="roles" value="">
             <div class="flex flex-wrap gap-3">
                 @foreach($roles as $role)
                     <label class="inline-flex items-center gap-2">

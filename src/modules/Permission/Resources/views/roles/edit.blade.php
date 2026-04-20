@@ -22,6 +22,7 @@
 
         <div>
             <label class="block text-sm font-medium mb-2">Permissions</label>
+            <input type="hidden" name="permissions" value="">
             <div class="flex flex-wrap gap-3">
                 @foreach($permissions as $permission)
                     <label class="inline-flex items-center gap-2">
