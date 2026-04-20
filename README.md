@@ -26,7 +26,7 @@ Todas as portas externas são ligadas a `127.0.0.1` (não expostas à rede) e **
 | Pacote | Versão | Função |
 |--------|--------|--------|
 | **Laravel Passport** | 13 | OAuth 2.0 (API tokens) |
-| **Laravel Fortify** | 1.36 | Autenticação (Login, Register, 2FA) |
+| **Laravel Fortify** | 1.36 | Autenticação (Login, Register, 2FA) + Blade views |
 | **Spatie Permission** | 7.2.4 | RBAC (Roles & Permissions) |
 
 ## 📁 Arquitetura Modular
@@ -49,7 +49,7 @@ src/
 
 **Cada módulo tem:**
 - `Models/` — Entidades Eloquent
-- `Http/Controllers/` — Controllers (JSON responders)
+- `Http/Controllers/` — Controllers (dual response: JSON + Blade)
 - `Http/Requests/` — Form Requests (validação)
 - `Http/Resources/` — API Resources (transformação)
 - `Services/` — Lógica de negócio
@@ -60,7 +60,8 @@ src/
 - `Routes/` — API + Web routes
 - `Database/` — Migrations & Seeders
 - `Tests/Api/` — Testes de endpoints API (Passport)
-- `Tests/Web/` — Testes de endpoints Web (Session)
+- `Resources/views/` — Blade templates (quando aplicável)
+- `Tests/Web/` — Testes de endpoints Web (Session + Blade views)
 
 > **Nota:** `Actions/` existe apenas no módulo Auth (requisito Fortify). Os demais módulos colocam a lógica de negócio em `Services/`.
 
@@ -145,9 +146,30 @@ curl -X POST http://localhost:${APP_PORT}/api/auth/login \
 curl -H "Authorization: Bearer {token}" http://localhost:${APP_PORT}/api/users
 ```
 
-### Web (Session-based)
+### Web (Session-based + Blade Views)
 
-A autenticação web é handleada pelo **Fortify** (API-only, sem views). Rotas web retornam JSON e exigem middleware `auth` (session). Não há templates Blade para login/register — os formulários devem ser criados no frontend (SPA ou Blade custom).
+A autenticação web é handleada pelo **Fortify** com views Blade completas. Rotas web retornam **Blade views** para browsers e **JSON** para requisições API (`Accept: application/json`).
+
+**Views de autenticação disponíveis:**
+- `GET /auth/login` — Formulário de login
+- `GET /auth/register` — Formulário de registo
+- `GET /auth/forgot-password` — Solicitar reset de password
+- `GET /auth/reset-password/{token}` — Formulário de nova password
+
+**Dual Response Pattern:**
+
+Todos os controllers dos módulos base suportam ambos os formatos. A decisão é automática:
+
+```php
+// No controller — retorna JSON ou Blade conforme o request
+if (request()->expectsJson()) {
+    return response()->json(UserResource::collection($users));
+}
+return view('user::users.index', compact('users'));
+```
+
+- **Browser** (session): Recebe Blade views com layout, formulários e flash messages
+- **API** (`Authorization: Bearer {token}` + `Accept: application/json`): Recebe JSON
 
 ## 🔐 Permissões & Roles
 
@@ -295,23 +317,70 @@ As notificações são guardadas via `notify()` do Laravel (tabela `notification
 | POST | `/api/notifications/read-all` | ✅ | Marcar todas como lidas |
 | DELETE | `/api/notifications/{id}` | ✅ | Deletar notificação |
 
-## 🪵 Rotas Web
+## 🪵 Rotas Web (Blade Views)
 
-As mesmas rotas API estão disponíveis como web routes (session auth):
+Todas as rotas web retornam Blade views para browsers (session auth via Fortify):
 
-- `/users` — CRUD usuários
-- `/roles` — CRUD roles
-- `/permissions` — CRUD permissions
-- `/notifications` — Notificações
+### Auth (Fortify)
 
-Exemplo:
-```bash
-# Login via formulário
-POST /login (Fortify)
+| Método | Rota | View |
+|--------|------|------|
+| GET | `/auth/login` | Login form |
+| POST | `/auth/login` | Processar login |
+| GET | `/auth/register` | Register form |
+| POST | `/auth/register` | Processar registo |
+| POST | `/auth/logout` | Logout |
+| GET | `/auth/forgot-password` | Forgot password form |
+| POST | `/auth/forgot-password` | Enviar email reset |
+| GET | `/auth/reset-password/{token}` | Reset password form |
+| POST | `/auth/reset-password` | Confirmar reset |
 
-# Acessar via session
-GET /users (Middleware: auth)
-```
+### Users
+
+| Método | Rota | View / Acção |
+|--------|------|------|
+| GET | `/users` | Lista de usuários |
+| GET | `/users/create` | Formulário de criação |
+| POST | `/users` | Criar usuário (redirect) |
+| GET | `/users/{id}` | Detalhe do usuário |
+| GET | `/users/{id}/edit` | Formulário de edição |
+| PUT | `/users/{id}` | Atualizar usuário (redirect) |
+| DELETE | `/users/{id}` | Deletar usuário (redirect) |
+
+### Roles
+
+| Método | Rota | View / Acção |
+|--------|------|------|
+| GET | `/roles` | Lista de roles |
+| GET | `/roles/create` | Formulário de criação |
+| POST | `/roles` | Criar role (redirect) |
+| GET | `/roles/{id}` | Detalhe da role |
+| GET | `/roles/{id}/edit` | Formulário de edição |
+| PUT | `/roles/{id}` | Atualizar role (redirect) |
+| DELETE | `/roles/{id}` | Deletar role (redirect) |
+
+### Permissions
+
+| Método | Rota | View / Acção |
+|--------|------|------|
+| GET | `/permissions` | Lista de permissions |
+| GET | `/permissions/create` | Formulário de criação |
+| POST | `/permissions` | Criar permission (redirect) |
+| GET | `/permissions/{id}` | Detalhe da permission |
+| GET | `/permissions/{id}/edit` | Formulário de edição |
+| PUT | `/permissions/{id}` | Atualizar permission (redirect) |
+| DELETE | `/permissions/{id}` | Deletar permission (redirect) |
+
+### Notifications
+
+| Método | Rota | View / Acção |
+|--------|------|------|
+| GET | `/notifications` | Lista de notificações |
+| GET | `/notifications/unread` | Apenas não lidas |
+| GET | `/notifications/{id}` | Detalhe da notificação |
+| PATCH | `/notifications/{id}/read` | Marcar como lida (redirect) |
+| POST | `/notifications/read-all` | Marcar todas como lidas (redirect) |
+| DELETE | `/notifications/{id}` | Deletar notificação (redirect) |
 
 ## 🧪 Testes
 
@@ -405,7 +474,8 @@ Executados com `migrate:fresh --seed`:
 
 1. **PermissionSeeder** — 15 permissions × 2 guards (api, web)
 2. **RoleSeeder** — admin (15 perms), user (2 perms) × 2 guards
-3. **DatabaseSeeder** — 2 usuários (admin@, user@)
+3. **UserSeeder** — 2 usuários (admin@example.com + user@example.com) com roles atribuídas
+4. **DatabaseSeeder** — orquestra a ordem: PermissionSeeder → RoleSeeder → UserSeeder
 
 ### Backup & Restore
 
@@ -489,6 +559,9 @@ O boilerplate inclui comandos Artisan para gerar e remover módulos completos:
 # Gerar módulo com toda a estrutura (Controller, Service, Model, Routes, Tests, etc.)
 make artisan CMD="make:module Product"
 
+# Gerar módulo com Blade views (dual response: JSON + Blade)
+make artisan CMD="make:module Product --with-views"
+
 # Remover módulo (apaga diretório + limpa providers.php + remove suites phpunit.xml)
 make artisan CMD="remove:module Product"
 ```
@@ -504,6 +577,12 @@ O `make:module` cria automaticamente:
 - Regista automaticamente o provider em `bootstrap/providers.php`
 - Cria test suites `{Module}-Api` e `{Module}-Web` em `phpunit.xml`
 
+Com `--with-views`, adiciona também:
+- `Resources/views/{module}/` — 4 Blade views (index, show, create, edit) com layout base
+- Controller com **dual response** (`expectsJson()` → JSON ou Blade)
+- `loadViewsFrom` registado automaticamente no ServiceProvider
+- Rotas web `create` e `edit` adicionais
+
 ### Conventions
 
 - **Controllers**: `DatumController` (singular), methods: `index`, `store`, `show`, `update`, `destroy`
@@ -514,6 +593,8 @@ O `make:module` cria automaticamente:
 - **Events**: Um event por acção de negócio (ex: `UserCreated`, `RoleDeleted`)
 - **Listeners**: Um listener por reacção (ex: `LogUserCreation`, `NotifyOnUserCreated`)
 - **Guards**: `resolveGuardName()` nos Services — detecta `api` vs `web` dinamicamente
+- **Views**: Blade templates em `Resources/views/`, registados via `loadViewsFrom` no ServiceProvider
+- **Dual Response**: Controllers usam `request()->expectsJson()` para decidir JSON vs Blade
 - **Models**: Use traits `HasFactory`, `Notifiable` quando precisar
 
 ### Exemplo: Criar CRUD Rápido
