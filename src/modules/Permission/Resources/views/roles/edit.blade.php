@@ -27,7 +27,7 @@
                 @foreach($permissions as $permission)
                     <label class="inline-flex items-center gap-2">
                         <input type="checkbox" name="permissions[]" value="{{ $permission->name }}"
-                            {{ in_array($permission->name, old('permissions', $role->permissions->pluck('name')->toArray())) ? 'checked' : '' }}
+                            {{ in_array($permission->name, (array) old('permissions', $role->permissions->pluck('name')->toArray())) ? 'checked' : '' }}
                             class="rounded-sm">
                         <span class="text-sm">{{ $permission->name }}</span>
                     </label>

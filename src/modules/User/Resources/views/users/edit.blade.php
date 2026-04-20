@@ -45,7 +45,7 @@
                 @foreach($roles as $role)
                     <label class="inline-flex items-center gap-2">
                         <input type="checkbox" name="roles[]" value="{{ $role->name }}"
-                            {{ in_array($role->name, old('roles', $user->roles->pluck('name')->toArray())) ? 'checked' : '' }}
+                            {{ in_array($role->name, (array) old('roles', $user->roles->pluck('name')->toArray())) ? 'checked' : '' }}
                             class="rounded-sm">
                         <span class="text-sm">{{ $role->name }}</span>
                     </label>
