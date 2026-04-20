@@ -3,6 +3,7 @@
 namespace Modules\User\Services;
 
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use Modules\Auth\Events\UserCreated;
 use Modules\Permission\Events\RoleAssigned;
 use Modules\User\Events\UserDeleted;
@@ -52,6 +53,7 @@ class UserService
         $user->update($fields);
 
         if (array_key_exists('roles', $data)) {
+            $this->guardAgainstLastAdminRoleRemoval($user, $data['roles'] ?? []);
             $this->assignRolesToUser($user, $data['roles'] ?? []);
         }
 
@@ -63,6 +65,9 @@ class UserService
     public function delete(int $id): void
     {
         $user = User::findOrFail($id);
+
+        $this->guardAgainstLastAdminDeletion($user);
+
         $userId = $user->id;
         $userEmail = $user->email;
 
@@ -83,6 +88,42 @@ class UserService
             if ($role) {
                 RoleAssigned::dispatch($user, $role);
             }
+        }
+    }
+
+    private function guardAgainstLastAdminRoleRemoval(User $user, array $newRoles): void
+    {
+        if (!$user->hasRole('admin')) {
+            return;
+        }
+
+        if (in_array('admin', $newRoles)) {
+            return;
+        }
+
+        $guardName = $user->roles->firstWhere('name', 'admin')?->guard_name ?? 'web';
+        $adminCount = User::role('admin', $guardName)->count();
+
+        if ($adminCount <= 1) {
+            throw ValidationException::withMessages([
+                'roles' => 'Cannot remove admin role from the last admin user.',
+            ]);
+        }
+    }
+
+    private function guardAgainstLastAdminDeletion(User $user): void
+    {
+        if (!$user->hasRole('admin')) {
+            return;
+        }
+
+        $guardName = $user->roles->firstWhere('name', 'admin')?->guard_name ?? 'web';
+        $adminCount = User::role('admin', $guardName)->count();
+
+        if ($adminCount <= 1) {
+            throw ValidationException::withMessages([
+                'user' => 'Cannot delete the last admin user.',
+            ]);
         }
     }
 }

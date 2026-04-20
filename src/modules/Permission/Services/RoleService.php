@@ -2,6 +2,7 @@
 
 namespace Modules\Permission\Services;
 
+use Illuminate\Validation\ValidationException;
 use Modules\Permission\Events\RoleCreated;
 use Modules\Permission\Events\RoleDeleted;
 use Modules\Permission\Events\RoleUpdated;
@@ -55,6 +56,13 @@ class RoleService
     public function delete(int $id): void
     {
         $role = Role::findOrFail($id);
+
+        if ($role->name === 'admin') {
+            throw ValidationException::withMessages([
+                'role' => 'The admin role cannot be deleted.',
+            ]);
+        }
+
         $roleId = $role->id;
         $roleName = $role->name;
 
