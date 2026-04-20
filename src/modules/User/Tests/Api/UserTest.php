@@ -404,4 +404,40 @@ class UserTest extends TestCase
 
         $response->assertCreated();
     }
+
+    public function test_user_without_permission_cannot_list_users(): void
+    {
+        $guest = User::factory()->create();
+        $token = $guest->createToken('test')->accessToken;
+
+        $response = $this->getJson('/api/users', ['Authorization' => 'Bearer ' . $token]);
+
+        $response->assertForbidden();
+    }
+
+    public function test_user_without_permission_cannot_create_user(): void
+    {
+        $guest = User::factory()->create();
+        $token = $guest->createToken('test')->accessToken;
+
+        $response = $this->postJson('/api/users', [
+            'name'                  => 'New',
+            'email'                 => 'new@test.com',
+            'password'              => 'password123',
+            'password_confirmation' => 'password123',
+        ], ['Authorization' => 'Bearer ' . $token]);
+
+        $response->assertForbidden();
+    }
+
+    public function test_user_without_permission_cannot_delete_user(): void
+    {
+        $guest  = User::factory()->create();
+        $token  = $guest->createToken('test')->accessToken;
+        $target = User::factory()->create();
+
+        $response = $this->deleteJson("/api/users/{$target->id}", [], ['Authorization' => 'Bearer ' . $token]);
+
+        $response->assertForbidden();
+    }
 }

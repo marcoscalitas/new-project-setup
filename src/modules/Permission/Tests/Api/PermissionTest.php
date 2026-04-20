@@ -220,4 +220,32 @@ class PermissionTest extends TestCase
 
         $response->assertCreated();
     }
+
+    public function test_user_without_permission_cannot_list_permissions(): void
+    {
+        $guest = User::factory()->create();
+        $token = $guest->createToken('test')->accessToken;
+
+        $this->getJson('/api/permissions', ['Authorization' => 'Bearer ' . $token])
+            ->assertForbidden();
+    }
+
+    public function test_user_without_permission_cannot_create_permission(): void
+    {
+        $guest = User::factory()->create();
+        $token = $guest->createToken('test')->accessToken;
+
+        $this->postJson('/api/permissions', ['name' => 'unauthorized.perm'], ['Authorization' => 'Bearer ' . $token])
+            ->assertForbidden();
+    }
+
+    public function test_user_without_permission_cannot_delete_permission(): void
+    {
+        $guest = User::factory()->create();
+        $token = $guest->createToken('test')->accessToken;
+        $perm  = Permission::create(['name' => 'target.perm', 'guard_name' => 'api']);
+
+        $this->deleteJson("/api/permissions/{$perm->id}", [], ['Authorization' => 'Bearer ' . $token])
+            ->assertForbidden();
+    }
 }

@@ -287,4 +287,32 @@ class RoleTest extends TestCase
 
         $response->assertCreated();
     }
+
+    public function test_user_without_permission_cannot_list_roles(): void
+    {
+        $guest = User::factory()->create();
+        $token = $guest->createToken('test')->accessToken;
+
+        $this->getJson('/api/roles', ['Authorization' => 'Bearer ' . $token])
+            ->assertForbidden();
+    }
+
+    public function test_user_without_permission_cannot_create_role(): void
+    {
+        $guest = User::factory()->create();
+        $token = $guest->createToken('test')->accessToken;
+
+        $this->postJson('/api/roles', ['name' => 'unauthorized-role'], ['Authorization' => 'Bearer ' . $token])
+            ->assertForbidden();
+    }
+
+    public function test_user_without_permission_cannot_delete_role(): void
+    {
+        $guest  = User::factory()->create();
+        $token  = $guest->createToken('test')->accessToken;
+        $role   = Role::create(['name' => 'target', 'guard_name' => 'api']);
+
+        $this->deleteJson("/api/roles/{$role->id}", [], ['Authorization' => 'Bearer ' . $token])
+            ->assertForbidden();
+    }
 }

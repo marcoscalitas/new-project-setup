@@ -186,4 +186,38 @@ class NotificationTest extends TestCase
         $ids = collect($response->json('data'))->pluck('id')->all();
         $this->assertNotContains($notification->id, $ids);
     }
+
+    public function test_user_cannot_view_another_users_notification(): void
+    {
+        $other         = User::factory()->create();
+        $notification  = DatabaseNotification::create([
+            'id'              => Str::uuid()->toString(),
+            'type'            => 'App\\Notifications\\TestNotification',
+            'notifiable_type' => User::class,
+            'notifiable_id'   => $other->id,
+            'data'            => ['message' => 'Private'],
+        ]);
+
+        // Service scopes notifications by notifiable_id, so another user's
+        // notification is not found rather than forbidden (safe by design)
+        $this->getJson("/api/notifications/{$notification->id}", $this->authHeaders())
+            ->assertNotFound();
+    }
+
+    public function test_user_cannot_delete_another_users_notification(): void
+    {
+        $other         = User::factory()->create();
+        $notification  = DatabaseNotification::create([
+            'id'              => Str::uuid()->toString(),
+            'type'            => 'App\\Notifications\\TestNotification',
+            'notifiable_type' => User::class,
+            'notifiable_id'   => $other->id,
+            'data'            => ['message' => 'Private'],
+        ]);
+
+        // Service scopes notifications by notifiable_id, so another user's
+        // notification is not found rather than forbidden (safe by design)
+        $this->deleteJson("/api/notifications/{$notification->id}", [], $this->authHeaders())
+            ->assertNotFound();
+    }
 }
