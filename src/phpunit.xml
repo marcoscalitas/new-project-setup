@@ -17,14 +17,23 @@
         <testsuite name="Auth-Api">
             <directory>modules/Auth/Tests/Api</directory>
         </testsuite>
-        <testsuite name="User">
-            <directory>modules/User/Tests</directory>
+        <testsuite name="User-Api">
+            <directory>modules/User/Tests/Api</directory>
         </testsuite>
-        <testsuite name="Permission">
-            <directory>modules/Permission/Tests</directory>
+        <testsuite name="User-Web">
+            <directory>modules/User/Tests/Web</directory>
         </testsuite>
-        <testsuite name="Notification">
-            <directory>modules/Notification/Tests</directory>
+        <testsuite name="Permission-Api">
+            <directory>modules/Permission/Tests/Api</directory>
+        </testsuite>
+        <testsuite name="Permission-Web">
+            <directory>modules/Permission/Tests/Web</directory>
+        </testsuite>
+        <testsuite name="Notification-Api">
+            <directory>modules/Notification/Tests/Api</directory>
+        </testsuite>
+        <testsuite name="Notification-Web">
+            <directory>modules/Notification/Tests/Web</directory>
         </testsuite>
     </testsuites>
     <source>
