@@ -475,6 +475,126 @@ class MakeModuleCommandTest extends TestCase
         $this->assertStringContainsString('name="DummyTwo-Api"', $phpunit);
     }
 
+    // == --WITH-VIEWS FLAG ==
+
+    public function test_with_views_creates_views_directory_and_files(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy', '--with-views' => true])
+            ->assertSuccessful();
+
+        $this->assertDirectoryExists("{$this->modulePath}/Resources/views/dummies");
+        $this->assertFileExists("{$this->modulePath}/Resources/views/dummies/index.blade.php");
+        $this->assertFileExists("{$this->modulePath}/Resources/views/dummies/show.blade.php");
+        $this->assertFileExists("{$this->modulePath}/Resources/views/dummies/create.blade.php");
+        $this->assertFileExists("{$this->modulePath}/Resources/views/dummies/edit.blade.php");
+    }
+
+    public function test_with_views_provider_loads_views(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy', '--with-views' => true])
+            ->assertSuccessful();
+
+        $content = file_get_contents("{$this->modulePath}/Providers/DummyServiceProvider.php");
+
+        $this->assertStringContainsString('loadViewsFrom', $content);
+        $this->assertStringContainsString("'dummy'", $content);
+    }
+
+    public function test_with_views_controller_has_dual_response(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy', '--with-views' => true])
+            ->assertSuccessful();
+
+        $content = file_get_contents("{$this->modulePath}/Http/Controllers/DummyController.php");
+
+        $this->assertStringContainsString('request()->expectsJson()', $content);
+        $this->assertStringContainsString('public function create()', $content);
+        $this->assertStringContainsString('public function edit(int $id)', $content);
+        $this->assertStringContainsString("view('dummy::dummies.", $content);
+        $this->assertStringContainsString('RedirectResponse', $content);
+    }
+
+    public function test_with_views_web_routes_have_create_and_edit(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy', '--with-views' => true])
+            ->assertSuccessful();
+
+        $content = file_get_contents("{$this->modulePath}/Routes/web.php");
+
+        $this->assertStringContainsString("name('dummies.create')", $content);
+        $this->assertStringContainsString("name('dummies.edit')", $content);
+    }
+
+    public function test_with_views_views_contain_correct_routes(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy', '--with-views' => true])
+            ->assertSuccessful();
+
+        $index = file_get_contents("{$this->modulePath}/Resources/views/dummies/index.blade.php");
+
+        $this->assertStringContainsString("route('dummies.create')", $index);
+        $this->assertStringContainsString("route('dummies.show'", $index);
+        $this->assertStringContainsString("route('dummies.edit'", $index);
+        $this->assertStringContainsString("route('dummies.destroy'", $index);
+        $this->assertStringContainsString('Dummies', $index);
+    }
+
+    public function test_without_views_does_not_create_views_directory(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy'])
+            ->assertSuccessful();
+
+        $this->assertDirectoryDoesNotExist("{$this->modulePath}/Resources");
+    }
+
+    public function test_without_views_controller_is_api_only(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy'])
+            ->assertSuccessful();
+
+        $content = file_get_contents("{$this->modulePath}/Http/Controllers/DummyController.php");
+
+        $this->assertStringNotContainsString('expectsJson', $content);
+        $this->assertStringNotContainsString('public function create()', $content);
+        $this->assertStringNotContainsString('public function edit(', $content);
+    }
+
+    public function test_without_views_provider_does_not_load_views(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy'])
+            ->assertSuccessful();
+
+        $content = file_get_contents("{$this->modulePath}/Providers/DummyServiceProvider.php");
+
+        $this->assertStringNotContainsString('loadViewsFrom', $content);
+    }
+
+    public function test_without_views_web_routes_have_no_create_edit(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy'])
+            ->assertSuccessful();
+
+        $content = file_get_contents("{$this->modulePath}/Routes/web.php");
+
+        $this->assertStringNotContainsString("name('dummies.create')", $content);
+        $this->assertStringNotContainsString("name('dummies.edit')", $content);
+    }
+
+    public function test_with_views_multi_word_module(): void
+    {
+        $this->artisan('make:module', ['name' => 'dummy-two', '--with-views' => true])
+            ->assertSuccessful();
+
+        $modulePath = base_path('modules/DummyTwo');
+
+        $this->assertDirectoryExists("{$modulePath}/Resources/views/dummy-twos");
+        $this->assertFileExists("{$modulePath}/Resources/views/dummy-twos/index.blade.php");
+
+        $content = file_get_contents("{$modulePath}/Http/Controllers/DummyTwoController.php");
+        $this->assertStringContainsString('request()->expectsJson()', $content);
+        $this->assertStringContainsString("view('dummytwo::dummy-twos.", $content);
+    }
+
     // == HELPERS ==
 
     private function assertFileContains(string $expected, string $relativePath): void
