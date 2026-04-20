@@ -221,11 +221,14 @@ O projecto usa uma **arquitetura event-driven**. Cada módulo despacha domain ev
 
 ### Events por Módulo
 
-| Módulo | Events |
+| Módulo | Events (classes) |
 |--------|--------|
-| **User** | `UserCreated`, `UserUpdated`, `UserDeleted`, `RoleAssigned` |
-| **Permission** | `PermissionCreated`, `PermissionUpdated`, `PermissionDeleted`, `RoleCreated`, `RoleUpdated`, `RoleDeleted` |
+| **Auth** | `UserCreated` |
+| **User** | `UserUpdated`, `UserDeleted` |
+| **Permission** | `PermissionCreated`, `PermissionUpdated`, `PermissionDeleted`, `RoleCreated`, `RoleUpdated`, `RoleDeleted`, `RoleAssigned` |
 | **Notification** | `NotificationRead`, `NotificationDeleted` |
+
+> **Nota:** `UserService` despacha `UserCreated` (que vive em `Auth/Events/`) e `RoleAssigned` (que vive em `Permission/Events/`). A tabela mostra onde cada event class é definida.
 
 ### Fluxo
 
