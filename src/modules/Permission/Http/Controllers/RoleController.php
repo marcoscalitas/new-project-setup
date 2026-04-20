@@ -9,53 +9,94 @@ use Modules\Permission\Http\Requests\UpdateRoleRequest;
 use Modules\Permission\Http\Resources\RoleResource;
 use Modules\Permission\Models\Role;
 use Modules\Permission\Services\RoleService;
+use Spatie\Permission\Models\Permission;
 
 class RoleController
 {
     public function __construct(private RoleService $roleService) {}
 
-    public function index(): JsonResponse
+    public function index(): JsonResponse|\Illuminate\View\View
     {
         Gate::authorize('viewAny', Role::class);
 
         $roles = $this->roleService->getAll();
 
-        return response()->json(RoleResource::collection($roles));
+        if (request()->expectsJson()) {
+            return response()->json(RoleResource::collection($roles));
+        }
+
+        return view('permission::roles.index', compact('roles'));
     }
 
-    public function store(StoreRoleRequest $request): JsonResponse
+    public function create(): \Illuminate\View\View
+    {
+        Gate::authorize('create', Role::class);
+
+        $permissions = Permission::where('guard_name', 'web')->get();
+
+        return view('permission::roles.create', compact('permissions'));
+    }
+
+    public function store(StoreRoleRequest $request): JsonResponse|\Illuminate\Http\RedirectResponse
     {
         Gate::authorize('create', Role::class);
 
         $role = $this->roleService->create($request->validated());
 
-        return response()->json(new RoleResource($role), 201);
+        if (request()->expectsJson()) {
+            return response()->json(new RoleResource($role), 201);
+        }
+
+        return redirect()->route('roles.index')->with('success', 'Role created.');
     }
 
-    public function show(int $id): JsonResponse
+    public function show(int $id): JsonResponse|\Illuminate\View\View
     {
         $role = $this->roleService->findById($id);
 
         Gate::authorize('view', $role);
 
-        return response()->json(new RoleResource($role));
+        if (request()->expectsJson()) {
+            return response()->json(new RoleResource($role));
+        }
+
+        return view('permission::roles.show', compact('role'));
     }
 
-    public function update(UpdateRoleRequest $request, int $id): JsonResponse
+    public function edit(int $id): \Illuminate\View\View
+    {
+        $role = Role::findOrFail($id);
+
+        Gate::authorize('update', $role);
+
+        $permissions = Permission::where('guard_name', 'web')->get();
+
+        return view('permission::roles.edit', compact('role', 'permissions'));
+    }
+
+    public function update(UpdateRoleRequest $request, int $id): JsonResponse|\Illuminate\Http\RedirectResponse
     {
         Gate::authorize('update', Role::findOrFail($id));
 
         $role = $this->roleService->update($id, $request->validated());
 
-        return response()->json(new RoleResource($role));
+        if (request()->expectsJson()) {
+            return response()->json(new RoleResource($role));
+        }
+
+        return redirect()->route('roles.index')->with('success', 'Role updated.');
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(int $id): JsonResponse|\Illuminate\Http\RedirectResponse
     {
         Gate::authorize('delete', Role::findOrFail($id));
 
         $this->roleService->delete($id);
 
-        return response()->json(null, 204);
+        if (request()->expectsJson()) {
+            return response()->json(null, 204);
+        }
+
+        return redirect()->route('roles.index')->with('success', 'Role deleted.');
     }
 }
