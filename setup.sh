@@ -247,8 +247,16 @@ info "src/.env sincronizado com as credenciais do .env"
 is_port_in_use() {
     local port=$1
     local project=$2
-    # Verifica se a porta está em uso
-    if ! ss -tln 2>/dev/null | awk '{print $4}' | grep -qE ":${port}$"; then
+    # Verifica se a porta está em uso (ss → lsof fallback para macOS)
+    local port_in_use=false
+    if command -v ss >/dev/null 2>&1; then
+        ss -tln 2>/dev/null | awk '{print $4}' | grep -qE ":${port}$" && port_in_use=true
+    elif command -v lsof >/dev/null 2>&1; then
+        lsof -iTCP:"$port" -sTCP:LISTEN -P -n >/dev/null 2>&1 && port_in_use=true
+    elif command -v netstat >/dev/null 2>&1; then
+        netstat -tln 2>/dev/null | awk '{print $4}' | grep -qE ":${port}$" && port_in_use=true
+    fi
+    if [ "$port_in_use" = false ]; then
         return 1 # porta livre
     fi
     # Se a porta está em uso, verifica se é um container do próprio projecto
