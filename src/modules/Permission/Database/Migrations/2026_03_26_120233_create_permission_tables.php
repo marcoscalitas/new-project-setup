@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -28,9 +29,10 @@ return new class extends Migration
             $table->string('name');
             $table->string('guard_name');
             $table->timestamps();
-
-            $table->unique(['name', 'guard_name']);
+            $table->softDeletes();
         });
+
+        DB::statement("CREATE UNIQUE INDEX permissions_name_guard_name_unique ON {$tableNames['permissions']} (name, guard_name) WHERE deleted_at IS NULL");
 
         /**
          * See `docs/prerequisites.md` for suggested lengths on 'name' and 'guard_name' if "1071 Specified key was too long" errors are encountered.
@@ -44,12 +46,15 @@ return new class extends Migration
             $table->string('name');
             $table->string('guard_name');
             $table->timestamps();
-            if ($teams || config('permission.testing')) {
-                $table->unique([$columnNames['team_foreign_key'], 'name', 'guard_name']);
-            } else {
-                $table->unique(['name', 'guard_name']);
-            }
+            $table->softDeletes();
         });
+
+        if ($teams || config('permission.testing')) {
+            $teamKey = $columnNames['team_foreign_key'];
+            DB::statement("CREATE UNIQUE INDEX roles_team_name_guard_unique ON {$tableNames['roles']} ({$teamKey}, name, guard_name) WHERE deleted_at IS NULL");
+        } else {
+            DB::statement("CREATE UNIQUE INDEX roles_name_guard_name_unique ON {$tableNames['roles']} (name, guard_name) WHERE deleted_at IS NULL");
+        }
 
         Schema::create($tableNames['model_has_permissions'], static function (Blueprint $table) use ($tableNames, $columnNames, $pivotPermission, $teams) {
             $table->unsignedBigInteger($pivotPermission);
