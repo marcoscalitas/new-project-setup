@@ -54,5 +54,6 @@ class PermissionServiceProvider extends ServiceProvider
         Route::middleware('web')->group(__DIR__ . '/../Routes/web.php');
         Route::prefix('api')->middleware('api')->group(__DIR__ . '/../Routes/api.php');
         $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
+        $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'permission');
     }
 }
