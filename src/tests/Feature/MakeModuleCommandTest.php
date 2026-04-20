@@ -38,7 +38,6 @@ class MakeModuleCommandTest extends TestCase
             ->assertSuccessful();
 
         $expectedDirs = [
-            'Actions',
             'Database/Migrations',
             'Database/Seeders',
             'Events',
@@ -91,7 +90,6 @@ class MakeModuleCommandTest extends TestCase
             ->assertSuccessful();
 
         $shouldHaveGitkeep = [
-            'Actions',
             'Database/Migrations',
             'Database/Seeders',
             'Events',
