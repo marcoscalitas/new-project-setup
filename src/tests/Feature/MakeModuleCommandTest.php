@@ -51,6 +51,7 @@ class MakeModuleCommandTest extends TestCase
             'Providers',
             'Routes',
             'Services',
+            'Tests/Api',
             'Tests/Web',
         ];
 
@@ -75,7 +76,7 @@ class MakeModuleCommandTest extends TestCase
             'Services/DummyService.php',
             'Routes/api.php',
             'Routes/web.php',
-            'Tests/DummyTest.php',
+            'Tests/Api/DummyTest.php',
             'Tests/Web/DummyWebTest.php',
         ];
 
@@ -295,10 +296,10 @@ class MakeModuleCommandTest extends TestCase
     {
         $this->artisan('make:module', ['name' => 'Dummy']);
 
-        $apiTest = file_get_contents("{$this->modulePath}/Tests/DummyTest.php");
+        $apiTest = file_get_contents("{$this->modulePath}/Tests/Api/DummyTest.php");
         $webTest = file_get_contents("{$this->modulePath}/Tests/Web/DummyWebTest.php");
 
-        $this->assertStringContainsString('namespace Modules\Dummy\Tests;', $apiTest);
+        $this->assertStringContainsString('namespace Modules\Dummy\Tests\Api;', $apiTest);
         $this->assertStringContainsString('class DummyTest extends TestCase', $apiTest);
         $this->assertStringContainsString('use RefreshDatabase;', $apiTest);
 
@@ -311,7 +312,7 @@ class MakeModuleCommandTest extends TestCase
     {
         $this->artisan('make:module', ['name' => 'Dummy']);
 
-        $apiTest = file_get_contents("{$this->modulePath}/Tests/DummyTest.php");
+        $apiTest = file_get_contents("{$this->modulePath}/Tests/Api/DummyTest.php");
         $webTest = file_get_contents("{$this->modulePath}/Tests/Web/DummyWebTest.php");
 
         $this->assertStringNotContainsString('Passport', $apiTest);
@@ -441,8 +442,10 @@ class MakeModuleCommandTest extends TestCase
 
         $phpunit = file_get_contents(base_path('phpunit.xml'));
 
-        $this->assertStringContainsString('name="Dummy"', $phpunit);
-        $this->assertStringContainsString('modules/Dummy/Tests', $phpunit);
+        $this->assertStringContainsString('name="Dummy-Api"', $phpunit);
+        $this->assertStringContainsString('modules/Dummy/Tests/Api', $phpunit);
+        $this->assertStringContainsString('name="Dummy-Web"', $phpunit);
+        $this->assertStringContainsString('modules/Dummy/Tests/Web', $phpunit);
     }
 
     public function test_does_not_duplicate_test_suite_on_second_run(): void
@@ -453,7 +456,7 @@ class MakeModuleCommandTest extends TestCase
         $this->artisan('make:module', ['name' => 'Dummy']);
 
         $phpunit = file_get_contents(base_path('phpunit.xml'));
-        $count = substr_count($phpunit, 'name="Dummy"');
+        $count = substr_count($phpunit, 'name="Dummy-Api"');
 
         $this->assertSame(1, $count);
     }
@@ -470,8 +473,8 @@ class MakeModuleCommandTest extends TestCase
 
         $this->assertStringContainsString('DummyServiceProvider::class', $providers);
         $this->assertStringContainsString('DummyTwoServiceProvider::class', $providers);
-        $this->assertStringContainsString('name="Dummy"', $phpunit);
-        $this->assertStringContainsString('name="DummyTwo"', $phpunit);
+        $this->assertStringContainsString('name="Dummy-Api"', $phpunit);
+        $this->assertStringContainsString('name="DummyTwo-Api"', $phpunit);
     }
 
     // == HELPERS ==
