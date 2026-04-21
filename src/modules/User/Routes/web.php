@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\User\Http\Controllers\UserController;
 
 Route::prefix('users')
-    ->middleware(['auth', 'throttle:60,1'])
+    ->middleware(['auth', 'verified', 'throttle:60,1'])
     ->group(function () {
         Route::get('/',           [UserController::class, 'index'])->name('users.index');
         Route::get('/create',     [UserController::class, 'create'])->name('users.create');

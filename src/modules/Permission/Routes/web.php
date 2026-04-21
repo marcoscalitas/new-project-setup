@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Permission\Http\Controllers\RoleController;
 use Modules\Permission\Http\Controllers\PermissionController;
 
-Route::middleware(['auth', 'throttle:60,1'])->group(function () {
+Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
     Route::prefix('roles')->group(function () {
         Route::get('/',           [RoleController::class, 'index'])->name('roles.index');
         Route::get('/create',     [RoleController::class, 'create'])->name('roles.create');

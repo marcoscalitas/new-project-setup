@@ -2,6 +2,7 @@
 
 namespace Modules\Auth\Services;
 
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Modules\Auth\Events\UserCreated;
@@ -37,6 +38,7 @@ class AuthService
         ]);
 
         UserCreated::dispatch($user);
+        event(new Registered($user));
 
         $token = $user->createToken('api-token')->accessToken;
 
@@ -67,5 +69,13 @@ class AuthService
         return Password::reset($data, function (User $user, string $password) {
             $user->forceFill(['password' => Hash::make($password)])->save();
         });
+    }
+
+    /**
+     * Resend the email verification notification.
+     */
+    public function resendVerificationEmail(User $user): void
+    {
+        $user->sendEmailVerificationNotification();
     }
 }

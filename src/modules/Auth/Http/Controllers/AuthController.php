@@ -63,4 +63,15 @@ class AuthController
             ? response()->json(['message' => 'Senha redefinida com sucesso.'])
             : response()->json(['message' => 'Token inválido ou expirado.'], 400);
     }
+
+    public function resendVerificationEmail(Request $request): JsonResponse
+    {
+        if ($request->user()->hasVerifiedEmail()) {
+            return response()->json(['message' => 'E-mail já verificado.'], 422);
+        }
+
+        $this->authService->resendVerificationEmail($request->user());
+
+        return response()->json(['message' => 'E-mail de verificação reenviado.']);
+    }
 }

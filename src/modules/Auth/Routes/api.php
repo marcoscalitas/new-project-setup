@@ -18,6 +18,7 @@ Route::prefix('auth')->group(function () {
     });
 
     Route::middleware('auth:api')->group(function () {
-        Route::post('logout', [AuthController::class, 'logout'])->name('api.auth.logout');
+        Route::post('logout',        [AuthController::class, 'logout'])->name('api.auth.logout');
+        Route::post('email/resend',  [AuthController::class, 'resendVerificationEmail'])->name('api.auth.email.resend');
     });
 });

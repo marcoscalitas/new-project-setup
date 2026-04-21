@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Notification\Http\Controllers\NotificationController;
 
 Route::prefix('notifications')
-    ->middleware(['auth', 'throttle:60,1'])
+    ->middleware(['auth', 'verified', 'throttle:60,1'])
     ->group(function () {
         Route::get('/',              [NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/unread',        [NotificationController::class, 'unread'])->name('notifications.unread');
