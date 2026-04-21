@@ -35,6 +35,12 @@
         <testsuite name="Notification-Web">
             <directory>modules/Notification/Tests/Web</directory>
         </testsuite>
+        <testsuite name="Horizon">
+            <file>tests/Feature/HorizonTest.php</file>
+        </testsuite>
+        <testsuite name="Telescope">
+            <file>tests/Feature/TelescopeTest.php</file>
+        </testsuite>
     </testsuites>
     <source>
         <include>
