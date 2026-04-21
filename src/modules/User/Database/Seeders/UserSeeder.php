@@ -9,14 +9,22 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::factory()->create([
-            'name'  => 'Admin',
-            'email' => 'admin@example.com',
-        ])->assignRole('admin');
+        $admin = User::withTrashed()->firstOrCreate(
+            ['email' => 'admin@example.com'],
+            ['name' => 'Admin', 'password' => bcrypt('password')]
+        );
+        if ($admin->trashed()) {
+            $admin->restore();
+        }
+        $admin->syncRoles('admin');
 
-        User::factory()->create([
-            'name'  => 'User',
-            'email' => 'user@example.com',
-        ])->assignRole('user');
+        $user = User::withTrashed()->firstOrCreate(
+            ['email' => 'user@example.com'],
+            ['name' => 'User', 'password' => bcrypt('password')]
+        );
+        if ($user->trashed()) {
+            $user->restore();
+        }
+        $user->syncRoles('user');
     }
 }
