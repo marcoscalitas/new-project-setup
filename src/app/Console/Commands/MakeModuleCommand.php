@@ -141,7 +141,7 @@ class MakeModuleCommand extends Command
                 Route::middleware('web')
                     ->group(__DIR__ . '/../Routes/web.php');
 
-                Route::prefix('api')
+                Route::prefix('api/v1')
                     ->middleware('api')
                     ->group(__DIR__ . '/../Routes/api.php');
 

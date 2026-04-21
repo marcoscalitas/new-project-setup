@@ -33,7 +33,7 @@ class LoginTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->postJson('/api/auth/login', [
+        $response = $this->postJson('/api/v1/auth/login', [
             'email'    => $user->email,
             'password' => 'password',
         ]);
@@ -46,7 +46,7 @@ class LoginTest extends TestCase
     {
         $user = User::factory()->create(['name' => 'Maria Silva']);
 
-        $response = $this->postJson('/api/auth/login', [
+        $response = $this->postJson('/api/v1/auth/login', [
             'email'    => $user->email,
             'password' => 'password',
         ]);
@@ -60,7 +60,7 @@ class LoginTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->postJson('/api/auth/login', [
+        $response = $this->postJson('/api/v1/auth/login', [
             'email'    => $user->email,
             'password' => 'wrong-password',
         ]);
@@ -71,7 +71,7 @@ class LoginTest extends TestCase
 
     public function test_api_login_fails_with_nonexistent_email(): void
     {
-        $response = $this->postJson('/api/auth/login', [
+        $response = $this->postJson('/api/v1/auth/login', [
             'email'    => 'ghost@example.com',
             'password' => 'password',
         ]);
@@ -81,7 +81,7 @@ class LoginTest extends TestCase
 
     public function test_api_login_requires_email(): void
     {
-        $response = $this->postJson('/api/auth/login', [
+        $response = $this->postJson('/api/v1/auth/login', [
             'password' => 'password',
         ]);
 
@@ -91,7 +91,7 @@ class LoginTest extends TestCase
 
     public function test_api_login_requires_password(): void
     {
-        $response = $this->postJson('/api/auth/login', [
+        $response = $this->postJson('/api/v1/auth/login', [
             'email' => 'user@example.com',
         ]);
 
@@ -101,7 +101,7 @@ class LoginTest extends TestCase
 
     public function test_api_login_requires_valid_email_format(): void
     {
-        $response = $this->postJson('/api/auth/login', [
+        $response = $this->postJson('/api/v1/auth/login', [
             'email'    => 'not-an-email',
             'password' => 'password',
         ]);
@@ -114,7 +114,7 @@ class LoginTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->postJson('/api/auth/login', [
+        $response = $this->postJson('/api/v1/auth/login', [
             'email'    => $user->email,
             'password' => 'password',
         ]);

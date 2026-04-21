@@ -60,7 +60,7 @@ class NotificationTest extends TestCase
         $this->createNotification();
         $this->createNotification();
 
-        $response = $this->getJson('/api/notifications', $this->authHeaders());
+        $response = $this->getJson('/api/v1/notifications', $this->authHeaders());
 
         $response->assertOk()
             ->assertJsonStructure(['data', 'links', 'meta'])
@@ -69,7 +69,7 @@ class NotificationTest extends TestCase
 
     public function test_unauthenticated_user_cannot_list_notifications(): void
     {
-        $response = $this->getJson('/api/notifications');
+        $response = $this->getJson('/api/v1/notifications');
 
         $response->assertUnauthorized();
     }
@@ -81,7 +81,7 @@ class NotificationTest extends TestCase
         $this->createNotification();
         $this->createNotification(['notifiable_id' => $other->id]);
 
-        $response = $this->getJson('/api/notifications', $this->authHeaders());
+        $response = $this->getJson('/api/v1/notifications', $this->authHeaders());
 
         $response->assertOk()
             ->assertJsonCount(1, 'data');
@@ -94,7 +94,7 @@ class NotificationTest extends TestCase
         $this->createNotification();
         $this->createNotification(['read_at' => now()]);
 
-        $response = $this->getJson('/api/notifications/unread', $this->authHeaders());
+        $response = $this->getJson('/api/v1/notifications/unread', $this->authHeaders());
 
         $response->assertOk()
             ->assertJsonStructure(['data', 'links', 'meta'])
@@ -107,7 +107,7 @@ class NotificationTest extends TestCase
     {
         $notification = $this->createNotification();
 
-        $response = $this->getJson("/api/notifications/{$notification->id}", $this->authHeaders());
+        $response = $this->getJson("/api/v1/notifications/{$notification->id}", $this->authHeaders());
 
         $response->assertOk()
             ->assertJsonPath('id', $notification->id)
@@ -116,7 +116,7 @@ class NotificationTest extends TestCase
 
     public function test_view_notification_returns_404_for_invalid_id(): void
     {
-        $response = $this->getJson('/api/notifications/' . Str::uuid(), $this->authHeaders());
+        $response = $this->getJson('/api/v1/notifications/' . Str::uuid(), $this->authHeaders());
 
         $response->assertNotFound();
     }
@@ -127,7 +127,7 @@ class NotificationTest extends TestCase
     {
         $notification = $this->createNotification();
 
-        $response = $this->patchJson("/api/notifications/{$notification->id}/read", [], $this->authHeaders());
+        $response = $this->patchJson("/api/v1/notifications/{$notification->id}/read", [], $this->authHeaders());
 
         $response->assertOk()
             ->assertJsonPath('message', 'Notificação marcada como lida.');
@@ -137,7 +137,7 @@ class NotificationTest extends TestCase
 
     public function test_mark_as_read_returns_404_for_invalid_id(): void
     {
-        $response = $this->patchJson('/api/notifications/' . Str::uuid() . '/read', [], $this->authHeaders());
+        $response = $this->patchJson('/api/v1/notifications/' . Str::uuid() . '/read', [], $this->authHeaders());
 
         $response->assertNotFound();
     }
@@ -149,7 +149,7 @@ class NotificationTest extends TestCase
         $n1 = $this->createNotification();
         $n2 = $this->createNotification();
 
-        $response = $this->postJson('/api/notifications/read-all', [], $this->authHeaders());
+        $response = $this->postJson('/api/v1/notifications/read-all', [], $this->authHeaders());
 
         $response->assertOk()
             ->assertJsonPath('message', 'Todas as notificações marcadas como lidas.');
@@ -164,7 +164,7 @@ class NotificationTest extends TestCase
     {
         $notification = $this->createNotification();
 
-        $response = $this->deleteJson("/api/notifications/{$notification->id}", [], $this->authHeaders());
+        $response = $this->deleteJson("/api/v1/notifications/{$notification->id}", [], $this->authHeaders());
 
         $response->assertNoContent();
         $this->assertSoftDeleted('notifications', ['id' => $notification->id]);
@@ -172,7 +172,7 @@ class NotificationTest extends TestCase
 
     public function test_delete_notification_returns_404_for_invalid_id(): void
     {
-        $response = $this->deleteJson('/api/notifications/' . Str::uuid(), [], $this->authHeaders());
+        $response = $this->deleteJson('/api/v1/notifications/' . Str::uuid(), [], $this->authHeaders());
 
         $response->assertNotFound();
     }
@@ -180,9 +180,9 @@ class NotificationTest extends TestCase
     public function test_deleted_notification_is_not_listed(): void
     {
         $notification = $this->createNotification();
-        $this->deleteJson("/api/notifications/{$notification->id}", [], $this->authHeaders());
+        $this->deleteJson("/api/v1/notifications/{$notification->id}", [], $this->authHeaders());
 
-        $response = $this->getJson('/api/notifications', $this->authHeaders());
+        $response = $this->getJson('/api/v1/notifications', $this->authHeaders());
 
         $response->assertOk();
         $ids = collect($response->json('data'))->pluck('id')->all();
@@ -202,7 +202,7 @@ class NotificationTest extends TestCase
 
         // Service scopes notifications by notifiable_id, so another user's
         // notification is not found rather than forbidden (safe by design)
-        $this->getJson("/api/notifications/{$notification->id}", $this->authHeaders())
+        $this->getJson("/api/v1/notifications/{$notification->id}", $this->authHeaders())
             ->assertNotFound();
     }
 
@@ -219,7 +219,7 @@ class NotificationTest extends TestCase
 
         // Service scopes notifications by notifiable_id, so another user's
         // notification is not found rather than forbidden (safe by design)
-        $this->deleteJson("/api/notifications/{$notification->id}", [], $this->authHeaders())
+        $this->deleteJson("/api/v1/notifications/{$notification->id}", [], $this->authHeaders())
             ->assertNotFound();
     }
 }

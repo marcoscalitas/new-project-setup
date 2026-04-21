@@ -59,7 +59,7 @@ class PermissionTest extends TestCase
         Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
         Permission::create(['name' => 'user.create', 'guard_name' => 'api']);
 
-        $response = $this->getJson('/api/permissions', $this->authHeaders());
+        $response = $this->getJson('/api/v1/permissions', $this->authHeaders());
 
         $response->assertOk()
             ->assertJsonStructure(['data', 'links', 'meta'])
@@ -68,7 +68,7 @@ class PermissionTest extends TestCase
 
     public function test_unauthenticated_user_cannot_list_permissions(): void
     {
-        $response = $this->getJson('/api/permissions');
+        $response = $this->getJson('/api/v1/permissions');
 
         $response->assertUnauthorized();
     }
@@ -77,7 +77,7 @@ class PermissionTest extends TestCase
 
     public function test_user_can_create_permission(): void
     {
-        $response = $this->postJson('/api/permissions', [
+        $response = $this->postJson('/api/v1/permissions', [
             'name' => 'user.list',
         ], $this->authHeaders());
 
@@ -89,7 +89,7 @@ class PermissionTest extends TestCase
 
     public function test_create_permission_requires_name(): void
     {
-        $response = $this->postJson('/api/permissions', [], $this->authHeaders());
+        $response = $this->postJson('/api/v1/permissions', [], $this->authHeaders());
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
@@ -99,7 +99,7 @@ class PermissionTest extends TestCase
     {
         Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
 
-        $response = $this->postJson('/api/permissions', [
+        $response = $this->postJson('/api/v1/permissions', [
             'name' => 'user.list',
         ], $this->authHeaders());
 
@@ -111,7 +111,7 @@ class PermissionTest extends TestCase
     {
         Permission::create(['name' => 'post.create', 'guard_name' => 'web']);
 
-        $response = $this->postJson('/api/permissions', [
+        $response = $this->postJson('/api/v1/permissions', [
             'name' => 'post.create',
         ], $this->authHeaders());
 
@@ -125,7 +125,7 @@ class PermissionTest extends TestCase
     {
         $permission = Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
 
-        $response = $this->getJson("/api/permissions/{$permission->id}", $this->authHeaders());
+        $response = $this->getJson("/api/v1/permissions/{$permission->id}", $this->authHeaders());
 
         $response->assertOk()
             ->assertJsonPath('name', 'user.list');
@@ -133,7 +133,7 @@ class PermissionTest extends TestCase
 
     public function test_view_permission_returns_404_for_invalid_id(): void
     {
-        $response = $this->getJson('/api/permissions/999', $this->authHeaders());
+        $response = $this->getJson('/api/v1/permissions/999', $this->authHeaders());
 
         $response->assertNotFound();
     }
@@ -144,7 +144,7 @@ class PermissionTest extends TestCase
     {
         $permission = Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
 
-        $response = $this->putJson("/api/permissions/{$permission->id}", [
+        $response = $this->putJson("/api/v1/permissions/{$permission->id}", [
             'name' => 'user.view',
         ], $this->authHeaders());
 
@@ -159,7 +159,7 @@ class PermissionTest extends TestCase
         Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
         $permission = Permission::create(['name' => 'user.create', 'guard_name' => 'api']);
 
-        $response = $this->putJson("/api/permissions/{$permission->id}", [
+        $response = $this->putJson("/api/v1/permissions/{$permission->id}", [
             'name' => 'user.list',
         ], $this->authHeaders());
 
@@ -171,7 +171,7 @@ class PermissionTest extends TestCase
     {
         $permission = Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
 
-        $response = $this->putJson("/api/permissions/{$permission->id}", [
+        $response = $this->putJson("/api/v1/permissions/{$permission->id}", [
             'name' => 'user.list',
         ], $this->authHeaders());
 
@@ -185,7 +185,7 @@ class PermissionTest extends TestCase
     {
         $permission = Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
 
-        $response = $this->deleteJson("/api/permissions/{$permission->id}", [], $this->authHeaders());
+        $response = $this->deleteJson("/api/v1/permissions/{$permission->id}", [], $this->authHeaders());
 
         $response->assertNoContent();
         $this->assertSoftDeleted('permissions', ['id' => $permission->id]);
@@ -193,7 +193,7 @@ class PermissionTest extends TestCase
 
     public function test_delete_permission_returns_404_for_invalid_id(): void
     {
-        $response = $this->deleteJson('/api/permissions/999', [], $this->authHeaders());
+        $response = $this->deleteJson('/api/v1/permissions/999', [], $this->authHeaders());
 
         $response->assertNotFound();
     }
@@ -201,9 +201,9 @@ class PermissionTest extends TestCase
     public function test_deleted_permission_is_not_listed(): void
     {
         $perm = Permission::create(['name' => 'temp.perm', 'guard_name' => 'api']);
-        $this->deleteJson("/api/permissions/{$perm->id}", [], $this->authHeaders());
+        $this->deleteJson("/api/v1/permissions/{$perm->id}", [], $this->authHeaders());
 
-        $response = $this->getJson('/api/permissions', $this->authHeaders());
+        $response = $this->getJson('/api/v1/permissions', $this->authHeaders());
 
         $response->assertOk();
         $names = collect($response->json('data'))->pluck('name')->all();
@@ -213,9 +213,9 @@ class PermissionTest extends TestCase
     public function test_can_create_permission_with_same_name_after_soft_delete(): void
     {
         $perm = Permission::create(['name' => 'reusable.perm', 'guard_name' => 'api']);
-        $this->deleteJson("/api/permissions/{$perm->id}", [], $this->authHeaders());
+        $this->deleteJson("/api/v1/permissions/{$perm->id}", [], $this->authHeaders());
 
-        $response = $this->postJson('/api/permissions', [
+        $response = $this->postJson('/api/v1/permissions', [
             'name' => 'reusable.perm',
         ], $this->authHeaders());
 
@@ -227,7 +227,7 @@ class PermissionTest extends TestCase
         $guest = User::factory()->create();
         $token = $guest->createToken('test')->accessToken;
 
-        $this->getJson('/api/permissions', ['Authorization' => 'Bearer ' . $token])
+        $this->getJson('/api/v1/permissions', ['Authorization' => 'Bearer ' . $token])
             ->assertForbidden();
     }
 
@@ -236,7 +236,7 @@ class PermissionTest extends TestCase
         $guest = User::factory()->create();
         $token = $guest->createToken('test')->accessToken;
 
-        $this->postJson('/api/permissions', ['name' => 'unauthorized.perm'], ['Authorization' => 'Bearer ' . $token])
+        $this->postJson('/api/v1/permissions', ['name' => 'unauthorized.perm'], ['Authorization' => 'Bearer ' . $token])
             ->assertForbidden();
     }
 
@@ -246,7 +246,7 @@ class PermissionTest extends TestCase
         $token = $guest->createToken('test')->accessToken;
         $perm  = Permission::create(['name' => 'target.perm', 'guard_name' => 'api']);
 
-        $this->deleteJson("/api/permissions/{$perm->id}", [], ['Authorization' => 'Bearer ' . $token])
+        $this->deleteJson("/api/v1/permissions/{$perm->id}", [], ['Authorization' => 'Bearer ' . $token])
             ->assertForbidden();
     }
 }

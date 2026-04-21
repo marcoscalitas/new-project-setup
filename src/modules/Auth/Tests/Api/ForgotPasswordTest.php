@@ -18,7 +18,7 @@ class ForgotPasswordTest extends TestCase
 
         $user = User::factory()->create();
 
-        $response = $this->postJson('/api/auth/forgot-password', [
+        $response = $this->postJson('/api/v1/auth/forgot-password', [
             'email' => $user->email,
         ]);
 
@@ -32,7 +32,7 @@ class ForgotPasswordTest extends TestCase
     {
         Notification::fake();
 
-        $response = $this->postJson('/api/auth/forgot-password', [
+        $response = $this->postJson('/api/v1/auth/forgot-password', [
             'email' => 'unknown@example.com',
         ]);
 
@@ -45,7 +45,7 @@ class ForgotPasswordTest extends TestCase
 
     public function test_forgot_password_requires_email(): void
     {
-        $response = $this->postJson('/api/auth/forgot-password', []);
+        $response = $this->postJson('/api/v1/auth/forgot-password', []);
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['email']);
@@ -53,7 +53,7 @@ class ForgotPasswordTest extends TestCase
 
     public function test_forgot_password_requires_valid_email_format(): void
     {
-        $response = $this->postJson('/api/auth/forgot-password', [
+        $response = $this->postJson('/api/v1/auth/forgot-password', [
             'email' => 'not-an-email',
         ]);
 

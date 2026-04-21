@@ -59,7 +59,7 @@ class UserTest extends TestCase
     {
         User::factory()->count(3)->create();
 
-        $response = $this->getJson('/api/users', $this->authHeaders());
+        $response = $this->getJson('/api/v1/users', $this->authHeaders());
 
         $response->assertOk()
             ->assertJsonStructure(['data', 'links', 'meta'])
@@ -68,7 +68,7 @@ class UserTest extends TestCase
 
     public function test_unauthenticated_user_cannot_list_users(): void
     {
-        $response = $this->getJson('/api/users');
+        $response = $this->getJson('/api/v1/users');
 
         $response->assertUnauthorized();
     }
@@ -77,7 +77,7 @@ class UserTest extends TestCase
 
     public function test_user_can_create_user(): void
     {
-        $response = $this->postJson('/api/users', [
+        $response = $this->postJson('/api/v1/users', [
             'name'                  => 'John Doe',
             'email'                 => 'john@example.com',
             'password'              => 'SecurePass1!',
@@ -95,7 +95,7 @@ class UserTest extends TestCase
     {
         Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
-        $response = $this->postJson('/api/users', [
+        $response = $this->postJson('/api/v1/users', [
             'name'                  => 'John Doe',
             'email'                 => 'john@example.com',
             'password'              => 'SecurePass1!',
@@ -109,7 +109,7 @@ class UserTest extends TestCase
 
     public function test_create_user_requires_name(): void
     {
-        $response = $this->postJson('/api/users', [
+        $response = $this->postJson('/api/v1/users', [
             'email'                 => 'john@example.com',
             'password'              => 'SecurePass1!',
             'password_confirmation' => 'SecurePass1!',
@@ -121,7 +121,7 @@ class UserTest extends TestCase
 
     public function test_create_user_requires_email(): void
     {
-        $response = $this->postJson('/api/users', [
+        $response = $this->postJson('/api/v1/users', [
             'name'                  => 'John Doe',
             'password'              => 'SecurePass1!',
             'password_confirmation' => 'SecurePass1!',
@@ -133,7 +133,7 @@ class UserTest extends TestCase
 
     public function test_create_user_requires_password(): void
     {
-        $response = $this->postJson('/api/users', [
+        $response = $this->postJson('/api/v1/users', [
             'name'  => 'John Doe',
             'email' => 'john@example.com',
         ], $this->authHeaders());
@@ -144,7 +144,7 @@ class UserTest extends TestCase
 
     public function test_create_user_requires_password_confirmation(): void
     {
-        $response = $this->postJson('/api/users', [
+        $response = $this->postJson('/api/v1/users', [
             'name'     => 'John Doe',
             'email'    => 'john@example.com',
             'password' => 'SecurePass1!',
@@ -158,7 +158,7 @@ class UserTest extends TestCase
     {
         User::factory()->create(['email' => 'taken@example.com']);
 
-        $response = $this->postJson('/api/users', [
+        $response = $this->postJson('/api/v1/users', [
             'name'                  => 'John Doe',
             'email'                 => 'taken@example.com',
             'password'              => 'SecurePass1!',
@@ -171,7 +171,7 @@ class UserTest extends TestCase
 
     public function test_create_user_rejects_invalid_email(): void
     {
-        $response = $this->postJson('/api/users', [
+        $response = $this->postJson('/api/v1/users', [
             'name'                  => 'John Doe',
             'email'                 => 'not-valid',
             'password'              => 'SecurePass1!',
@@ -184,7 +184,7 @@ class UserTest extends TestCase
 
     public function test_create_user_rejects_short_password(): void
     {
-        $response = $this->postJson('/api/users', [
+        $response = $this->postJson('/api/v1/users', [
             'name'                  => 'John Doe',
             'email'                 => 'john@example.com',
             'password'              => 'abc',
@@ -197,7 +197,7 @@ class UserTest extends TestCase
 
     public function test_create_user_hashes_password(): void
     {
-        $this->postJson('/api/users', [
+        $this->postJson('/api/v1/users', [
             'name'                  => 'John Doe',
             'email'                 => 'john@example.com',
             'password'              => 'SecurePass1!',
@@ -210,7 +210,7 @@ class UserTest extends TestCase
 
     public function test_create_user_does_not_expose_password(): void
     {
-        $response = $this->postJson('/api/users', [
+        $response = $this->postJson('/api/v1/users', [
             'name'                  => 'John Doe',
             'email'                 => 'john@example.com',
             'password'              => 'SecurePass1!',
@@ -227,7 +227,7 @@ class UserTest extends TestCase
     {
         $target = User::factory()->create(['name' => 'Maria Silva']);
 
-        $response = $this->getJson("/api/users/{$target->id}", $this->authHeaders());
+        $response = $this->getJson("/api/v1/users/{$target->id}", $this->authHeaders());
 
         $response->assertOk()
             ->assertJsonPath('name', 'Maria Silva');
@@ -235,7 +235,7 @@ class UserTest extends TestCase
 
     public function test_view_user_returns_404_for_invalid_id(): void
     {
-        $response = $this->getJson('/api/users/999', $this->authHeaders());
+        $response = $this->getJson('/api/v1/users/999', $this->authHeaders());
 
         $response->assertNotFound();
     }
@@ -246,7 +246,7 @@ class UserTest extends TestCase
     {
         $target = User::factory()->create();
 
-        $response = $this->putJson("/api/users/{$target->id}", [
+        $response = $this->putJson("/api/v1/users/{$target->id}", [
             'name'  => 'Updated Name',
             'email' => 'updated@example.com',
         ], $this->authHeaders());
@@ -261,7 +261,7 @@ class UserTest extends TestCase
         $target = User::factory()->create();
         Role::create(['name' => 'editor', 'guard_name' => 'api']);
 
-        $response = $this->putJson("/api/users/{$target->id}", [
+        $response = $this->putJson("/api/v1/users/{$target->id}", [
             'name'  => $target->name,
             'roles' => ['editor'],
         ], $this->authHeaders());
@@ -276,7 +276,7 @@ class UserTest extends TestCase
         $role = Role::create(['name' => 'editor', 'guard_name' => 'api']);
         $target->assignRole($role);
 
-        $response = $this->putJson("/api/users/{$target->id}", [
+        $response = $this->putJson("/api/v1/users/{$target->id}", [
             'name'  => $target->name,
             'roles' => [],
         ], $this->authHeaders());
@@ -290,7 +290,7 @@ class UserTest extends TestCase
         User::factory()->create(['email' => 'taken@example.com']);
         $target = User::factory()->create();
 
-        $response = $this->putJson("/api/users/{$target->id}", [
+        $response = $this->putJson("/api/v1/users/{$target->id}", [
             'email' => 'taken@example.com',
         ], $this->authHeaders());
 
@@ -304,7 +304,7 @@ class UserTest extends TestCase
     {
         $target = User::factory()->create();
 
-        $response = $this->deleteJson("/api/users/{$target->id}", [], $this->authHeaders());
+        $response = $this->deleteJson("/api/v1/users/{$target->id}", [], $this->authHeaders());
 
         $response->assertNoContent();
         $this->assertSoftDeleted('users', ['id' => $target->id]);
@@ -312,7 +312,7 @@ class UserTest extends TestCase
 
     public function test_delete_user_returns_404_for_invalid_id(): void
     {
-        $response = $this->deleteJson('/api/users/999', [], $this->authHeaders());
+        $response = $this->deleteJson('/api/v1/users/999', [], $this->authHeaders());
 
         $response->assertNotFound();
     }
@@ -325,7 +325,7 @@ class UserTest extends TestCase
         $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'api']);
         $admin->assignRole($adminRole);
 
-        $response = $this->putJson("/api/users/{$admin->id}", [
+        $response = $this->putJson("/api/v1/users/{$admin->id}", [
             'name'  => $admin->name,
             'roles' => [],
         ], $this->authHeaders());
@@ -343,7 +343,7 @@ class UserTest extends TestCase
         $admin2 = User::factory()->create();
         $admin2->assignRole($adminRole);
 
-        $response = $this->putJson("/api/users/{$admin1->id}", [
+        $response = $this->putJson("/api/v1/users/{$admin1->id}", [
             'name'  => $admin1->name,
             'roles' => [],
         ], $this->authHeaders());
@@ -358,7 +358,7 @@ class UserTest extends TestCase
         $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'api']);
         $admin->assignRole($adminRole);
 
-        $response = $this->deleteJson("/api/users/{$admin->id}", [], $this->authHeaders());
+        $response = $this->deleteJson("/api/v1/users/{$admin->id}", [], $this->authHeaders());
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['user']);
@@ -373,7 +373,7 @@ class UserTest extends TestCase
         $admin2 = User::factory()->create();
         $admin2->assignRole($adminRole);
 
-        $response = $this->deleteJson("/api/users/{$admin1->id}", [], $this->authHeaders());
+        $response = $this->deleteJson("/api/v1/users/{$admin1->id}", [], $this->authHeaders());
 
         $response->assertNoContent();
         $this->assertSoftDeleted('users', ['id' => $admin1->id]);
@@ -382,9 +382,9 @@ class UserTest extends TestCase
     public function test_deleted_user_is_not_listed(): void
     {
         $target = User::factory()->create();
-        $this->deleteJson("/api/users/{$target->id}", [], $this->authHeaders());
+        $this->deleteJson("/api/v1/users/{$target->id}", [], $this->authHeaders());
 
-        $response = $this->getJson('/api/users', $this->authHeaders());
+        $response = $this->getJson('/api/v1/users', $this->authHeaders());
 
         $response->assertOk();
         $ids = collect($response->json('data'))->pluck('id')->all();
@@ -394,9 +394,9 @@ class UserTest extends TestCase
     public function test_can_create_user_with_same_email_after_soft_delete(): void
     {
         $target = User::factory()->create(['email' => 'reuse@test.com']);
-        $this->deleteJson("/api/users/{$target->id}", [], $this->authHeaders());
+        $this->deleteJson("/api/v1/users/{$target->id}", [], $this->authHeaders());
 
-        $response = $this->postJson('/api/users', [
+        $response = $this->postJson('/api/v1/users', [
             'name'                  => 'New User',
             'email'                 => 'reuse@test.com',
             'password'              => 'password123',
@@ -411,7 +411,7 @@ class UserTest extends TestCase
         $guest = User::factory()->create();
         $token = $guest->createToken('test')->accessToken;
 
-        $response = $this->getJson('/api/users', ['Authorization' => 'Bearer ' . $token]);
+        $response = $this->getJson('/api/v1/users', ['Authorization' => 'Bearer ' . $token]);
 
         $response->assertForbidden();
     }
@@ -421,7 +421,7 @@ class UserTest extends TestCase
         $guest = User::factory()->create();
         $token = $guest->createToken('test')->accessToken;
 
-        $response = $this->postJson('/api/users', [
+        $response = $this->postJson('/api/v1/users', [
             'name'                  => 'New',
             'email'                 => 'new@test.com',
             'password'              => 'password123',
@@ -437,7 +437,7 @@ class UserTest extends TestCase
         $token  = $guest->createToken('test')->accessToken;
         $target = User::factory()->create();
 
-        $response = $this->deleteJson("/api/users/{$target->id}", [], ['Authorization' => 'Bearer ' . $token]);
+        $response = $this->deleteJson("/api/v1/users/{$target->id}", [], ['Authorization' => 'Bearer ' . $token]);
 
         $response->assertForbidden();
     }

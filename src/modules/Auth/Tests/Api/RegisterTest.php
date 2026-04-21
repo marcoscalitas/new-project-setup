@@ -31,7 +31,7 @@ class RegisterTest extends TestCase
 
     public function test_user_can_register_via_api(): void
     {
-        $response = $this->postJson('/api/auth/register', [
+        $response = $this->postJson('/api/v1/auth/register', [
             'name'                  => 'John Doe',
             'email'                 => 'john@example.com',
             'password'              => 'SecurePass1!',
@@ -46,7 +46,7 @@ class RegisterTest extends TestCase
 
     public function test_api_register_returns_user_data(): void
     {
-        $response = $this->postJson('/api/auth/register', [
+        $response = $this->postJson('/api/v1/auth/register', [
             'name'                  => 'Maria Silva',
             'email'                 => 'maria@example.com',
             'password'              => 'SecurePass1!',
@@ -60,7 +60,7 @@ class RegisterTest extends TestCase
 
     public function test_api_register_requires_name(): void
     {
-        $response = $this->postJson('/api/auth/register', [
+        $response = $this->postJson('/api/v1/auth/register', [
             'email'                 => 'john@example.com',
             'password'              => 'SecurePass1!',
             'password_confirmation' => 'SecurePass1!',
@@ -72,7 +72,7 @@ class RegisterTest extends TestCase
 
     public function test_api_register_requires_email(): void
     {
-        $response = $this->postJson('/api/auth/register', [
+        $response = $this->postJson('/api/v1/auth/register', [
             'name'                  => 'John Doe',
             'password'              => 'SecurePass1!',
             'password_confirmation' => 'SecurePass1!',
@@ -84,7 +84,7 @@ class RegisterTest extends TestCase
 
     public function test_api_register_requires_password(): void
     {
-        $response = $this->postJson('/api/auth/register', [
+        $response = $this->postJson('/api/v1/auth/register', [
             'name'  => 'John Doe',
             'email' => 'john@example.com',
         ]);
@@ -95,7 +95,7 @@ class RegisterTest extends TestCase
 
     public function test_api_register_requires_password_confirmation(): void
     {
-        $response = $this->postJson('/api/auth/register', [
+        $response = $this->postJson('/api/v1/auth/register', [
             'name'     => 'John Doe',
             'email'    => 'john@example.com',
             'password' => 'SecurePass1!',
@@ -109,7 +109,7 @@ class RegisterTest extends TestCase
     {
         User::factory()->create(['email' => 'taken@example.com']);
 
-        $response = $this->postJson('/api/auth/register', [
+        $response = $this->postJson('/api/v1/auth/register', [
             'name'                  => 'John Doe',
             'email'                 => 'taken@example.com',
             'password'              => 'SecurePass1!',
@@ -122,7 +122,7 @@ class RegisterTest extends TestCase
 
     public function test_api_register_rejects_short_password(): void
     {
-        $response = $this->postJson('/api/auth/register', [
+        $response = $this->postJson('/api/v1/auth/register', [
             'name'                  => 'John Doe',
             'email'                 => 'john@example.com',
             'password'              => 'abc',
@@ -135,7 +135,7 @@ class RegisterTest extends TestCase
 
     public function test_api_register_rejects_invalid_email(): void
     {
-        $response = $this->postJson('/api/auth/register', [
+        $response = $this->postJson('/api/v1/auth/register', [
             'name'                  => 'John Doe',
             'email'                 => 'not-valid',
             'password'              => 'SecurePass1!',
@@ -148,7 +148,7 @@ class RegisterTest extends TestCase
 
     public function test_api_register_hashes_password(): void
     {
-        $this->postJson('/api/auth/register', [
+        $this->postJson('/api/v1/auth/register', [
             'name'                  => 'John Doe',
             'email'                 => 'john@example.com',
             'password'              => 'SecurePass1!',

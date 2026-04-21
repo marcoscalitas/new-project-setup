@@ -34,7 +34,7 @@ class UserServiceProvider extends ServiceProvider
         Event::listen(UserDeleted::class, [LogUserDeletion::class, 'handle']);
 
         Route::middleware('web')->group(__DIR__ . '/../Routes/web.php');
-        Route::prefix('api')->middleware('api')->group(__DIR__ . '/../Routes/api.php');
+        Route::prefix('api/v1')->middleware('api')->group(__DIR__ . '/../Routes/api.php');
         $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
         $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'user');
     }

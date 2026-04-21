@@ -17,7 +17,7 @@ class LogoutTest extends TestCase
 
         Passport::actingAs($user);
 
-        $response = $this->postJson('/api/auth/logout');
+        $response = $this->postJson('/api/v1/auth/logout');
 
         $response->assertOk()
             ->assertJson(['message' => 'Sessão encerrada com sucesso.']);
@@ -25,7 +25,7 @@ class LogoutTest extends TestCase
 
     public function test_unauthenticated_user_cannot_logout_via_api(): void
     {
-        $response = $this->postJson('/api/auth/logout');
+        $response = $this->postJson('/api/v1/auth/logout');
 
         $response->assertUnauthorized();
     }

@@ -45,7 +45,7 @@ class ExceptionHandlerTest extends TestCase
 
     public function test_unauthenticated_api_request_returns_401_json(): void
     {
-        $response = $this->getJson('/api/users');
+        $response = $this->getJson('/api/v1/users');
 
         $response->assertUnauthorized()
             ->assertJsonStructure(['message'])
@@ -59,7 +59,7 @@ class ExceptionHandlerTest extends TestCase
         // Permission exists but user does not have it
         Permission::firstOrCreate(['name' => 'user.list', 'guard_name' => 'api']);
 
-        $response = $this->getJson('/api/users', $this->authHeaders());
+        $response = $this->getJson('/api/v1/users', $this->authHeaders());
 
         $response->assertForbidden()
             ->assertJsonStructure(['message'])
@@ -70,7 +70,7 @@ class ExceptionHandlerTest extends TestCase
 
     public function test_api_request_to_unknown_route_returns_404_json(): void
     {
-        $response = $this->getJson('/api/this-route-does-not-exist');
+        $response = $this->getJson('/api/v1/this-route-does-not-exist');
 
         $response->assertNotFound()
             ->assertJsonStructure(['message']);
@@ -81,7 +81,7 @@ class ExceptionHandlerTest extends TestCase
         $perm = Permission::firstOrCreate(['name' => 'user.view', 'guard_name' => 'api']);
         $this->user->givePermissionTo($perm);
 
-        $response = $this->getJson('/api/users/999999', $this->authHeaders());
+        $response = $this->getJson('/api/v1/users/999999', $this->authHeaders());
 
         $response->assertNotFound()
             ->assertJsonStructure(['message']);
@@ -91,7 +91,7 @@ class ExceptionHandlerTest extends TestCase
 
     public function test_api_request_with_wrong_method_returns_405_json(): void
     {
-        $response = $this->patchJson('/api/users');
+        $response = $this->patchJson('/api/v1/users');
 
         $response->assertStatus(405)
             ->assertJsonStructure(['message']);

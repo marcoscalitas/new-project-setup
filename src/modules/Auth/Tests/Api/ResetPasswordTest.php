@@ -17,7 +17,7 @@ class ResetPasswordTest extends TestCase
         $user  = User::factory()->create();
         $token = Password::createToken($user);
 
-        $response = $this->postJson('/api/auth/reset-password', [
+        $response = $this->postJson('/api/v1/auth/reset-password', [
             'token'                 => $token,
             'email'                 => $user->email,
             'password'              => 'NewSecurePass1!',
@@ -34,7 +34,7 @@ class ResetPasswordTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->postJson('/api/auth/reset-password', [
+        $response = $this->postJson('/api/v1/auth/reset-password', [
             'token'                 => 'invalid-token',
             'email'                 => $user->email,
             'password'              => 'NewSecurePass1!',
@@ -47,7 +47,7 @@ class ResetPasswordTest extends TestCase
 
     public function test_reset_password_requires_token(): void
     {
-        $response = $this->postJson('/api/auth/reset-password', [
+        $response = $this->postJson('/api/v1/auth/reset-password', [
             'email'                 => 'user@example.com',
             'password'              => 'NewSecurePass1!',
             'password_confirmation' => 'NewSecurePass1!',
@@ -59,7 +59,7 @@ class ResetPasswordTest extends TestCase
 
     public function test_reset_password_requires_email(): void
     {
-        $response = $this->postJson('/api/auth/reset-password', [
+        $response = $this->postJson('/api/v1/auth/reset-password', [
             'token'                 => 'some-token',
             'password'              => 'NewSecurePass1!',
             'password_confirmation' => 'NewSecurePass1!',
@@ -71,7 +71,7 @@ class ResetPasswordTest extends TestCase
 
     public function test_reset_password_requires_password(): void
     {
-        $response = $this->postJson('/api/auth/reset-password', [
+        $response = $this->postJson('/api/v1/auth/reset-password', [
             'token' => 'some-token',
             'email' => 'user@example.com',
         ]);
@@ -85,7 +85,7 @@ class ResetPasswordTest extends TestCase
         $user  = User::factory()->create();
         $token = Password::createToken($user);
 
-        $response = $this->postJson('/api/auth/reset-password', [
+        $response = $this->postJson('/api/v1/auth/reset-password', [
             'token'    => $token,
             'email'    => $user->email,
             'password' => 'NewSecurePass1!',
@@ -100,7 +100,7 @@ class ResetPasswordTest extends TestCase
         $user  = User::factory()->create();
         $token = Password::createToken($user);
 
-        $response = $this->postJson('/api/auth/reset-password', [
+        $response = $this->postJson('/api/v1/auth/reset-password', [
             'token'                 => $token,
             'email'                 => $user->email,
             'password'              => 'abc',
