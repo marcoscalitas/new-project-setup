@@ -32,6 +32,8 @@ class MakeModuleCommand extends Command
         $this->createDirectories();
         $this->createProvider();
         $this->createModel();
+        $this->createMigration();
+        $this->createFactory();
         $this->createController();
         $this->createService();
         $this->createRequests();
@@ -65,6 +67,7 @@ class MakeModuleCommand extends Command
         $slug = Str::kebab(Str::plural($this->module));
 
         $dirs = [
+            'Database/Factories',
             'Database/Migrations',
             'Database/Seeders',
             'Events',
@@ -82,6 +85,8 @@ class MakeModuleCommand extends Command
         ];
 
         $fileWillExist = [
+            'Database/Factories',
+            'Database/Migrations',
             'Http/Controllers',
             'Http/Requests',
             'Http/Resources',
@@ -153,9 +158,11 @@ class MakeModuleCommand extends Command
 
         namespace Modules\\{$this->module}\Models;
 
+        use Illuminate\Database\Eloquent\Factories\Factory;
         use Illuminate\Database\Eloquent\Factories\HasFactory;
         use Illuminate\Database\Eloquent\Model;
         use Illuminate\Database\Eloquent\SoftDeletes;
+        use Modules\\{$this->module}\Database\Factories\\{$this->module}Factory;
 
         class {$this->module} extends Model
         {
@@ -164,6 +171,11 @@ class MakeModuleCommand extends Command
             protected \$fillable = [
                 //
             ];
+
+            protected static function newFactory(): Factory
+            {
+                return {$this->module}Factory::new();
+            }
         }
         PHP);
     }
@@ -798,6 +810,62 @@ class MakeModuleCommand extends Command
         );
 
         file_put_contents($providersPath, $content);
+    }
+
+    private function createMigration(): void
+    {
+        $table = Str::snake(Str::plural($this->module));
+        $filename = date('Y_m_d_His') . "_create_{$table}_table.php";
+
+        $this->write("Database/Migrations/{$filename}", <<<PHP
+        <?php
+
+        use Illuminate\Database\Migrations\Migration;
+        use Illuminate\Database\Schema\Blueprint;
+        use Illuminate\Support\Facades\Schema;
+
+        return new class extends Migration
+        {
+            public function up(): void
+            {
+                Schema::create('{$table}', function (Blueprint \$table) {
+                    \$table->id();
+                    // TODO: add columns
+                    \$table->timestamps();
+                    \$table->softDeletes();
+                });
+            }
+
+            public function down(): void
+            {
+                Schema::dropIfExists('{$table}');
+            }
+        };
+        PHP);
+    }
+
+    private function createFactory(): void
+    {
+        $this->write("Database/Factories/{$this->module}Factory.php", <<<PHP
+        <?php
+
+        namespace Modules\\{$this->module}\Database\Factories;
+
+        use Illuminate\Database\Eloquent\Factories\Factory;
+        use Modules\\{$this->module}\Models\\{$this->module};
+
+        class {$this->module}Factory extends Factory
+        {
+            protected \$model = {$this->module}::class;
+
+            public function definition(): array
+            {
+                return [
+                    // TODO: add fields
+                ];
+            }
+        }
+        PHP);
     }
 
     private function write(string $relativePath, string $content): void

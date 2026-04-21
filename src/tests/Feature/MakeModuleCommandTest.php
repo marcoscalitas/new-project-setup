@@ -77,7 +77,11 @@ class MakeModuleCommandTest extends TestCase
             'Routes/web.php',
             'Tests/Api/DummyTest.php',
             'Tests/Web/DummyWebTest.php',
+            'Database/Factories/DummyFactory.php',
         ];
+
+        $migrationFiles = glob("{$this->modulePath}/Database/Migrations/*_create_dummies_table.php");
+        $this->assertNotEmpty($migrationFiles, 'Migration file was not created');
 
         foreach ($expectedFiles as $file) {
             $this->assertFileExists("{$this->modulePath}/{$file}");
@@ -90,13 +94,14 @@ class MakeModuleCommandTest extends TestCase
             ->assertSuccessful();
 
         $shouldHaveGitkeep = [
-            'Database/Migrations',
             'Database/Seeders',
             'Events',
             'Listeners',
         ];
 
         $shouldNotHaveGitkeep = [
+            'Database/Migrations',
+            'Database/Factories',
             'Http/Controllers',
             'Http/Requests',
             'Http/Resources',
@@ -196,6 +201,7 @@ class MakeModuleCommandTest extends TestCase
             'Http/Resources/DummyResource.php',
             'Policies/DummyPolicy.php',
             'Services/DummyService.php',
+            'Database/Factories/DummyFactory.php',
         ];
 
         foreach ($phpFiles as $file) {
@@ -394,6 +400,45 @@ class MakeModuleCommandTest extends TestCase
         $this->assertStringContainsString('extends Model', $content);
         $this->assertStringContainsString('use HasFactory, SoftDeletes;', $content);
         $this->assertStringContainsString('protected $fillable', $content);
+    }
+
+    public function test_model_uses_module_factory(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $content = file_get_contents("{$this->modulePath}/Models/Dummy.php");
+
+        $this->assertStringContainsString('use Modules\\Dummy\\Database\\Factories\\DummyFactory;', $content);
+        $this->assertStringContainsString('protected static function newFactory(): Factory', $content);
+        $this->assertStringContainsString('DummyFactory::new()', $content);
+    }
+
+    public function test_generates_migration_with_correct_table_name(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $files = glob("{$this->modulePath}/Database/Migrations/*_create_dummies_table.php");
+        $this->assertCount(1, $files, 'Expected exactly one migration file');
+
+        $content = file_get_contents($files[0]);
+        $this->assertStringContainsString("Schema::create('dummies'", $content);
+        $this->assertStringContainsString('$table->id()', $content);
+        $this->assertStringContainsString('$table->timestamps()', $content);
+        $this->assertStringContainsString('$table->softDeletes()', $content);
+        $this->assertStringContainsString("Schema::dropIfExists('dummies')", $content);
+    }
+
+    public function test_generates_factory_with_correct_model(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $content = file_get_contents("{$this->modulePath}/Database/Factories/DummyFactory.php");
+
+        $this->assertStringContainsString('namespace Modules\\Dummy\\Database\\Factories;', $content);
+        $this->assertStringContainsString('use Modules\\Dummy\\Models\\Dummy;', $content);
+        $this->assertStringContainsString('class DummyFactory extends Factory', $content);
+        $this->assertStringContainsString('protected $model = Dummy::class;', $content);
+        $this->assertStringContainsString('public function definition(): array', $content);
     }
 
     public function test_provider_has_register_and_boot_methods(): void
