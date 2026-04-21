@@ -7,9 +7,10 @@ use Modules\Auth\Http\Controllers\AuthController;
 Route::prefix('auth')->group(function () {
     // 5 requests per minute for brute force protection
     Route::middleware('throttle:5,1')->group(function () {
-        Route::post('login',           [AuthController::class, 'login'])->name('api.auth.login');
-        Route::post('register',        [AuthController::class, 'register'])->name('api.auth.register');
-        Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->name('api.auth.forgotPassword');
+        Route::post('login',                [AuthController::class, 'login'])->name('api.auth.login');
+        Route::post('two-factor-challenge', [AuthController::class, 'twoFactorChallenge'])->name('api.auth.twoFactorChallenge');
+        Route::post('register',             [AuthController::class, 'register'])->name('api.auth.register');
+        Route::post('forgot-password',      [AuthController::class, 'forgotPassword'])->name('api.auth.forgotPassword');
     });
 
     // 3 requests per minute for password reset (more restrictive)
