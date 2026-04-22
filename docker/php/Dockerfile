@@ -28,6 +28,7 @@ RUN apk add --no-cache \
         gd \
         bcmath \
         pcntl \
+        exif \
         opcache \
         intl
 
