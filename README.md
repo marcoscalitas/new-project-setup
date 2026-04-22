@@ -30,6 +30,7 @@ Todas as portas externas são ligadas a `127.0.0.1` (não expostas à rede) e **
 | **Laravel Fortify** | 1.36 | Autenticação (Login, Register, 2FA) + Blade views |
 | **Spatie Permission** | 7.2.4 | RBAC (Roles & Permissions) |
 | **Spatie Media Library** | 11.21 | Upload e gestão de ficheiros (avatars, attachments) |
+| **Spatie Activity Log** | 5.0 | Auditoria de acções (criação, edição, remoção) |
 
 ## 📁 Arquitetura Modular
 
@@ -41,7 +42,8 @@ src/
 │   ├── Auth/              # Autenticação (Login, Register, 2FA, Fortify)
 │   ├── User/              # CRUD de usuários
 │   ├── Permission/        # RBAC (Roles & Permissions → Spatie)
-│   └── Notification/      # Notificações + hub cross-module (Events/Listeners)
+│   ├── Notification/      # Notificações + hub cross-module (Events/Listeners)
+│   └── ActivityLog/       # Auditoria de acções (activity log)
 ├── routes/                # Rotas globais
 ├── config/                # Configurações
 └── database/              # Migrations & Seeders
@@ -181,7 +183,7 @@ return view('user::users.index', compact('users'));
 
 | Role | Permissions | Uso |
 |------|-------------|-----|
-| **admin** | Todas (15) | Acesso total |
+| **admin** | Todas (17) | Acesso total |
 | **user** | `user.list`, `user.view` | Apenas leitura |
 
 ### Permissions
@@ -200,6 +202,10 @@ Organizadas por domínio (3 "módulos" de negócio):
 
 **Permission:**
 - `permission.list`, `permission.view`, `permission.create`, `permission.update`, `permission.delete`
+
+**Log:**
+- `log.list` — Listar activity log (admin)
+- `log.view` — Ver entrada do activity log (admin ou próprio utilizador)
 
 ### Verificar Permissão em Código
 
@@ -274,6 +280,59 @@ $post->getFirstMediaUrl('thumbnail');
 O MinIO disponibiliza uma interface web em `http://localhost:9001` (credenciais: `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` do `.env`).
 
 O `setup.sh` cria o bucket automaticamente ao subir o ambiente de desenvolvimento.
+
+## 🪵 Activity Log
+
+O projecto usa a **Spatie Activity Log** para auditar acções nos modelos críticos.
+
+### Modelos com Logging Automático
+
+| Modelo | Campos logados | Eventos |
+|--------|---------------|--------|
+| `User` | `name`, `email` | `created`, `updated`, `deleted` |
+| `Role` | `name`, `guard_name` | `created`, `updated`, `deleted` |
+| `Permission` | `name`, `guard_name` | `created`, `updated`, `deleted` |
+| `Notification` | `read_at` | `updated`, `deleted` |
+
+> Campos sensíveis (`password`, tokens, timestamps) são explicitamente excluídos. Registos com dirty set vazio não são gravados (`dontLogEmptyChanges`).
+
+> `Notification` não loga `created` — a criação da notificação é uma consequência de outro evento que já está logado (ex: `UserCreated`).
+
+### Endpoints
+
+```bash
+# Listar activity log (requer log.list)
+GET /api/v1/activity-log
+
+# Filtros disponíveis via query string:
+?causer_id=1&subject_type=User&log_name=default&date_from=2026-01-01&date_to=2026-12-31&per_page=15
+
+# Ver entrada individual (requer log.view ou ser o causer)
+GET /api/v1/activity-log/{id}
+
+# Ver actividade de um utilizador específico (próprio utilizador ou log.list)
+GET /api/v1/users/{id}/activity
+```
+
+### Log Manual
+
+```php
+// Em qualquer Service/Controller
+activity()
+    ->causedBy($user)
+    ->performedOn($order)
+    ->withProperties(['total' => 99.90])
+    ->log('order.created');
+```
+
+### Acesso via RBAC
+
+| Acção | Permissão necessária |
+|-------|---------------------|
+| Listar todo o log | `log.list` |
+| Ver entrada específica | `log.view` OU ser o causer |
+| Ver actividade própria | nenhuma (autenticado) |
+| Ver actividade de outro utilizador | `log.list` |
 
 ## 🔒 Events & Notifications (Cross-Module)
 
@@ -350,6 +409,7 @@ As notificações são guardadas via `notify()` do Laravel (tabela `notification
 | DELETE | `/api/users/{id}` | ✅ | `user.delete` |
 | POST | `/api/users/{id}/avatar` | ✅ | próprio utilizador ou `user.update` |
 | DELETE | `/api/users/{id}/avatar` | ✅ | próprio utilizador ou `user.update` |
+| GET | `/api/users/{id}/activity` | ✅ | próprio utilizador ou `log.list` |
 
 ### Roles
 
@@ -370,7 +430,12 @@ As notificações são guardadas via `notify()` do Laravel (tabela `notification
 | GET | `/api/permissions/{id}` | ✅ | `permission.view` |
 | PUT | `/api/permissions/{id}` | ✅ | `permission.update` |
 | DELETE | `/api/permissions/{id}` | ✅ | `permission.delete` |
+### Activity Log
 
+| Método | Rota | Autenticação | Permission |
+|--------|------|--------------|----------|
+| GET | `/api/activity-log` | ✅ | `log.list` |
+| GET | `/api/activity-log/{id}` | ✅ | `log.view` ou próprio causer |
 ### Notifications
 
 | Método | Rota | Autenticação | Descrição |
@@ -474,6 +539,7 @@ docker compose exec app php artisan test --coverage
 - `Permission-Api` — CRUD roles/permissions (API)
 - `Notification-Web` — Notificações (web)
 - `Notification-Api` — Notificações (API)
+- `ActivityLog-Api` — Activity log (API)
 
 Rodar suite específica:
 ```bash
@@ -608,7 +674,8 @@ make artisan CMD="make:seeder YourSeeder"
     │   ├── Auth/
     │   ├── User/
     │   ├── Permission/
-    │   └── Notification/
+    │   ├── Notification/
+    │   └── ActivityLog/
     ├── public/
     ├── resources/
     ├── routes/
@@ -865,6 +932,7 @@ make cache-clear
 - [Laravel Documentation](https://laravel.com/docs)
 - [Spatie Permission Docs](https://spatie.be/docs/laravel-permission)
 - [Spatie Media Library Docs](https://spatie.be/docs/laravel-medialibrary)
+- [Spatie Activity Log Docs](https://spatie.be/docs/laravel-activitylog)
 - [Laravel Passport Docs](https://laravel.com/docs/passport)
 - [Laravel Fortify Docs](https://laravel.com/docs/fortify)
 - [Vite Documentation](https://vitejs.dev)
