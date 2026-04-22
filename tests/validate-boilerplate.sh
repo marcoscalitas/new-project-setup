@@ -543,7 +543,7 @@ else
 fi
 
 # Required packages
-for pkg in "laravel/framework" "laravel/passport" "laravel/fortify" "spatie/laravel-permission" "spatie/laravel-activitylog" "maatwebsite/excel" "spatie/browsershot"; do
+for pkg in "laravel/framework" "laravel/passport" "laravel/fortify" "spatie/laravel-permission" "spatie/laravel-activitylog" "maatwebsite/excel" "spatie/browsershot" "dedoc/scramble"; do
     if grep -q "\"$pkg\"" src/composer.json; then
         pass "requires $pkg"
     else
@@ -2153,8 +2153,84 @@ done
 echo ""
 
 # ==========================================
-# Summary
+# 56. API Documentation (scramble)
 # ==========================================
+echo "▸ API Documentation (scramble)"
+
+if [ -f "src/config/scramble.php" ]; then
+    pass "config/scramble.php exists"
+else
+    fail "config/scramble.php missing"
+fi
+
+if grep -q "RestrictedDocsAccess" src/config/scramble.php 2>/dev/null; then
+    pass "scramble: RestrictedDocsAccess middleware configured"
+else
+    fail "scramble: RestrictedDocsAccess missing (docs exposed in production)"
+fi
+
+if grep -q "Scramble::configure" src/app/Providers/AppServiceProvider.php 2>/dev/null; then
+    pass "scramble: security scheme configured in AppServiceProvider"
+else
+    fail "scramble: Scramble::configure missing in AppServiceProvider"
+fi
+
+if grep -q "dedoc/scramble" src/composer.json 2>/dev/null; then
+    pass "scramble: dedoc/scramble in composer.json"
+else
+    fail "scramble: dedoc/scramble missing from composer.json"
+fi
+echo ""
+
+# ==========================================
+# 57. Health Check Endpoint
+# ==========================================
+echo "▸ Health Check Endpoint"
+
+if [ -f "src/app/Http/Controllers/HealthController.php" ]; then
+    pass "HealthController exists"
+else
+    fail "HealthController missing"
+fi
+
+if grep -q "/health" src/routes/web.php 2>/dev/null; then
+    pass "routes/web.php has /health route"
+else
+    fail "/health route missing in routes/web.php"
+fi
+
+for check in "checkDatabase" "checkCache" "checkQueue"; do
+    if grep -q "$check" src/app/Http/Controllers/HealthController.php 2>/dev/null; then
+        pass "HealthController: $check defined"
+    else
+        fail "HealthController: $check missing"
+    fi
+done
+echo ""
+
+# ==========================================
+# 58. make:module Job Stub
+# ==========================================
+echo "▸ make:module Job Stub"
+
+if grep -q "createJob" src/app/Console/Commands/MakeModuleCommand.php 2>/dev/null; then
+    pass "MakeModuleCommand: createJob method exists"
+else
+    fail "MakeModuleCommand: createJob method missing"
+fi
+
+if grep -q "'Jobs'" src/app/Console/Commands/MakeModuleCommand.php 2>/dev/null; then
+    pass "MakeModuleCommand: Jobs/ directory in creation list"
+else
+    fail "MakeModuleCommand: Jobs/ directory missing from creation list"
+fi
+
+if grep -q "ShouldQueue" src/app/Console/Commands/MakeModuleCommand.php 2>/dev/null; then
+    pass "MakeModuleCommand: job stub implements ShouldQueue"
+else
+    fail "MakeModuleCommand: job stub missing ShouldQueue"
+fi
+echo ""
 TOTAL=$((PASS + FAIL + WARN))
 echo "============================================"
 echo -e "  ${GREEN}PASS: $PASS${NC}  ${RED}FAIL: $FAIL${NC}  ${YELLOW}WARN: $WARN${NC}  TOTAL: $TOTAL"

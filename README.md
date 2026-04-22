@@ -33,6 +33,7 @@ Todas as portas externas são ligadas a `127.0.0.1` (não expostas à rede) e **
 | **Spatie Activity Log** | 5.0 | Auditoria de acções (criação, edição, remoção) |
 | **Maatwebsite Excel** | 3.1 | Exportação CSV e XLSX |
 | **Spatie Browsershot** | 5.2 | Exportação PDF via Chromium headless |
+| **dedoc/scramble** | 0.13 | Documentação OpenAPI 3.1 auto-gerada a partir do código |
 
 ## 📁 Arquitetura Modular
 
@@ -66,6 +67,7 @@ src/
 - `Providers/` — ServiceProvider do módulo (routes, policies, events)
 - `Routes/` — API + Web routes
 - `Database/` — Migrations & Seeders
+- `Jobs/` — Jobs de background (`ShouldQueue`, retry, failure handling)
 - `Tests/Api/` — Testes de endpoints API (Passport)
 - `Resources/views/` — Blade templates (quando aplicável)
 - `Tests/Web/` — Testes de endpoints Web (Session + Blade views)
@@ -466,6 +468,33 @@ As notificações são guardadas via `notify()` do Laravel (tabela `notification
 **Resposta sync** (≤ `EXPORT_SYNC_LIMIT` registos): ficheiro descarregado directamente.
 
 **Resposta async** (> `EXPORT_SYNC_LIMIT` registos): HTTP 202 com UUID. O job corre em background (Redis queue), o utilizador recebe notificação database quando pronto.
+### API Documentation
+
+| Método | Rota | Autenticação | Descrição |
+|--------|------|--------------|-----------|
+| GET | `/docs/api` | ❌ (apenas local) | UI interactiva Stoplight Elements |
+| GET | `/docs/api.json` | ❌ (apenas local) | Especificação OpenAPI 3.1 |
+
+> Gerado automaticamente por `dedoc/scramble` a partir dos controllers, Form Requests e API Resources. Acessível apenas em `APP_ENV=local` e `testing` (middleware `RestrictedDocsAccess`).
+
+### Health Check
+
+| Método | Rota | Autenticação | Descrição |
+|--------|------|--------------|-----------|
+| GET | `/health` | ❌ | Estado da aplicação (DB, Cache, Queue) |
+
+**Resposta (200 — ok):**
+```json
+{ "status": "ok", "checks": { "database": {"status": "ok"}, "cache": {"status": "ok"}, "queue": {"status": "ok"} } }
+```
+
+**Resposta (503 — degraded):**
+```json
+{ "status": "degraded", "checks": { "database": {"status": "fail", "message": "Database unreachable"}, ... } }
+```
+
+> Usado por load balancers, Docker `HEALTHCHECK`, Kubernetes `livenessProbe` e monitorização externa.
+
 ### Notifications
 
 | Método | Rota | Autenticação | Descrição |
@@ -571,6 +600,7 @@ docker compose exec app php artisan test --coverage
 - `Notification-Api` — Notificações (API)
 - `ActivityLog-Api` — Activity log (API)
 - `Export-Api` — Exportação CSV, XLSX e PDF (21 cenários)
+- `Feature` — Inclui `HealthTest` (6 cenários) e `MakeModuleCommandTest` (46 cenários)
 
 Rodar suite específica:
 ```bash
@@ -733,6 +763,7 @@ make artisan CMD="remove:module Product"
 O `make:module` cria automaticamente:
 - `Http/Controllers/`, `Http/Requests/`, `Http/Resources/`
 - `Models/`, `Services/`, `Policies/`
+- `Jobs/` — `Process{Module}Job.php` (stub com `ShouldQueue`, `tries = 3`, `timeout = 60`, `handle()` e `failed()`)
 - `Events/`, `Listeners/`
 - `Providers/` (ServiceProvider com routes, policies e events)
 - `Routes/` (api.php + web.php)
@@ -1039,6 +1070,7 @@ private const EXPORTERS = [
 - [Laravel Fortify Docs](https://laravel.com/docs/fortify)
 - [Maatwebsite Excel Docs](https://docs.laravel-excel.com)
 - [Spatie Browsershot Docs](https://spatie.be/docs/browsershot)
+- [dedoc/scramble Docs](https://scramble.dedoc.co)
 - [Vite Documentation](https://vitejs.dev)
 - [MinIO Documentation](https://min.io/docs/minio/container/index.html)
 
