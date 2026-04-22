@@ -474,7 +474,7 @@ echo ""
 # ==========================================
 echo "▸ Module structure"
 
-MODULES=("Auth" "User" "Permission" "Notification")
+MODULES=("Auth" "User" "Permission" "Notification" "ActivityLog")
 MODULE_DIRS=("Http/Controllers" "Routes" "Services" "Providers" "Tests")
 
 for mod in "${MODULES[@]}"; do
@@ -508,7 +508,7 @@ echo ""
 echo "▸ phpunit.xml"
 
 # Test suites for modules
-for suite in "Auth-Web" "Auth-Api" "User" "Permission" "Notification" "Unit" "Feature"; do
+for suite in "Auth-Web" "Auth-Api" "User" "Permission" "Notification" "ActivityLog-Api" "Unit" "Feature"; do
     if grep -q "name=\"$suite\"" src/phpunit.xml; then
         pass "test suite '$suite' defined"
     else
@@ -544,7 +544,7 @@ else
 fi
 
 # Required packages
-for pkg in "laravel/framework" "laravel/passport" "laravel/fortify" "spatie/laravel-permission"; do
+for pkg in "laravel/framework" "laravel/passport" "laravel/fortify" "spatie/laravel-permission" "spatie/laravel-activitylog"; do
     if grep -q "\"$pkg\"" src/composer.json; then
         pass "requires $pkg"
     else
@@ -1672,6 +1672,25 @@ for f in "${NOTIF_FILES[@]}"; do
 done
 echo ""
 
+echo "▸ Module files (ActivityLog)"
+
+ACTLOG_FILES=(
+    "Http/Controllers/ActivityLogController.php"
+    "Http/Resources/ActivityLogResource.php"
+    "Services/ActivityLogService.php"
+    "Policies/ActivityLogPolicy.php"
+    "Providers/ActivityLogServiceProvider.php"
+    "Routes/api.php"
+)
+for f in "${ACTLOG_FILES[@]}"; do
+    if [ -f "src/modules/ActivityLog/$f" ]; then
+        pass "ActivityLog/$f"
+    else
+        fail "ActivityLog/$f missing"
+    fi
+done
+echo ""
+
 # ==========================================
 # 46. Migrations
 # ==========================================
@@ -1719,6 +1738,25 @@ else
     fail "Notification: notifications_table migration missing"
 fi
 
+ACTLOG_MIG=$(find src/database/migrations -name '*activity_log*' 2>/dev/null | head -1)
+if [ -n "$ACTLOG_MIG" ]; then
+    pass "ActivityLog: activity_log migration"
+else
+    fail "ActivityLog: activity_log migration missing"
+fi
+
+# ActivityLog config
+if [ -f "src/config/activitylog.php" ]; then
+    pass "config/activitylog.php exists"
+    if grep -q "include_soft_deleted_subjects" src/config/activitylog.php; then
+        pass "activitylog config: include_soft_deleted_subjects"
+    else
+        fail "activitylog config: include_soft_deleted_subjects missing"
+    fi
+else
+    fail "config/activitylog.php missing"
+fi
+
 # Migration schema checks
 if grep -q "Schema::create('cache'" src/database/migrations/0001_01_01_000001_create_cache_table.php; then
     pass "cache migration creates 'cache' table"
@@ -1764,6 +1802,13 @@ if [ "$NOTIF_TESTS" -ge 1 ]; then
     pass "Notification: $NOTIF_TESTS test files"
 else
     fail "Notification: no test files"
+fi
+
+ACTIVITY_TESTS=$(find src/modules/ActivityLog/Tests -name '*.php' 2>/dev/null | wc -l)
+if [ "$ACTIVITY_TESTS" -ge 1 ]; then
+    pass "ActivityLog: $ACTIVITY_TESTS test files"
+else
+    fail "ActivityLog: no test files"
 fi
 
 EVENT_TESTS=$(find src/tests/Feature -name '*Event*' 2>/dev/null | wc -l)
@@ -1842,6 +1887,13 @@ for mod in Auth User Permission Notification; do
         fi
     done
 done
+
+# ActivityLog is API-only (no web routes)
+if [ -f "src/modules/ActivityLog/Routes/api.php" ]; then
+    pass "ActivityLog/Routes/api.php exists"
+else
+    fail "ActivityLog/Routes/api.php missing"
+fi
 echo ""
 
 # ==========================================
