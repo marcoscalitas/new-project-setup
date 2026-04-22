@@ -49,6 +49,41 @@ services:
                     cpus: '0.1'
                     memory: 64M
 
+    minio:
+        image: minio/minio:latest
+        container_name: ${PROJECT_NAME}-minio
+        restart: unless-stopped
+        command: server /data --console-address ":9001"
+        environment:
+            MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minio}
+            MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minio123}
+        volumes:
+            - minio_data:/data
+        ports:
+            - "127.0.0.1:${MINIO_PORT:-9000}:9000"
+            - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+        networks:
+            - app_network
+        healthcheck:
+            test: [ "CMD", "mc", "ready", "local" ]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 10s
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+                max-file: "3"
+        deploy:
+            resources:
+                limits:
+                    cpus: '0.5'
+                    memory: 256M
+                reservations:
+                    cpus: '0.05'
+                    memory: 64M
+
     mailpit:
         image: axllent/mailpit
         container_name: ${PROJECT_NAME}-mailpit
@@ -71,3 +106,7 @@ services:
                 reservations:
                     cpus: '0.05'
                     memory: 16M
+
+volumes:
+    minio_data:
+        driver: local
