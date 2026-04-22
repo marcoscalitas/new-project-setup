@@ -71,6 +71,12 @@ RUN apk add --no-cache \
     icu-libs \
     && rm -rf /var/cache/apk/*
 
+# ext-exif: compilada em build-time (sem libs externas, apenas compilador)
+RUN apk add --no-cache --virtual .exif-build-deps autoconf gcc g++ make \
+    && docker-php-ext-install exif \
+    && apk del .exif-build-deps \
+    && rm -rf /var/cache/apk/*
+
 # Utilizador não root (UID/GID configurável para evitar mismatch com o host)
 ARG UID=1000
 ARG GID=1000
