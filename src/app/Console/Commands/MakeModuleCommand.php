@@ -75,6 +75,7 @@ class MakeModuleCommand extends Command
             'Http/Requests',
             'Http/Resources',
             'Listeners',
+            'Mail',
             'Models',
             'Policies',
             'Providers',
