@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Modules\User\Http\Requests\StoreUserRequest;
 use Modules\User\Http\Requests\UpdateUserRequest;
+use Modules\User\Http\Requests\UploadAvatarRequest;
 use Modules\User\Http\Resources\UserResource;
 use Modules\User\Models\User;
 use Modules\User\Services\UserService;
@@ -100,5 +101,28 @@ class UserController
         }
 
         return redirect()->route('users.index')->with('success', 'User deleted.');
+    }
+
+    public function uploadAvatar(UploadAvatarRequest $request, int $id): JsonResponse
+    {
+        $user = User::findOrFail($id);
+
+        Gate::authorize('update', $user);
+
+        $user->addMediaFromRequest('avatar')
+            ->toMediaCollection('avatar');
+
+        return (new UserResource($user->fresh()))->response();
+    }
+
+    public function deleteAvatar(int $id): JsonResponse
+    {
+        $user = User::findOrFail($id);
+
+        Gate::authorize('update', $user);
+
+        $user->clearMediaCollection('avatar');
+
+        return response()->json(null, 204);
     }
 }
