@@ -38,6 +38,9 @@
         <testsuite name="ActivityLog-Api">
             <directory>modules/ActivityLog/Tests/Api</directory>
         </testsuite>
+        <testsuite name="Export-Api">
+            <directory>modules/Export/Tests/Api</directory>
+        </testsuite>
         <testsuite name="Horizon">
             <file>tests/Feature/HorizonTest.php</file>
         </testsuite>
