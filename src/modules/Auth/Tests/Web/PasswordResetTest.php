@@ -2,10 +2,11 @@
 
 namespace Modules\Auth\Tests\Web;
 
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Contracts\MailSenderInterface;
+use App\Mail\MailMessage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use Mockery\MockInterface;
 use Modules\User\Models\User;
 use Tests\TestCase;
 
@@ -15,16 +16,22 @@ class PasswordResetTest extends TestCase
 
     public function test_user_can_request_password_reset_link(): void
     {
-        Notification::fake();
-
         $user = User::factory()->create();
+
+        $this->mock(MailSenderInterface::class, function (MockInterface $mock) use ($user) {
+            $mock->shouldReceive('queue')
+                ->once()
+                ->withArgs(fn(MailMessage $msg) =>
+                    $msg->to === $user->email &&
+                    $msg->view === 'auth::emails.password-reset'
+                );
+        });
 
         $response = $this->postJson('/auth/forgot-password', [
             'email' => $user->email,
         ]);
 
         $response->assertOk();
-        Notification::assertSentTo($user, ResetPassword::class);
     }
 
     public function test_forgot_password_requires_email(): void
