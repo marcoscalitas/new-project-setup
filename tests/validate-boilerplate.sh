@@ -473,7 +473,7 @@ echo ""
 # ==========================================
 echo "▸ Module structure"
 
-MODULES=("Auth" "User" "Permission" "Notification" "ActivityLog")
+MODULES=("Auth" "User" "Permission" "Notification" "ActivityLog" "Export")
 MODULE_DIRS=("Http/Controllers" "Routes" "Services" "Providers" "Tests")
 
 for mod in "${MODULES[@]}"; do
@@ -507,7 +507,7 @@ echo ""
 echo "▸ phpunit.xml"
 
 # Test suites for modules
-for suite in "Auth-Web" "Auth-Api" "User-Api" "User-Web" "Permission-Api" "Permission-Web" "Notification-Api" "Notification-Web" "ActivityLog-Api" "Unit" "Feature"; do
+for suite in "Auth-Web" "Auth-Api" "User-Api" "User-Web" "Permission-Api" "Permission-Web" "Notification-Api" "Notification-Web" "ActivityLog-Api" "Export-Api" "Unit" "Feature"; do
     if grep -q "name=\"$suite\"" src/phpunit.xml; then
         pass "test suite '$suite' defined"
     else
@@ -543,7 +543,7 @@ else
 fi
 
 # Required packages
-for pkg in "laravel/framework" "laravel/passport" "laravel/fortify" "spatie/laravel-permission" "spatie/laravel-activitylog"; do
+for pkg in "laravel/framework" "laravel/passport" "laravel/fortify" "spatie/laravel-permission" "spatie/laravel-activitylog" "maatwebsite/excel" "spatie/browsershot"; do
     if grep -q "\"$pkg\"" src/composer.json; then
         pass "requires $pkg"
     else
@@ -1528,6 +1528,18 @@ else
     fail "development stage missing bash"
 fi
 
+if grep -q "chromium" "$DOCKERFILE"; then
+    pass "development stage installs Chromium (Browsershot)"
+else
+    fail "development stage missing Chromium (required for PDF export)"
+fi
+
+if grep -q "PUPPETEER_EXECUTABLE_PATH" "$DOCKERFILE"; then
+    pass "PUPPETEER_EXECUTABLE_PATH configured"
+else
+    fail "PUPPETEER_EXECUTABLE_PATH not set"
+fi
+
 if grep -q "mkdir.*storage" "$DOCKERFILE"; then
     pass "storage directories created"
 else
@@ -1707,6 +1719,71 @@ for f in "${ACTLOG_FILES[@]}"; do
 done
 echo ""
 
+echo "▸ Module files (Export)"
+
+EXPORT_FILES=(
+    "Contracts/ExportableInterface.php"
+    "Models/Export.php"
+    "Services/ExportService.php"
+    "Jobs/ProcessExportJob.php"
+    "Commands/PurgeExpiredExportsCommand.php"
+    "Notifications/ExportReadyNotification.php"
+    "Http/Controllers/ExportController.php"
+    "Http/Requests/ExportRequest.php"
+    "Providers/ExportServiceProvider.php"
+    "Routes/api.php"
+    "Database/Migrations/2026_04_22_202724_create_exports_table.php"
+)
+for f in "${EXPORT_FILES[@]}"; do
+    if [ -f "src/modules/Export/$f" ]; then
+        pass "Export/$f"
+    else
+        fail "Export/$f missing"
+    fi
+done
+
+# User and ActivityLog export services
+for f in \
+    "src/modules/User/Exports/UsersExport.php" \
+    "src/modules/User/Services/UserExportService.php" \
+    "src/modules/User/Resources/views/exports/pdf.blade.php" \
+    "src/modules/ActivityLog/Exports/ActivityLogExport.php" \
+    "src/modules/ActivityLog/Services/ActivityLogExportService.php" \
+    "src/modules/ActivityLog/Resources/views/exports/pdf.blade.php"; do
+    if [ -f "$f" ]; then
+        pass "$(echo $f | sed 's|src/modules/||')"
+    else
+        fail "$(echo $f | sed 's|src/modules/||') missing"
+    fi
+done
+
+# Export config
+if [ -f "src/config/export.php" ]; then
+    pass "config/export.php exists"
+    if grep -q "sync_limit" src/config/export.php; then
+        pass "export config: sync_limit defined"
+    else
+        fail "export config: sync_limit missing"
+    fi
+    if grep -q "expiration_hours" src/config/export.php; then
+        pass "export config: expiration_hours defined"
+    else
+        fail "export config: expiration_hours missing"
+    fi
+else
+    fail "config/export.php missing"
+fi
+
+# Export env vars
+for var in "EXPORT_SYNC_LIMIT" "EXPORT_EXPIRATION_HOURS"; do
+    if grep -q "^${var}=" src/.env.example; then
+        pass "src/.env.example has $var"
+    else
+        fail "src/.env.example missing $var"
+    fi
+done
+echo ""
+
 # ==========================================
 # 46. Migrations
 # ==========================================
@@ -1759,6 +1836,13 @@ if [ -n "$ACTLOG_MIG" ]; then
     pass "ActivityLog: activity_log migration"
 else
     fail "ActivityLog: activity_log migration missing"
+fi
+
+EXPORT_MIG=$(find src/modules/Export/Database/Migrations -name '*exports_table*' 2>/dev/null | head -1)
+if [ -n "$EXPORT_MIG" ]; then
+    pass "Export: create_exports_table migration"
+else
+    fail "Export: create_exports_table migration missing"
 fi
 
 # ActivityLog config
@@ -1825,6 +1909,13 @@ if [ "$ACTIVITY_TESTS" -ge 1 ]; then
     pass "ActivityLog: $ACTIVITY_TESTS test files"
 else
     fail "ActivityLog: no test files"
+fi
+
+EXPORT_TESTS=$(find src/modules/Export/Tests -name '*.php' 2>/dev/null | wc -l)
+if [ "$EXPORT_TESTS" -ge 1 ]; then
+    pass "Export: $EXPORT_TESTS test files"
+else
+    fail "Export: no test files"
 fi
 
 EVENT_TESTS=$(find src/tests/Feature -name '*Event*' 2>/dev/null | wc -l)
@@ -1909,6 +2000,13 @@ if [ -f "src/modules/ActivityLog/Routes/api.php" ]; then
     pass "ActivityLog/Routes/api.php exists"
 else
     fail "ActivityLog/Routes/api.php missing"
+fi
+
+# Export is API-only (no web routes)
+if [ -f "src/modules/Export/Routes/api.php" ]; then
+    pass "Export/Routes/api.php exists"
+else
+    fail "Export/Routes/api.php missing"
 fi
 echo ""
 

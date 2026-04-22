@@ -31,6 +31,8 @@ Todas as portas externas são ligadas a `127.0.0.1` (não expostas à rede) e **
 | **Spatie Permission** | 7.2.4 | RBAC (Roles & Permissions) |
 | **Spatie Media Library** | 11.21 | Upload e gestão de ficheiros (avatars, attachments) |
 | **Spatie Activity Log** | 5.0 | Auditoria de acções (criação, edição, remoção) |
+| **Maatwebsite Excel** | 3.1 | Exportação CSV e XLSX |
+| **Spatie Browsershot** | 5.2 | Exportação PDF via Chromium headless |
 
 ## 📁 Arquitetura Modular
 
@@ -43,13 +45,14 @@ src/
 │   ├── User/              # CRUD de usuários
 │   ├── Permission/        # RBAC (Roles & Permissions → Spatie)
 │   ├── Notification/      # Notificações + hub cross-module (Events/Listeners)
-│   └── ActivityLog/       # Auditoria de acções (activity log)
+│   ├── ActivityLog/       # Auditoria de acções (activity log)
+│   └── Export/            # Exportação CSV, XLSX e PDF (sync/async híbrido)
 ├── routes/                # Rotas globais
 ├── config/                # Configurações
 └── database/              # Migrations & Seeders
 ```
 
-> **Nota:** Estes 4 módulos são o **esqueleto base** (infraestrutura). Os teus módulos de negócio ficam ao lado destes — ex: `modules/Product/`, `modules/Order/`, etc.
+> **Nota:** Estes 6 módulos são o **esqueleto base** (infraestrutura). Os teus módulos de negócio ficam ao lado destes — ex: `modules/Product/`, `modules/Order/`, etc.
 
 **Cada módulo tem:**
 - `Models/` — Entidades Eloquent
@@ -206,6 +209,9 @@ Organizadas por domínio (3 "módulos" de negócio):
 **Log:**
 - `log.list` — Listar activity log (admin)
 - `log.view` — Ver entrada do activity log (admin ou próprio utilizador)
+
+**Export:**
+- `export.create` — Iniciar exportação (CSV, XLSX, PDF)
 
 ### Verificar Permissão em Código
 
@@ -436,6 +442,30 @@ As notificações são guardadas via `notify()` do Laravel (tabela `notification
 |--------|------|--------------|----------|
 | GET | `/api/activity-log` | ✅ | `log.list` |
 | GET | `/api/activity-log/{id}` | ✅ | `log.view` ou próprio causer |
+
+### Export
+
+| Método | Rota | Autenticação | Descrição |
+|--------|------|--------------|----------|
+| POST | `/api/v1/exports` | ✅ | Iniciar exportação (sync ou async) |
+| GET | `/api/v1/exports/{uuid}/status` | ✅ | Estado de exportação async |
+| GET | `/api/v1/exports/{uuid}/download` | ✅ | Download de exportação async |
+
+**Body (POST):**
+```json
+{
+  "module": "users",
+  "format": "csv",
+  "filters": { "role": "admin", "search": "maria" }
+}
+```
+- `module`: `users` \| `activity_log`
+- `format`: `csv` \| `xlsx` \| `pdf`
+- `filters`: opcional (filtros específicos do módulo)
+
+**Resposta sync** (≤ `EXPORT_SYNC_LIMIT` registos): ficheiro descarregado directamente.
+
+**Resposta async** (> `EXPORT_SYNC_LIMIT` registos): HTTP 202 com UUID. O job corre em background (Redis queue), o utilizador recebe notificação database quando pronto.
 ### Notifications
 
 | Método | Rota | Autenticação | Descrição |
@@ -540,6 +570,7 @@ docker compose exec app php artisan test --coverage
 - `Notification-Web` — Notificações (web)
 - `Notification-Api` — Notificações (API)
 - `ActivityLog-Api` — Activity log (API)
+- `Export-Api` — Exportação CSV, XLSX e PDF (21 cenários)
 
 Rodar suite específica:
 ```bash
@@ -675,7 +706,8 @@ make artisan CMD="make:seeder YourSeeder"
     │   ├── User/
     │   ├── Permission/
     │   ├── Notification/
-    │   └── ActivityLog/
+    │   ├── ActivityLog/
+    │   └── Export/
     ├── public/
     ├── resources/
     ├── routes/
@@ -802,6 +834,10 @@ MAIL_PORT=1025
 # Upload (Media Library)
 MEDIA_DISK=minio             # minio em dev, r2 em produção
 
+# Export
+EXPORT_SYNC_LIMIT=5000       # Exportações com ≤ N registos são síncronas
+EXPORT_EXPIRATION_HOURS=24   # Horas até o ficheiro async expirar
+
 # MinIO (dev)
 MINIO_ACCESS_KEY=...         # Sincronizado com MINIO_ACCESS_KEY
 MINIO_SECRET_KEY=...         # Sincronizado com MINIO_SECRET_KEY
@@ -927,6 +963,72 @@ docker compose exec app chown -R appuser:appuser /var/www/storage
 make cache-clear
 ```
 
+## � Exportação (CSV / XLSX / PDF)
+
+O módulo Export oferece exportação híbrida sync/async para qualquer módulo do projecto.
+
+### Lógica Híbrida
+
+| Condição | Comportamento |
+|----------|---------------|
+| `count(registos) ≤ EXPORT_SYNC_LIMIT` | Ficheiro gerado no momento (HTTP 200 download) |
+| `count(registos) > EXPORT_SYNC_LIMIT` | Job despachado para fila Redis (HTTP 202 + UUID) |
+
+### Formatos Suportados
+
+| Formato | Biblioteca | Características |
+|---------|------------|-----------------|
+| **CSV** | `maatwebsite/excel` | UTF-8, BOM configurável via `config/excel.php` |
+| **XLSX** | `maatwebsite/excel` | Cabeçalhos coloridos, auto-resize de colunas |
+| **PDF** | `spatie/browsershot` | Gerado via Chromium headless, layout HTML/CSS completo |
+
+### Módulos Exportáveis
+
+| Módulo | Filtros disponíveis | Campos exportados |
+|--------|--------------------|-----------------|
+| `users` | `role`, `search` | ID, Nome, Email, Roles, Verificado, Criado em |
+| `activity_log` | `causer_id`, `log_name`, `subject_type`, `date_from`, `date_to` | ID, Log, Descrição, Utilizador, Modelo, ID Modelo, Data |
+
+### Exportação Assíncrona — Ciclo de Vida
+
+```
+POST /api/v1/exports  →  202 Accepted + { uuid, status: "pending" }
+        ↓
+  ProcessExportJob (Redis queue)
+        ↓
+  Export gravado em storage/app/exports/{uuid}/
+        ↓
+  ExportReadyNotification (database notification → utilizador)
+        ↓
+GET /api/v1/exports/{uuid}/status  →  { status: "completed", expires_at }
+GET /api/v1/exports/{uuid}/download  →  ficheiro
+```
+
+### Expiração e Limpeza
+
+Ficheiros expiram ao fim de `EXPORT_EXPIRATION_HOURS` horas (default: 24h).
+O comando `exports:purge` é agendado diariamente e apaga ficheiros e registos expirados.
+
+### Adicionar Suporte de Export a um Módulo
+
+```php
+// 1. Implementar ExportableInterface no service do módulo
+class ProductExportService implements ExportableInterface {
+    public function getQuery(array $filters = []): Builder { ... }
+    public function getExportClass(array $filters = []): FromQuery { return new ProductsExport($filters); }
+    public function getPdfView(): string { return 'product::exports.pdf'; }
+    public function getFilename(): string { return 'products'; }
+    public function getPdfData(array $filters = []): array { ... }
+}
+
+// 2. Registar em ExportController::EXPORTERS
+private const EXPORTERS = [
+    'users'        => UserExportService::class,
+    'activity_log' => ActivityLogExportService::class,
+    'products'     => ProductExportService::class, // novo
+];
+```
+
 ## 📚 Recursos
 
 - [Laravel Documentation](https://laravel.com/docs)
@@ -935,6 +1037,8 @@ make cache-clear
 - [Spatie Activity Log Docs](https://spatie.be/docs/laravel-activitylog)
 - [Laravel Passport Docs](https://laravel.com/docs/passport)
 - [Laravel Fortify Docs](https://laravel.com/docs/fortify)
+- [Maatwebsite Excel Docs](https://docs.laravel-excel.com)
+- [Spatie Browsershot Docs](https://spatie.be/docs/browsershot)
 - [Vite Documentation](https://vitejs.dev)
 - [MinIO Documentation](https://min.io/docs/minio/container/index.html)
 
