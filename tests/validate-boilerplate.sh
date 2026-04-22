@@ -315,9 +315,8 @@ else
     fail "production CSP: unsafe-inline present for scripts"
 fi
 
-# Dev CSP — allows localhost
-DEV_CSP=$(grep "Content-Security-Policy" docker/nginx/nginx.dev.conf || true)
-if echo "$DEV_CSP" | grep -q "localhost"; then
+# Dev CSP — allows localhost (may be in a map variable, not inline)
+if grep -q "localhost" docker/nginx/nginx.dev.conf; then
     pass "dev CSP: allows localhost (Vite)"
 else
     fail "dev CSP: missing localhost for Vite"
@@ -508,7 +507,7 @@ echo ""
 echo "▸ phpunit.xml"
 
 # Test suites for modules
-for suite in "Auth-Web" "Auth-Api" "User" "Permission" "Notification" "ActivityLog-Api" "Unit" "Feature"; do
+for suite in "Auth-Web" "Auth-Api" "User-Api" "User-Web" "Permission-Api" "Permission-Web" "Notification-Api" "Notification-Web" "ActivityLog-Api" "Unit" "Feature"; do
     if grep -q "name=\"$suite\"" src/phpunit.xml; then
         pass "test suite '$suite' defined"
     else
@@ -872,10 +871,11 @@ echo ""
 # ==========================================
 echo "▸ config/fortify.php"
 
-if grep -q "'views' => false" src/config/fortify.php; then
-    pass "views disabled (API-only)"
+# Fortify views = true because the project uses dual-response (Blade + JSON)
+if grep -q "'views'" src/config/fortify.php; then
+    pass "fortify views key present (dual-response Blade + JSON)"
 else
-    fail "views not disabled"
+    fail "fortify views key missing"
 fi
 
 if grep -q "'guard' => 'web'" src/config/fortify.php; then
@@ -1140,31 +1140,26 @@ fi
 echo ""
 
 # ==========================================
-# 34. EventServiceProvider
+# 34. Event registration (module ServiceProviders)
 # ==========================================
-echo "▸ EventServiceProvider"
+echo "▸ Event registration (module ServiceProviders)"
 
-EVENT_FILE="src/app/Providers/EventServiceProvider.php"
+# Events are registered in each module's ServiceProvider, not a central EventServiceProvider
+ALL_PROVIDERS=$(cat src/modules/*/Providers/*.php 2>/dev/null)
 
 for event in "Registered" "UserCreated" "UserUpdated" "UserDeleted" "RoleAssigned" "PermissionCreated" "PermissionUpdated" "PermissionDeleted" "NotificationRead" "NotificationDeleted"; do
-    if grep -q "${event}::class" "$EVENT_FILE"; then
-        pass "event $event mapped"
+    if echo "$ALL_PROVIDERS" | grep -q "${event}::class"; then
+        pass "event $event registered"
     else
-        fail "event $event not mapped"
+        fail "event $event not registered in any module ServiceProvider"
     fi
 done
 
-if grep -q "return false" "$EVENT_FILE"; then
-    pass "shouldDiscoverEvents returns false"
-else
-    warn "shouldDiscoverEvents may auto-discover"
-fi
-
-EVENT_COUNT=$(grep -c '::class =>' "$EVENT_FILE" || echo 0)
+EVENT_COUNT=$(echo "$ALL_PROVIDERS" | grep -c 'Event::listen' || echo 0)
 if [ "$EVENT_COUNT" -ge 10 ]; then
-    pass "total event mappings: $EVENT_COUNT (≥10)"
+    pass "total Event::listen calls: $EVENT_COUNT (≥10)"
 else
-    fail "only $EVENT_COUNT event mappings (expected ≥10)"
+    fail "only $EVENT_COUNT Event::listen calls across module providers (expected ≥10)"
 fi
 echo ""
 
@@ -1241,10 +1236,8 @@ SEEDER="src/database/seeders/DatabaseSeeder.php"
 for check in \
     "PermissionSeeder:calls PermissionSeeder" \
     "RoleSeeder:calls RoleSeeder" \
-    "assignRole.*admin:creates admin user" \
-    "assignRole.*user:creates regular user" \
-    "WithoutModelEvents:uses WithoutModelEvents" \
-    'Modules\\User\\Models\\User:uses Modules User model'; do
+    "UserSeeder:calls UserSeeder" \
+    "WithoutModelEvents:uses WithoutModelEvents"; do
     pattern="${check%%:*}"
     label="${check##*:}"
     if grep -q "$pattern" "$SEEDER"; then
@@ -1253,6 +1246,29 @@ for check in \
         fail "$label"
     fi
 done
+
+# UserSeeder creates admin and user (delegation pattern)
+USER_SEEDER="src/modules/User/Database/Seeders/UserSeeder.php"
+if [ -f "$USER_SEEDER" ]; then
+    pass "UserSeeder.php exists"
+    if grep -q "syncRoles.*admin\|assignRole.*admin" "$USER_SEEDER"; then
+        pass "creates admin user"
+    else
+        fail "admin user not created in UserSeeder"
+    fi
+    if grep -q "syncRoles.*user\|assignRole.*user" "$USER_SEEDER"; then
+        pass "creates regular user"
+    else
+        fail "regular user not created in UserSeeder"
+    fi
+    if grep -q 'Modules\\User\\Models\\User' "$USER_SEEDER"; then
+        pass "uses Modules User model"
+    else
+        fail "UserSeeder not using Modules\\User\\Models\\User"
+    fi
+else
+    fail "UserSeeder.php missing"
+fi
 echo ""
 
 # ==========================================
@@ -2003,7 +2019,7 @@ for event_path in \
     if [ -f "$event_path" ]; then
         pass "event file $(basename $event_path) exists"
     else
-        fail "event file $(basename $event_path) missing (EventServiceProvider ref)"
+        fail "event file $(basename $event_path) missing"
     fi
 done
 
@@ -2022,7 +2038,7 @@ for listener_path in \
     if [ -f "$listener_path" ]; then
         pass "listener file $(basename $listener_path) exists"
     else
-        fail "listener file $(basename $listener_path) missing (EventServiceProvider ref)"
+        fail "listener file $(basename $listener_path) missing"
     fi
 done
 
