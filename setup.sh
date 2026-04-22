@@ -206,6 +206,11 @@ if grep -qE '^REDIS_PASSWORD=\s*$' .env; then
     sedi "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${GENERATED_RD}|" .env
     info "REDIS_PASSWORD gerado automaticamente."
 fi
+if grep -qE '^MINIO_SECRET_KEY=\s*$' .env; then
+    GENERATED_MN=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)
+    sedi "s|^MINIO_SECRET_KEY=.*|MINIO_SECRET_KEY=${GENERATED_MN}|" .env
+    info "MINIO_SECRET_KEY gerado automaticamente."
+fi
 
 # --- Carregar variáveis do .env ---
 set +e
@@ -232,6 +237,9 @@ sedi "s|^DB_DATABASE=.*|DB_DATABASE=${POSTGRES_DB}|" src/.env
 sedi "s|^DB_USERNAME=.*|DB_USERNAME=${POSTGRES_USER}|" src/.env
 sedi "s|^DB_PASSWORD=.*|DB_PASSWORD=${POSTGRES_PASSWORD}|" src/.env
 sedi "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASSWORD}|" src/.env
+sedi "s|^MINIO_ACCESS_KEY=.*|MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}|" src/.env
+sedi "s|^MINIO_SECRET_KEY=.*|MINIO_SECRET_KEY=${MINIO_SECRET_KEY}|" src/.env
+sedi "s|^MINIO_URL=.*|MINIO_URL=http://localhost:${MINIO_PORT:-9000}/${MINIO_BUCKET:-local}|" src/.env
 sedi "s|^APP_URL=.*|APP_URL=http://localhost:${APP_PORT:-8080}|" src/.env
 
 if $PROD; then
@@ -294,6 +302,8 @@ if ! $PROD; then
     PORTS_TO_CHECK="${PORTS_TO_CHECK} VITE_PORT:${VITE_PORT:-5173}:Node/Vite"
     PORTS_TO_CHECK="${PORTS_TO_CHECK} MAILPIT_PORT:${MAILPIT_PORT:-8025}:Mailpit-UI"
     PORTS_TO_CHECK="${PORTS_TO_CHECK} MAILPIT_SMTP_PORT:${MAILPIT_SMTP_PORT:-1025}:Mailpit-SMTP"
+    PORTS_TO_CHECK="${PORTS_TO_CHECK} MINIO_PORT:${MINIO_PORT:-9000}:MinIO-API"
+    PORTS_TO_CHECK="${PORTS_TO_CHECK} MINIO_CONSOLE_PORT:${MINIO_CONSOLE_PORT:-9001}:MinIO-Console"
 fi
 
 REASSIGNED=""
@@ -458,6 +468,21 @@ fi
 info "A criar symlink do storage..."
 $DCMD exec -T app php artisan storage:link 2>/dev/null || true
 
+# --- Criar bucket MinIO (dev only) ---
+if ! $PROD; then
+    MINIO_BUCKET_NAME="${MINIO_BUCKET:-local}"
+    info "A criar bucket MinIO '${MINIO_BUCKET_NAME}'..."
+    MINIO_CONTAINER="${PROJECT_NAME}-minio"
+    if docker ps --format '{{.Names}}' | grep -q "^${MINIO_CONTAINER}$"; then
+        docker exec "${MINIO_CONTAINER}" mc alias set setup http://localhost:9000 "${MINIO_ACCESS_KEY:-minio}" "${MINIO_SECRET_KEY}" >/dev/null 2>&1 || true
+        docker exec "${MINIO_CONTAINER}" mc mb --ignore-existing "setup/${MINIO_BUCKET_NAME}" >/dev/null 2>&1 \
+            && info "Bucket '${MINIO_BUCKET_NAME}' pronto." \
+            || warn "Não foi possível criar o bucket MinIO — cria manualmente em http://localhost:${MINIO_CONSOLE_PORT:-9001}"
+    else
+        warn "Container MinIO não está a correr — bucket não criado."
+    fi
+fi
+
 # --- Resultado ---
 CLEANUP_NEEDED=false
 SETUP_END=$(date +%s)
@@ -474,6 +499,7 @@ echo "  App: http://localhost:${APP_PORT:-8080}"
 if ! $PROD; then
     echo "  Mailpit: http://localhost:${MAILPIT_PORT:-8025}"
     echo "  Vite:    http://localhost:${VITE_PORT:-5173}"
+    echo "  MinIO:   http://localhost:${MINIO_CONSOLE_PORT:-9001}"
 fi
 echo ""
 echo "  Comandos úteis:"
