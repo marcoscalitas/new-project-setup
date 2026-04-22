@@ -16,6 +16,7 @@ Um boilerplate profissional e production-ready baseado em **Laravel 12**, **Dock
 | **Scheduler** | (reutiliza app) | — | `schedule:work` |
 | **Node/Vite** ¹ | `node:22-alpine` | `VITE_PORT` (5173) | HMR em desenvolvimento |
 | **Mailpit** ¹ | `axllent/mailpit` | `MAILPIT_PORT` (8025) / `MAILPIT_SMTP_PORT` (1025) | Captura emails em dev |
+| **MinIO** ¹ | `minio/minio:latest` | `MINIO_PORT` (9000) / `MINIO_CONSOLE_PORT` (9001) | Object storage compatível S3 (dev) |
 
 > ¹ Apenas em desenvolvimento (`docker-compose.override.yml`).
 
@@ -28,6 +29,7 @@ Todas as portas externas são ligadas a `127.0.0.1` (não expostas à rede) e **
 | **Laravel Passport** | 13 | OAuth 2.0 (API tokens) |
 | **Laravel Fortify** | 1.36 | Autenticação (Login, Register, 2FA) + Blade views |
 | **Spatie Permission** | 7.2.4 | RBAC (Roles & Permissions) |
+| **Spatie Media Library** | 11.21 | Upload e gestão de ficheiros (avatars, attachments) |
 
 ## 📁 Arquitetura Modular
 
@@ -89,13 +91,14 @@ cd meu-projecto
 O script fará automaticamente:
 - ✅ Validar Docker, permissões, espaço em disco e conectividade
 - ✅ Detectar nome de projecto duplicado e volumes órfãos
-- ✅ Criar `.env` e `src/.env` com passwords aleatórias
-- ✅ Resolver portas em conflito (auto-reassign)
+- ✅ Criar `.env` e `src/.env` com passwords aleatórias (PG, Redis, MinIO)
+- ✅ Resolver portas em conflito (auto-reassign), incluindo MinIO
 - ✅ Construir imagem multi-stage (PHP + Vite assets em prod)
 - ✅ Instalar dependências (Composer)
 - ✅ Gerar APP_KEY, chaves Passport e Personal Access Client
 - ✅ Rodar migrations
 - ✅ Criar symlink do storage
+- ✅ Criar bucket MinIO automaticamente em desenvolvimento
 - ✅ Cache warming em produção (`config:cache`, `route:cache`, `view:cache`)
 
 > O setup impede execução concorrente (lock file) e limpa containers parciais em caso de Ctrl+C.
@@ -104,6 +107,7 @@ O script fará automaticamente:
 - **App**: `http://localhost:<APP_PORT>` (default 8080)
 - **Mailpit** (emails): `http://localhost:<MAILPIT_PORT>` (default 8025) — só dev
 - **Vite HMR**: `http://localhost:<VITE_PORT>` (default 5173) — só dev
+- **MinIO Console**: `http://localhost:<MINIO_CONSOLE_PORT>` (default 9001) — só dev
 
 ## 📚 Credenciais Padrão (após seed)
 
@@ -215,7 +219,63 @@ if ($user->hasPermissionTo('user.create')) {
 }
 ```
 
-## � Events & Notifications (Cross-Module)
+## 🖼️ Upload de Ficheiros (Media Library)
+
+O projecto usa a **Spatie Media Library** para gestão de ficheiros, com suporte a múltiplos discos de armazenamento.
+
+### Discos de Armazenamento
+
+| Disco | Ambiente | Serviço | Configuração |
+|-------|----------|---------|-------------|
+| `minio` | Desenvolvimento | MinIO (local) | `MINIO_*` em `src/.env` |
+| `r2` | Produção | Cloudflare R2 | `R2_*` em `src/.env` |
+
+O disco activo é controlado pela variável `MEDIA_DISK` (default: `minio`).
+
+### Avatar de Utilizador
+
+O modelo `User` já implementa `HasMedia` com uma coleção `avatar` configurada:
+
+```bash
+# Upload de avatar (multipart/form-data, campo: avatar)
+# Formatos aceites: jpeg, png, webp, gif — máx. 2MB
+POST /api/users/{id}/avatar
+
+# Remover avatar
+DELETE /api/users/{id}/avatar
+```
+
+O campo `avatar_url` é exposto automaticamente no `UserResource`.
+
+### Adicionar Media a um Módulo
+
+```php
+// 1. Implementar HasMedia no Model
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+
+class Post extends Model implements HasMedia {
+    use InteractsWithMedia;
+
+    public function registerMediaCollections(): void {
+        $this->addMediaCollection('thumbnail')->singleFile();
+    }
+}
+
+// 2. Upload no Controller
+$post->addMediaFromRequest('thumbnail')->toMediaCollection('thumbnail');
+
+// 3. Obter URL
+$post->getFirstMediaUrl('thumbnail');
+```
+
+### MinIO Console (Dev)
+
+O MinIO disponibiliza uma interface web em `http://localhost:9001` (credenciais: `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` do `.env`).
+
+O `setup.sh` cria o bucket automaticamente ao subir o ambiente de desenvolvimento.
+
+## 🔒 Events & Notifications (Cross-Module)
 
 O projecto usa uma **arquitetura event-driven**. Cada módulo despacha domain events, e o módulo **Notification** reage automaticamente para notificar admins.
 
@@ -288,6 +348,8 @@ As notificações são guardadas via `notify()` do Laravel (tabela `notification
 | GET | `/api/users/{id}` | ✅ | `user.view` |
 | PUT | `/api/users/{id}` | ✅ | `user.update` |
 | DELETE | `/api/users/{id}` | ✅ | `user.delete` |
+| POST | `/api/users/{id}/avatar` | ✅ | próprio utilizador ou `user.update` |
+| DELETE | `/api/users/{id}/avatar` | ✅ | próprio utilizador ou `user.update` |
 
 ### Roles
 
@@ -636,6 +698,12 @@ POSTGRES_PASSWORD=...        # Gerado automaticamente
 REDIS_PORT=6379
 REDIS_PASSWORD=...           # Gerado automaticamente
 
+# MinIO (dev only)
+MINIO_PORT=9000
+MINIO_CONSOLE_PORT=9001
+MINIO_ACCESS_KEY=minio
+MINIO_SECRET_KEY=...         # Gerado automaticamente
+
 # Dev only
 VITE_PORT=5173
 MAILPIT_PORT=8025
@@ -663,6 +731,23 @@ REDIS_PASSWORD=...           # Sincronizado com REDIS_PASSWORD
 
 MAIL_HOST=mailpit
 MAIL_PORT=1025
+
+# Upload (Media Library)
+MEDIA_DISK=minio             # minio em dev, r2 em produção
+
+# MinIO (dev)
+MINIO_ACCESS_KEY=...         # Sincronizado com MINIO_ACCESS_KEY
+MINIO_SECRET_KEY=...         # Sincronizado com MINIO_SECRET_KEY
+MINIO_BUCKET=local
+MINIO_ENDPOINT=http://minio:9000
+MINIO_URL=http://localhost:9000/local  # URL pública (auto-ajustada com MINIO_PORT)
+
+# Cloudflare R2 (produção)
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET=
+R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+R2_URL=
 ```
 
 > Ambos os ficheiros são criados com `chmod 600` e incluídos no `.gitignore`.
@@ -726,6 +811,7 @@ Todos os containers têm limites de CPU e memória configurados no `docker-compo
 | Scheduler | 0.5 | 256MB | 64MB |
 | Node (dev) | 0.5 | 512MB | 64MB |
 | Mailpit (dev) | 0.25 | 64MB | 16MB |
+| MinIO (dev) | 0.5 | 256MB | 64MB |
 
 ### Múltiplos Projectos
 
@@ -748,7 +834,7 @@ lsof -i :8080
 lsof -i :5432
 
 # As portas são configuráveis via .env:
-# APP_PORT, REDIS_PORT, VITE_PORT, MAILPIT_PORT, MAILPIT_SMTP_PORT
+# APP_PORT, REDIS_PORT, VITE_PORT, MAILPIT_PORT, MAILPIT_SMTP_PORT, MINIO_PORT, MINIO_CONSOLE_PORT
 ```
 
 ### Database connection error
@@ -778,7 +864,9 @@ make cache-clear
 
 - [Laravel Documentation](https://laravel.com/docs)
 - [Spatie Permission Docs](https://spatie.be/docs/laravel-permission)
+- [Spatie Media Library Docs](https://spatie.be/docs/laravel-medialibrary)
 - [Laravel Passport Docs](https://laravel.com/docs/passport)
 - [Laravel Fortify Docs](https://laravel.com/docs/fortify)
 - [Vite Documentation](https://vitejs.dev)
+- [MinIO Documentation](https://min.io/docs/minio/container/index.html)
 
