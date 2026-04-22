@@ -60,6 +60,34 @@ return [
             'report' => false,
         ],
 
+        // Cloudflare R2 — produção
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto',
+            'bucket' => env('R2_BUCKET'),
+            'url' => env('R2_URL'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => false,
+            'throw' => false,
+            'report' => false,
+        ],
+
+        // MinIO — desenvolvimento local (S3-compatible)
+        'minio' => [
+            'driver' => 's3',
+            'key' => env('MINIO_ACCESS_KEY', 'minio'),
+            'secret' => env('MINIO_SECRET_KEY', 'minio123'),
+            'region' => 'us-east-1',
+            'bucket' => env('MINIO_BUCKET', 'local'),
+            'url' => env('MINIO_URL', 'http://localhost:9000/local'),
+            'endpoint' => env('MINIO_ENDPOINT', 'http://minio:9000'),
+            'use_path_style_endpoint' => true,
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*
