@@ -44,6 +44,7 @@ class MakeModuleCommandTest extends TestCase
             'Http/Controllers',
             'Http/Requests',
             'Http/Resources',
+            'Jobs',
             'Listeners',
             'Models',
             'Policies',
@@ -71,6 +72,7 @@ class MakeModuleCommandTest extends TestCase
             'Http/Requests/StoreDummyRequest.php',
             'Http/Requests/UpdateDummyRequest.php',
             'Http/Resources/DummyResource.php',
+            'Jobs/ProcessDummyJob.php',
             'Policies/DummyPolicy.php',
             'Services/DummyService.php',
             'Routes/api.php',
@@ -105,6 +107,7 @@ class MakeModuleCommandTest extends TestCase
             'Http/Controllers',
             'Http/Requests',
             'Http/Resources',
+            'Jobs',
             'Models',
             'Policies',
             'Providers',
@@ -474,6 +477,32 @@ class MakeModuleCommandTest extends TestCase
         $this->assertStringContainsString('extends JsonResource', $content);
         $this->assertStringContainsString('public function toArray(Request $request): array', $content);
         $this->assertStringContainsString("'id' => \$this->id", $content);
+    }
+
+    // == JOB ==
+
+    public function test_generates_job_with_correct_structure(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $content = file_get_contents("{$this->modulePath}/Jobs/ProcessDummyJob.php");
+
+        $this->assertStringContainsString('namespace Modules\\Dummy\\Jobs;', $content);
+        $this->assertStringContainsString('class ProcessDummyJob implements ShouldQueue', $content);
+        $this->assertStringContainsString('use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;', $content);
+        $this->assertStringContainsString('public int $tries = 3;', $content);
+        $this->assertStringContainsString('public int $timeout = 60;', $content);
+        $this->assertStringContainsString('public function handle(): void', $content);
+        $this->assertStringContainsString('public function failed(Throwable $e): void', $content);
+    }
+
+    public function test_generated_job_is_valid_php(): void
+    {
+        $this->artisan('make:module', ['name' => 'Dummy']);
+
+        $content = file_get_contents("{$this->modulePath}/Jobs/ProcessDummyJob.php");
+
+        $this->assertStringStartsWith('<?php', $content);
     }
 
     // == PHPUNIT.XML REGISTRATION ==

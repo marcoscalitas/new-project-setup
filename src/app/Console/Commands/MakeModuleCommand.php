@@ -36,6 +36,7 @@ class MakeModuleCommand extends Command
         $this->createFactory();
         $this->createController();
         $this->createService();
+        $this->createJob();
         $this->createRequests();
         $this->createResource();
         $this->createPolicy();
@@ -54,6 +55,7 @@ class MakeModuleCommand extends Command
         $this->components->bulletList([
             "Provider registered in <comment>bootstrap/providers.php</comment>",
             "Test suite registered in <comment>phpunit.xml</comment>",
+            "Job stub created at <comment>modules/{$this->module}/Jobs/Process{$this->module}Job.php</comment>",
             "Add event bindings to <comment>app/Providers/EventServiceProvider.php</comment>",
             "Add seeder call to <comment>database/seeders/DatabaseSeeder.php</comment> if needed",
             "Run <comment>php artisan migrate</comment> after creating migrations",
@@ -74,6 +76,7 @@ class MakeModuleCommand extends Command
             'Http/Controllers',
             'Http/Requests',
             'Http/Resources',
+            'Jobs',
             'Listeners',
             'Mail',
             'Models',
@@ -91,6 +94,7 @@ class MakeModuleCommand extends Command
             'Http/Controllers',
             'Http/Requests',
             'Http/Resources',
+            'Jobs',
             'Models',
             'Policies',
             'Providers',
@@ -842,6 +846,44 @@ class MakeModuleCommand extends Command
                 Schema::dropIfExists('{$table}');
             }
         };
+        PHP);
+    }
+
+    private function createJob(): void
+    {
+        $this->write("Jobs/Process{$this->module}Job.php", <<<PHP
+        <?php
+
+        namespace Modules\\{$this->module}\\Jobs;
+
+        use Illuminate\\Bus\\Queueable;
+        use Illuminate\\Contracts\\Queue\\ShouldQueue;
+        use Illuminate\\Foundation\\Bus\\Dispatchable;
+        use Illuminate\\Queue\\InteractsWithQueue;
+        use Illuminate\\Queue\\SerializesModels;
+        use Throwable;
+
+        class Process{$this->module}Job implements ShouldQueue
+        {
+            use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+            public int \$tries = 3;
+            public int \$timeout = 60;
+
+            public function __construct(
+                // TODO: inject dependencies
+            ) {}
+
+            public function handle(): void
+            {
+                // TODO: implement job logic
+            }
+
+            public function failed(Throwable \$e): void
+            {
+                // TODO: handle failure
+            }
+        }
         PHP);
     }
 
