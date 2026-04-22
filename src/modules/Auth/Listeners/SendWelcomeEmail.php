@@ -2,29 +2,24 @@
 
 namespace Modules\Auth\Listeners;
 
+use App\Contracts\MailSenderInterface;
+use App\Mail\MailMessage;
 use Modules\Auth\Events\UserCreated;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 
-class SendWelcomeEmail implements ShouldQueue
+class SendWelcomeEmail
 {
-    use InteractsWithQueue;
+    public function __construct(private MailSenderInterface $mail) {}
 
-    /**
-     * Create the event listener.
-     */
-    public function __construct()
-    {
-    }
-
-    /**
-     * Handle the event.
-     */
     public function handle(UserCreated $event): void
     {
-        // TODO: Implement welcome email
-        // Mail::send(new WelcomeEmail($event->user));
-        
-        logger()->info("Welcome email sent to {$event->user->email}");
+        $this->mail->queue(
+            MailMessage::make(
+                to: $event->user->email,
+                subject: 'Welcome to ' . config('app.name'),
+                view: 'auth::emails.welcome',
+                data: ['user' => $event->user],
+            )
+        );
     }
 }
+

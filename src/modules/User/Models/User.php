@@ -2,6 +2,8 @@
 
 namespace Modules\User\Models;
 
+use App\Contracts\MailSenderInterface;
+use App\Mail\MailMessage;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -82,6 +84,24 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         $this->addMediaCollection('avatar')
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        app(MailSenderInterface::class)->queue(
+            MailMessage::make(
+                to: $this->email,
+                subject: 'Reset Your Password',
+                view: 'auth::emails.password-reset',
+                data: [
+                    'user'     => $this,
+                    'resetUrl' => url(route('password.reset', [
+                        'token' => $token,
+                        'email' => $this->email,
+                    ], false)),
+                ],
+            )
+        );
     }
 
 }
