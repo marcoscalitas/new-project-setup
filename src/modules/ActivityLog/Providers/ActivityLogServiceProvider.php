@@ -20,5 +20,6 @@ class ActivityLogServiceProvider extends ServiceProvider
         Gate::policy(Activity::class, ActivityLogPolicy::class);
 
         Route::prefix('api/v1')->middleware('api')->group(__DIR__ . '/../Routes/api.php');
+        $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'activitylog');
     }
 }
