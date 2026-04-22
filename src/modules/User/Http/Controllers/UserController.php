@@ -55,7 +55,7 @@ class UserController
             return response()->json(new UserResource($user), 201);
         }
 
-        return redirect()->route('users.index')->with('success', 'User created.');
+        return redirect()->route('users.index')->with('success', __('users.created'));
     }
 
     public function show(int $id): JsonResponse|\Illuminate\View\View
@@ -92,7 +92,7 @@ class UserController
             return response()->json(new UserResource($user));
         }
 
-        return redirect()->route('users.index')->with('success', 'User updated.');
+        return redirect()->route('users.index')->with('success', __('users.updated'));
     }
 
     public function destroy(int $id): JsonResponse|\Illuminate\Http\RedirectResponse
@@ -105,7 +105,7 @@ class UserController
             return response()->json(null, 204);
         }
 
-        return redirect()->route('users.index')->with('success', 'User deleted.');
+        return redirect()->route('users.index')->with('success', __('users.deleted'));
     }
 
     public function uploadAvatar(UploadAvatarRequest $request, int $id): JsonResponse

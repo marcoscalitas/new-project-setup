@@ -46,7 +46,7 @@ class PermissionController
             return response()->json(new PermissionResource($permission), 201);
         }
 
-        return redirect()->route('permissions.index')->with('success', 'Permission created.');
+        return redirect()->route('permissions.index')->with('success', __('permissions.permission_created'));
     }
 
     public function show(int $id): JsonResponse|\Illuminate\View\View
@@ -81,7 +81,7 @@ class PermissionController
             return response()->json(new PermissionResource($permission));
         }
 
-        return redirect()->route('permissions.index')->with('success', 'Permission updated.');
+        return redirect()->route('permissions.index')->with('success', __('permissions.permission_updated'));
     }
 
     public function destroy(int $id): JsonResponse|\Illuminate\Http\RedirectResponse
@@ -94,6 +94,6 @@ class PermissionController
             return response()->json(null, 204);
         }
 
-        return redirect()->route('permissions.index')->with('success', 'Permission deleted.');
+        return redirect()->route('permissions.index')->with('success', __('permissions.permission_deleted'));
     }
 }

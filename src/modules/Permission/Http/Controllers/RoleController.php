@@ -49,7 +49,7 @@ class RoleController
             return response()->json(new RoleResource($role), 201);
         }
 
-        return redirect()->route('roles.index')->with('success', 'Role created.');
+        return redirect()->route('roles.index')->with('success', __('permissions.role_created'));
     }
 
     public function show(int $id): JsonResponse|\Illuminate\View\View
@@ -86,7 +86,7 @@ class RoleController
             return response()->json(new RoleResource($role));
         }
 
-        return redirect()->route('roles.index')->with('success', 'Role updated.');
+        return redirect()->route('roles.index')->with('success', __('permissions.role_updated'));
     }
 
     public function destroy(int $id): JsonResponse|\Illuminate\Http\RedirectResponse
@@ -99,6 +99,6 @@ class RoleController
             return response()->json(null, 204);
         }
 
-        return redirect()->route('roles.index')->with('success', 'Role deleted.');
+        return redirect()->route('roles.index')->with('success', __('permissions.role_deleted'));
     }
 }

@@ -22,7 +22,7 @@ class AuthService
         $user = User::where('email', $credentials['email'])->first();
 
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
-            return ['error' => 'Credenciais inválidas.', 'status' => 401];
+            return ['error' => __('auth.invalid_credentials'), 'status' => 401];
         }
 
         if ($user->hasEnabledTwoFactorAuthentication()) {
@@ -45,34 +45,34 @@ class AuthService
         $userId = Cache::get("2fa_pending:{$pendingToken}");
 
         if (!$userId) {
-            return ['error' => 'Token inválido ou expirado.', 'status' => 422];
+            return ['error' => __('auth.invalid_or_expired_token'), 'status' => 422];
         }
 
         $user = User::find($userId);
 
         if (!$user) {
-            return ['error' => 'Utilizador não encontrado.', 'status' => 422];
+            return ['error' => __('auth.user_not_found'), 'status' => 422];
         }
 
         if ($code) {
             $provider = app(TwoFactorAuthenticationProvider::class);
 
             if (!$provider->verify(decrypt($user->two_factor_secret), $code)) {
-                return ['error' => 'Código inválido.', 'status' => 422];
+                return ['error' => __('auth.invalid_code'), 'status' => 422];
             }
         } elseif ($recoveryCode) {
             $recoveryCodes = json_decode(decrypt($user->two_factor_recovery_codes), true);
             $index = array_search($recoveryCode, $recoveryCodes, true);
 
             if ($index === false) {
-                return ['error' => 'Código de recuperação inválido.', 'status' => 422];
+                return ['error' => __('auth.invalid_recovery_code'), 'status' => 422];
             }
 
             // Invalidate used recovery code
             $recoveryCodes[$index] = Str::random(10) . '-' . Str::random(10);
             $user->forceFill(['two_factor_recovery_codes' => encrypt(json_encode($recoveryCodes))])->save();
         } else {
-            return ['error' => 'Código obrigatório.', 'status' => 422];
+            return ['error' => __('auth.code_required'), 'status' => 422];
         }
 
         Cache::forget("2fa_pending:{$pendingToken}");

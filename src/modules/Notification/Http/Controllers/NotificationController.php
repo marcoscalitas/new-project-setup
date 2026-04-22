@@ -51,10 +51,10 @@ class NotificationController
         $this->notificationService->markAsRead($request->user(), $id);
 
         if (request()->expectsJson()) {
-            return response()->json(['message' => 'Notificação marcada como lida.']);
+            return response()->json(['message' => __('notifications.marked_as_read')]);
         }
 
-        return redirect()->route('notifications.index')->with('success', 'Notification marked as read.');
+        return redirect()->route('notifications.index')->with('success', __('notifications.marked_as_read'));
     }
 
     public function markAllAsRead(Request $request): JsonResponse|\Illuminate\Http\RedirectResponse
@@ -62,10 +62,10 @@ class NotificationController
         $this->notificationService->markAllAsRead($request->user());
 
         if (request()->expectsJson()) {
-            return response()->json(['message' => 'Todas as notificações marcadas como lidas.']);
+            return response()->json(['message' => __('notifications.all_marked_as_read')]);
         }
 
-        return redirect()->route('notifications.index')->with('success', 'All notifications marked as read.');
+        return redirect()->route('notifications.index')->with('success', __('notifications.all_marked_as_read'));
     }
 
     public function destroy(Request $request, string $id): JsonResponse|\Illuminate\Http\RedirectResponse
@@ -76,6 +76,6 @@ class NotificationController
             return response()->json(null, 204);
         }
 
-        return redirect()->route('notifications.index')->with('success', 'Notification deleted.');
+        return redirect()->route('notifications.index')->with('success', __('notifications.deleted'));
     }
 }

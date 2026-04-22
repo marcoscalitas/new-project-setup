@@ -106,7 +106,7 @@ class UserService
 
         if ($adminCount <= 1) {
             throw ValidationException::withMessages([
-                'roles' => 'Cannot remove admin role from the last admin user.',
+                'roles' => __('users.cannot_remove_last_admin_role'),
             ]);
         }
     }
@@ -122,7 +122,7 @@ class UserService
 
         if ($adminCount <= 1) {
             throw ValidationException::withMessages([
-                'user' => 'Cannot delete the last admin user.',
+                'user' => __('users.cannot_delete_last_admin'),
             ]);
         }
     }

@@ -59,7 +59,7 @@ class RoleService
 
         if ($role->name === 'admin') {
             throw ValidationException::withMessages([
-                'role' => 'The admin role cannot be deleted.',
+                'role' => __('permissions.cannot_delete_admin_role'),
             ]);
         }
 

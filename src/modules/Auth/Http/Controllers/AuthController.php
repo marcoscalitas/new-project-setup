@@ -70,7 +70,7 @@ class AuthController
     {
         $this->authService->logout($request->user());
 
-        return response()->json(['message' => 'Sessão encerrada com sucesso.']);
+        return response()->json(['message' => __('auth.logout_success')]);
     }
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
@@ -78,7 +78,7 @@ class AuthController
         $this->authService->forgotPassword($request->input('email'));
 
         // Sempre retorna 200 para evitar enumeração de e-mails (OWASP)
-        return response()->json(['message' => 'Link de recuperação enviado.']);
+        return response()->json(['message' => __('auth.password_reset_link_sent')]);
     }
 
     public function resetPassword(ResetPasswordRequest $request): JsonResponse
@@ -86,18 +86,18 @@ class AuthController
         $status = $this->authService->resetPassword($request->validated());
 
         return $status === Password::PASSWORD_RESET
-            ? response()->json(['message' => 'Senha redefinida com sucesso.'])
-            : response()->json(['message' => 'Token inválido ou expirado.'], 400);
+            ? response()->json(['message' => __('auth.password_reset_success')])
+            : response()->json(['message' => __('auth.invalid_or_expired_token')], 400);
     }
 
     public function resendVerificationEmail(Request $request): JsonResponse
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return response()->json(['message' => 'E-mail já verificado.'], 422);
+            return response()->json(['message' => __('auth.email_already_verified')], 422);
         }
 
         $this->authService->resendVerificationEmail($request->user());
 
-        return response()->json(['message' => 'E-mail de verificação reenviado.']);
+        return response()->json(['message' => __('auth.verification_email_resent')]);
     }
 }
