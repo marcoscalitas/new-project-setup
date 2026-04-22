@@ -105,4 +105,16 @@ USER root
 # bash e ferramentas úteis em desenvolvimento
 RUN apk add --no-cache bash
 
+# Chromium + Node.js + Puppeteer para spatie/browsershot (PDF generation)
+RUN apk add --no-cache \
+    chromium \
+    nodejs \
+    npm \
+    && npm install -g puppeteer --unsafe-perm \
+    && ln -sf /usr/bin/chromium-browser /usr/bin/chromium
+
+ENV CHROME_PATH=/usr/bin/chromium
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
 USER appuser
