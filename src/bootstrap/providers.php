@@ -9,4 +9,5 @@ return [
     Modules\Notification\Providers\NotificationServiceProvider::class,
     Modules\Permission\Providers\PermissionServiceProvider::class,
     Modules\User\Providers\UserServiceProvider::class,
+    Modules\Export\Providers\ExportServiceProvider::class,
 ];
