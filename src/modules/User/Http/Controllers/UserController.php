@@ -5,6 +5,8 @@ namespace Modules\User\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Modules\ActivityLog\Http\Resources\ActivityLogResource;
+use Modules\ActivityLog\Services\ActivityLogService;
 use Modules\User\Http\Requests\StoreUserRequest;
 use Modules\User\Http\Requests\UpdateUserRequest;
 use Modules\User\Http\Requests\UploadAvatarRequest;
@@ -15,7 +17,10 @@ use Modules\Permission\Models\Role;
 
 class UserController
 {
-    public function __construct(private UserService $userService) {}
+    public function __construct(
+        private UserService $userService,
+        private ActivityLogService $activityLogService,
+    ) {}
 
     public function index(Request $request): JsonResponse|\Illuminate\View\View
     {
@@ -124,5 +129,19 @@ class UserController
         $user->clearMediaCollection('avatar');
 
         return response()->json(null, 204);
+    }
+
+    public function activity(Request $request, int $id): JsonResponse
+    {
+        $user = User::findOrFail($id);
+
+        if ($request->user()->id !== $user->id) {
+            Gate::authorize('viewAny', \Spatie\Activitylog\Models\Activity::class);
+        }
+
+        $perPage = min((int) $request->query('per_page', 15), 100);
+        $logs = $this->activityLogService->getForUser($user->id, $perPage);
+
+        return ActivityLogResource::collection($logs)->response();
     }
 }
