@@ -134,14 +134,30 @@ test-feature: ## Run feature tests only
 # Maintenance
 # ============================================
 
-reset: ## Destroy containers, volumes and .env files ⚠️
+reset: ## Destroy containers, volumes, .env files and port registry entry ⚠️
 	@read -p "Tens a certeza? Isto apaga volumes e .env files. [y/N] " ans && [ "$$ans" = "y" ]
 	@if [ -f .env ]; then \
 		$(DC) down -v; \
+		if [ -n "$(PROJECT_NAME)" ] && [ -f "$$HOME/.docker-ports-registry" ]; then \
+			grep -v "^$(PROJECT_NAME):" "$$HOME/.docker-ports-registry" > "$$HOME/.docker-ports-registry.tmp" 2>/dev/null || true; \
+			mv "$$HOME/.docker-ports-registry.tmp" "$$HOME/.docker-ports-registry"; \
+			echo "  Projecto '$(PROJECT_NAME)' removido do registo de portas."; \
+		fi; \
 	else \
 		echo "  .env não existe — a ignorar docker compose down."; \
 	fi
 	rm -f .env src/.env
+
+ports: ## Show all projects and their reserved ports
+	@if [ -f "$$HOME/.docker-ports-registry" ] && [ -s "$$HOME/.docker-ports-registry" ]; then \
+		echo ""; \
+		echo "  Registo global de portas (~/.docker-ports-registry):"; \
+		echo ""; \
+		awk -F: '{printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' "$$HOME/.docker-ports-registry"; \
+		echo ""; \
+	else \
+		echo "  Nenhum projecto registado."; \
+	fi
 
 # ============================================
 # Help
@@ -152,4 +168,4 @@ help: ## Show this help
 
 .PHONY: setup setup-prod up down restart build ps logs logs-nginx logs-queue \
         shell artisan migrate migrate-fresh seed tinker composer npm \
-        cache-clear cache-warm db-dump db-restore test test-unit test-feature reset help
+        cache-clear cache-warm db-dump db-restore test test-unit test-feature reset ports help

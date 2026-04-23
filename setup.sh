@@ -41,6 +41,39 @@ sedi() {
     fi
 }
 
+# --- Registo global de portas (~/.docker-ports-registry) ---
+PORT_REGISTRY="$HOME/.docker-ports-registry"
+
+# Lê as portas reservadas por todos os projetos excepto o actual
+load_reserved_ports() {
+    local current_project=$1
+    if [ ! -f "$PORT_REGISTRY" ]; then
+        RESERVED_PORTS=""
+        return
+    fi
+    RESERVED_PORTS=$(grep -v "^${current_project}:" "$PORT_REGISTRY" 2>/dev/null \
+        | cut -d: -f2- | tr ',' '\n' | grep -E '^[0-9]+$' | tr '\n' ' ')
+}
+
+# Escreve/actualiza a entrada do projecto no registo
+register_project_ports() {
+    local project=$1
+    local ports=$2
+    touch "$PORT_REGISTRY"
+    grep -v "^${project}:" "$PORT_REGISTRY" > "${PORT_REGISTRY}.tmp" 2>/dev/null || true
+    mv "${PORT_REGISTRY}.tmp" "$PORT_REGISTRY"
+    echo "${project}:${ports}" >> "$PORT_REGISTRY"
+}
+
+# Remove o projecto do registo (chamado em make reset)
+unregister_project_ports() {
+    local project=$1
+    if [ -f "$PORT_REGISTRY" ]; then
+        grep -v "^${project}:" "$PORT_REGISTRY" > "${PORT_REGISTRY}.tmp" 2>/dev/null || true
+        mv "${PORT_REGISTRY}.tmp" "$PORT_REGISTRY"
+    fi
+}
+
 # --- Lock contra execução concorrente ---
 if command -v md5sum >/dev/null 2>&1; then
     LOCKFILE="/tmp/setup-$(echo "$(pwd)" | md5sum | cut -d' ' -f1).lock"
@@ -276,12 +309,20 @@ is_port_in_use() {
     return 0 # porta em uso por outro processo
 }
 
+is_port_reserved() {
+    local port=$1
+    for rp in $RESERVED_PORTS; do
+        [ "$port" = "$rp" ] && return 0
+    done
+    return 1
+}
+
 find_free_port() {
     local port=$1
     local max_attempts=50
     local attempt=0
     while [ $attempt -lt $max_attempts ]; do
-        if ! is_port_in_use "$port" "$PROJECT_NAME"; then
+        if ! is_port_reserved "$port" && ! is_port_in_use "$port" "$PROJECT_NAME"; then
             echo "$port"
             return 0
         fi
@@ -294,6 +335,12 @@ find_free_port() {
     done
     return 1
 }
+
+# Carregar portas já reservadas por outros projetos
+load_reserved_ports "$PROJECT_NAME"
+if [ -n "$RESERVED_PORTS" ]; then
+    info "Portas reservadas por outros projetos: $(echo "$RESERVED_PORTS" | tr ' ' ',')"
+fi
 
 PORTS_TO_CHECK="APP_PORT:${APP_PORT:-8080}:Nginx"
 PORTS_TO_CHECK="${PORTS_TO_CHECK} REDIS_PORT:${REDIS_PORT:-6379}:Redis"
@@ -311,7 +358,7 @@ for entry in $PORTS_TO_CHECK; do
     VAR_NAME=$(echo "$entry" | cut -d: -f1)
     PORT_NUM=$(echo "$entry" | cut -d: -f2)
     SERVICE=$(echo "$entry" | cut -d: -f3)
-    if is_port_in_use "$PORT_NUM" "$PROJECT_NAME"; then
+    if is_port_in_use "$PORT_NUM" "$PROJECT_NAME" || is_port_reserved "$PORT_NUM"; then
         NEW_PORT=$(find_free_port "$((PORT_NUM + 1))")
         if [ -z "$NEW_PORT" ]; then
             error "Não foi possível encontrar uma porta livre para ${SERVICE} (a partir de ${PORT_NUM})."
@@ -333,6 +380,14 @@ if [ -n "$REASSIGNED" ]; then
     info "Portas reatribuídas automaticamente:"
     echo -e "$REASSIGNED"
 fi
+
+# Registar portas finais no registo global
+FINAL_PORTS="${APP_PORT},${REDIS_PORT}"
+if ! $PROD; then
+    FINAL_PORTS="${FINAL_PORTS},${VITE_PORT},${MAILPIT_PORT},${MAILPIT_SMTP_PORT},${MINIO_PORT},${MINIO_CONSOLE_PORT}"
+fi
+register_project_ports "$PROJECT_NAME" "$FINAL_PORTS"
+info "Portas do projecto '${PROJECT_NAME}' registadas em $PORT_REGISTRY"
 
 info "Todas as portas estão disponíveis."
 
