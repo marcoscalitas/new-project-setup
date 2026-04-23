@@ -153,7 +153,7 @@ ports: ## Show all projects and their reserved ports
 		echo ""; \
 		echo "  Registo global de portas (~/.docker-ports-registry):"; \
 		echo ""; \
-		awk -F: '{printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' "$$HOME/.docker-ports-registry"; \
+		awk -F: '{printf "  \033[36m%-20s\033[0m %s\n", $$1, $$3}' "$$HOME/.docker-ports-registry"; \
 		echo ""; \
 	else \
 		echo "  Nenhum projecto registado."; \
