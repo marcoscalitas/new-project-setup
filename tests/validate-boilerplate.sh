@@ -725,11 +725,6 @@ else
     fail "hardcoded container names: $CONTAINER_NAMES"
 fi
 
-# Volumes use PROJECT_NAME (no collision between projects)
-if grep -q '${PROJECT_NAME}' docker-compose.yml | head -1 >/dev/null 2>&1; then
-    : # checked via container names
-fi
-
 # Passwords auto-generated (unique per project)
 if grep -q 'urandom.*head.*32' setup.sh; then
     pass "passwords auto-generated from /dev/urandom (32 chars)"
@@ -758,6 +753,87 @@ if grep -q '65535' setup.sh; then
     pass "port upper boundary check (65535)"
 else
     warn "no upper boundary check for ports"
+fi
+
+# --- Global port registry ---
+if grep -q 'docker-ports-registry' setup.sh; then
+    pass "global port registry (~/.docker-ports-registry) referenced"
+else
+    fail "global port registry missing"
+fi
+
+if grep -q 'load_reserved_ports' setup.sh; then
+    pass "load_reserved_ports() function defined"
+else
+    fail "load_reserved_ports() missing"
+fi
+
+if grep -q 'register_project_ports' setup.sh; then
+    pass "register_project_ports() function defined"
+else
+    fail "register_project_ports() missing"
+fi
+
+if grep -q 'unregister_project_ports' setup.sh; then
+    pass "unregister_project_ports() function defined"
+else
+    fail "unregister_project_ports() missing"
+fi
+
+if grep -q 'is_port_reserved' setup.sh; then
+    pass "is_port_reserved() function defined"
+else
+    fail "is_port_reserved() missing"
+fi
+
+# find_free_port uses is_port_reserved (not just is_port_in_use)
+if grep -A5 'find_free_port()' setup.sh | grep -q 'is_port_reserved'; then
+    pass "find_free_port() consults is_port_reserved()"
+else
+    fail "find_free_port() does not use is_port_reserved()"
+fi
+
+# Port check loop also consults is_port_reserved
+if grep -q 'is_port_reserved.*PORT_NUM\|is_port_reserved.*"\$PORT_NUM"' setup.sh; then
+    pass "port conflict loop uses is_port_reserved()"
+else
+    fail "port conflict loop does not consult is_port_reserved()"
+fi
+
+# Ports are registered at end of setup
+if grep -q 'register_project_ports.*FINAL_PORTS\|register_project_ports.*PROJECT_NAME' setup.sh; then
+    pass "setup registers final ports in global registry"
+else
+    fail "setup does not register ports in global registry"
+fi
+
+# make reset removes project from registry
+if grep -A15 'reset:' Makefile | grep -q 'docker-ports-registry'; then
+    pass "make reset removes project from port registry"
+else
+    fail "make reset does not clean up port registry"
+fi
+
+# make ports target exists
+if grep -qE '^ports:' Makefile; then
+    pass "make ports target exists"
+else
+    fail "make ports target missing"
+fi
+
+# make ports reads ~/.docker-ports-registry
+if grep -A10 '^ports:' Makefile | grep -q 'docker-ports-registry'; then
+    pass "make ports reads ~/.docker-ports-registry"
+else
+    fail "make ports does not read registry file"
+fi
+
+# ports is in .PHONY
+PHONY_LINE=$(sed -n '/^\.PHONY/,/[^\\]$/p' Makefile | tr '\n' ' ')
+if echo "$PHONY_LINE" | grep -qw "ports"; then
+    pass "ports target in .PHONY"
+else
+    fail "ports target not in .PHONY"
 fi
 echo ""
 
@@ -2230,6 +2306,205 @@ if grep -q "ShouldQueue" src/app/Console/Commands/MakeModuleCommand.php 2>/dev/n
 else
     fail "MakeModuleCommand: job stub missing ShouldQueue"
 fi
+echo ""
+
+# ==========================================
+# 59. Port registry (unit tests)
+# ==========================================
+echo "▸ Port registry (unit tests)"
+
+_REG_TMPDIR=$(mktemp -d)
+_PORT_REGISTRY="${_REG_TMPDIR}/.docker-ports-registry"
+trap 'rm -rf "$_REG_TMPDIR"' EXIT
+
+# -- functions under test (copied verbatim from setup.sh) --
+_load_reserved_ports() {
+    local current_project=$1
+    if [ ! -f "$_PORT_REGISTRY" ]; then RESERVED_PORTS=""; return; fi
+    RESERVED_PORTS=$(grep -v "^${current_project}:" "$_PORT_REGISTRY" 2>/dev/null \
+        | cut -d: -f2- | tr ',' '\n' | grep -E '^[0-9]+$' | tr '\n' ' ')
+}
+_register_project_ports() {
+    local project=$1 ports=$2
+    touch "$_PORT_REGISTRY"
+    grep -v "^${project}:" "$_PORT_REGISTRY" > "${_PORT_REGISTRY}.tmp" 2>/dev/null || true
+    mv "${_PORT_REGISTRY}.tmp" "$_PORT_REGISTRY"
+    echo "${project}:${ports}" >> "$_PORT_REGISTRY"
+}
+_unregister_project_ports() {
+    local project=$1
+    if [ -f "$_PORT_REGISTRY" ]; then
+        grep -v "^${project}:" "$_PORT_REGISTRY" > "${_PORT_REGISTRY}.tmp" 2>/dev/null || true
+        mv "${_PORT_REGISTRY}.tmp" "$_PORT_REGISTRY"
+    fi
+}
+_is_port_reserved() {
+    local port=$1
+    for rp in $RESERVED_PORTS; do [ "$port" = "$rp" ] && return 0; done
+    return 1
+}
+# stub: never in use by OS — lets find_free_port test only the registry layer
+_is_port_in_use() { return 1; }
+_find_free_port() {
+    local port=$1 max_attempts=50 attempt=0
+    while [ $attempt -lt $max_attempts ]; do
+        if ! _is_port_reserved "$port" && ! _is_port_in_use "$port"; then
+            echo "$port"; return 0
+        fi
+        port=$((port + 1))
+        [ "$port" -gt 65535 ] && return 1
+        attempt=$((attempt + 1))
+    done
+    return 1
+}
+
+# -- assertion helpers (local to this section) --
+_assert_eq() {
+    local label="$1" expected="$2" actual="$3"
+    if [ "$expected" = "$actual" ]; then pass "$label"
+    else fail "$label (expected='$expected' got='$actual')"; fi
+}
+_assert_has()    { echo "$3" | grep -q "$2" && pass "$1" || fail "$1 (missing '$2')"; }
+_assert_hasnt()  { echo "$3" | grep -q "$2" && fail "$1 (unexpected '$2')" || pass "$1"; }
+_assert_true()   { eval "$2" >/dev/null 2>&1 && pass "$1" || fail "$1 (expected true)"; }
+_assert_false()  { eval "$2" >/dev/null 2>&1 && fail "$1 (expected false)" || pass "$1"; }
+
+# 1. register writes to registry
+rm -f "$_PORT_REGISTRY"
+_register_project_ports "alpha" "8080,6379,5173"
+_assert_has "register: creates entry" "alpha:8080,6379,5173" "$(cat "$_PORT_REGISTRY")"
+
+_register_project_ports "beta" "8081,6380"
+_assert_has "register: second project appended" "beta:8081,6380" "$(cat "$_PORT_REGISTRY")"
+_assert_has "register: first project preserved" "alpha:8080,6379,5173" "$(cat "$_PORT_REGISTRY")"
+_assert_eq  "register: exactly 2 lines" "2" "$(wc -l < "$_PORT_REGISTRY")"
+
+# 2. idempotency — re-register replaces, no duplicates
+_register_project_ports "alpha" "9090,7379"
+_assert_eq  "idempotency: no duplicate entry" "2" "$(wc -l < "$_PORT_REGISTRY")"
+_assert_has   "idempotency: updated entry present"  "alpha:9090,7379"       "$(cat "$_PORT_REGISTRY")"
+_assert_hasnt "idempotency: old entry removed"       "alpha:8080,6379,5173"  "$(cat "$_PORT_REGISTRY")"
+
+# 3. load_reserved_ports excludes current project
+rm -f "$_PORT_REGISTRY"
+_register_project_ports "project-a" "8080,6379"
+_register_project_ports "project-b" "8081,6380"
+_register_project_ports "project-c" "8082,6381"
+
+_load_reserved_ports "project-a"
+_assert_hasnt "load: excludes own port 8080"        "8080" "$RESERVED_PORTS"
+_assert_has   "load: includes project-b port 8081"  "8081" "$RESERVED_PORTS"
+_assert_has   "load: includes project-c port 8082"  "8082" "$RESERVED_PORTS"
+
+_load_reserved_ports "project-b"
+_assert_has   "load: project-b sees 8080"           "8080" "$RESERVED_PORTS"
+_assert_hasnt "load: project-b excludes own 8081"   "8081" "$RESERVED_PORTS"
+
+# 4. edge cases: missing/empty registry, only own project
+rm -f "$_PORT_REGISTRY"
+_load_reserved_ports "any"; _assert_eq "load: missing registry → empty" "" "$(echo "$RESERVED_PORTS" | tr -d ' ')"
+touch "$_PORT_REGISTRY"
+_load_reserved_ports "any"; _assert_eq "load: empty registry → empty"   "" "$(echo "$RESERVED_PORTS" | tr -d ' ')"
+_register_project_ports "solo" "8080,6379"
+_load_reserved_ports "solo";  _assert_eq "load: only own project → empty" "" "$(echo "$RESERVED_PORTS" | tr -d ' ')"
+
+# 5. non-numeric entries ignored
+rm -f "$_PORT_REGISTRY"
+printf "other:8080,not-a-port,,9999\n" > "$_PORT_REGISTRY"
+_load_reserved_ports "current"
+_assert_has   "load: valid port 8080 loaded"             "8080"         "$RESERVED_PORTS"
+_assert_hasnt "load: non-numeric ignored"                "not-a-port"   "$RESERVED_PORTS"
+_assert_has   "load: valid port 9999 loaded"             "9999"         "$RESERVED_PORTS"
+
+# 6. unregister
+rm -f "$_PORT_REGISTRY"
+_register_project_ports "alpha" "8080,6379"
+_register_project_ports "beta"  "8081,6380"
+_register_project_ports "gamma" "8082,6381"
+_unregister_project_ports "beta"
+_assert_hasnt "unregister: beta removed"           "beta"  "$(cat "$_PORT_REGISTRY")"
+_assert_has   "unregister: alpha preserved"        "alpha" "$(cat "$_PORT_REGISTRY")"
+_assert_has   "unregister: gamma preserved"        "gamma" "$(cat "$_PORT_REGISTRY")"
+_assert_eq    "unregister: 2 lines remain"         "2"     "$(wc -l < "$_PORT_REGISTRY")"
+_unregister_project_ports "alpha"; _unregister_project_ports "gamma"
+_assert_eq    "unregister: all removed → empty"    ""      "$(grep -v '^$' "$_PORT_REGISTRY" || true)"
+_unregister_project_ports "ghost"; pass "unregister non-existent project: no crash"
+rm -f "$_PORT_REGISTRY"
+_unregister_project_ports "ghost"; pass "unregister missing registry file: no crash"
+
+# 7. is_port_reserved
+RESERVED_PORTS="8080 6379 5173 "
+_assert_true  "is_port_reserved: 8080 in list"      "_is_port_reserved 8080"
+_assert_true  "is_port_reserved: 6379 in list"      "_is_port_reserved 6379"
+_assert_false "is_port_reserved: 9090 not in list"  "_is_port_reserved 9090"
+_assert_false "is_port_reserved: empty string"      "_is_port_reserved ''"
+RESERVED_PORTS=""
+_assert_false "is_port_reserved: empty list"        "_is_port_reserved 8080"
+
+# 8. find_free_port skips reserved ports
+RESERVED_PORTS="8080 8081 8082 "
+_assert_eq "find_free_port: skips 3 reserved → 8083" "8083" "$(_find_free_port 8080)"
+RESERVED_PORTS="9000 9001 9002 9003 9004"
+_assert_eq "find_free_port: skips 5 reserved → 9005" "9005" "$(_find_free_port 9000)"
+RESERVED_PORTS=""
+_assert_eq "find_free_port: no reserved → first port" "4000" "$(_find_free_port 4000)"
+
+# 9. multi-project simulation: 3 projects, no port overlap
+rm -f "$_PORT_REGISTRY"
+RESERVED_PORTS=""
+PA=$(_find_free_port 8080); RA=$(_find_free_port 6379)
+_register_project_ports "project-a" "${PA},${RA}"
+_load_reserved_ports "project-b"
+PB=$(_find_free_port 8080); RB=$(_find_free_port 6379)
+_register_project_ports "project-b" "${PB},${RB}"
+_load_reserved_ports "project-c"
+PC=$(_find_free_port 8080); RC=$(_find_free_port 6379)
+_register_project_ports "project-c" "${PC},${RC}"
+_assert_eq "multi-project: A gets 8080" "8080" "$PA"
+_assert_eq "multi-project: B gets 8081" "8081" "$PB"
+_assert_eq "multi-project: C gets 8082" "8082" "$PC"
+_assert_eq "multi-project: A gets 6379" "6379" "$RA"
+_assert_eq "multi-project: B gets 6380" "6380" "$RB"
+_assert_eq "multi-project: C gets 6381" "6381" "$RC"
+ALL_P="${PA} ${PB} ${PC} ${RA} ${RB} ${RC}"
+UNIQ=$(echo "$ALL_P" | tr ' ' '\n' | sort -u | wc -l | tr -d ' ')
+_assert_eq "multi-project: all 6 ports are unique" "6" "$UNIQ"
+
+# 10. port reuse after project removal
+_unregister_project_ports "project-b"
+_load_reserved_ports "project-d"
+_assert_hasnt "reuse: project-b port 8081 no longer reserved" "8081" "$RESERVED_PORTS"
+_assert_has   "reuse: project-a port 8080 still reserved"     "8080" "$RESERVED_PORTS"
+PD=$(_find_free_port 8080)
+_assert_eq    "reuse: project-d picks up freed port 8081"     "8081" "$PD"
+
+# 11. re-setup updates without stale entries
+rm -f "$_PORT_REGISTRY"
+_register_project_ports "my-app" "8080,6379,5173,8025"
+_register_project_ports "my-app" "8090,6389,5183,8035"
+LINES=$(grep -c "my-app" "$_PORT_REGISTRY")
+_assert_eq    "re-setup: single entry"       "1"    "$LINES"
+_assert_has   "re-setup: new ports present"  "8090" "$(cat "$_PORT_REGISTRY")"
+_assert_hasnt "re-setup: old ports removed"  "8080" "$(cat "$_PORT_REGISTRY")"
+
+# 12. registry format integrity
+rm -f "$_PORT_REGISTRY"
+_register_project_ports "alpha" "8080,6379,5173,8025,1025,9000,9001"
+_register_project_ports "beta"  "8081,6380"
+FORMAT_FAIL=0
+while IFS= read -r line; do
+    echo "$line" | grep -qE '^[a-z0-9_-]+:[0-9]+(,[0-9]+)*$' || FORMAT_FAIL=1
+done < "$_PORT_REGISTRY"
+[ "$FORMAT_FAIL" = "0" ] && pass "registry format: all lines valid" || fail "registry format: malformed line(s)"
+_assert_eq "registry format: exactly 2 lines" "2" "$(wc -l < "$_PORT_REGISTRY")"
+
+# 13. atomic write — no leftover .tmp files
+rm -f "$_PORT_REGISTRY" "${_PORT_REGISTRY}.tmp"
+_register_project_ports "x" "1234"
+_assert_false "atomic write: no .tmp after register"     "[ -f '${_PORT_REGISTRY}.tmp' ]"
+_unregister_project_ports "x"
+_assert_false "atomic write: no .tmp after unregister"   "[ -f '${_PORT_REGISTRY}.tmp' ]"
+
 echo ""
 TOTAL=$((PASS + FAIL + WARN))
 echo "============================================"
