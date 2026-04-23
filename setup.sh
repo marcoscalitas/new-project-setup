@@ -44,25 +44,54 @@ sedi() {
 # --- Registo global de portas (~/.docker-ports-registry) ---
 PORT_REGISTRY="$HOME/.docker-ports-registry"
 
-# Lê as portas reservadas por todos os projetos excepto o actual
+# Lê as portas reservadas por todos os projetos excepto o actual.
+# Remove automaticamente entradas fantasma (pasta ou docker-compose.yml eliminados).
 load_reserved_ports() {
     local current_project=$1
+    local tmp
+    tmp=$(mktemp)
+    RESERVED_PORTS=""
+
     if [ ! -f "$PORT_REGISTRY" ]; then
-        RESERVED_PORTS=""
+        rm -f "$tmp"
         return
     fi
-    RESERVED_PORTS=$(grep -v "^${current_project}:" "$PORT_REGISTRY" 2>/dev/null \
-        | cut -d: -f2- | tr ',' '\n' | grep -E '^[0-9]+$' | tr '\n' ' ')
+
+    while IFS= read -r line || [ -n "$line" ]; do
+        [ -z "$line" ] && continue
+        local proj proj_path ports
+        proj=$(echo "$line" | cut -d: -f1)
+        proj_path=$(echo "$line" | cut -d: -f2)
+        ports=$(echo "$line" | cut -d: -f3)
+
+        # Ignorar entrada do projecto actual (será re-registada no fim do setup)
+        [ "$proj" = "$current_project" ] && continue
+
+        # Remover entradas fantasma cujo docker-compose.yml já não existe
+        if [ ! -f "${proj_path}/docker-compose.yml" ]; then
+            warn "Projecto '${proj}' já não existe — entrada removida do registo."
+            continue
+        fi
+
+        echo "$line" >> "$tmp"
+        RESERVED_PORTS="$RESERVED_PORTS $(echo "$ports" | tr ',' '\n' | grep -E '^[0-9]+$' | tr '\n' ' ')"
+    done < "$PORT_REGISTRY"
+
+    # Preservar entrada do projecto actual caso já existisse
+    grep "^${current_project}:" "$PORT_REGISTRY" >> "$tmp" 2>/dev/null || true
+    mv "$tmp" "$PORT_REGISTRY"
 }
 
-# Escreve/actualiza a entrada do projecto no registo
+# Escreve/actualiza a entrada do projecto no registo (inclui o caminho para validação futura)
 register_project_ports() {
     local project=$1
     local ports=$2
+    local path
+    path=$(pwd)
     touch "$PORT_REGISTRY"
     grep -v "^${project}:" "$PORT_REGISTRY" > "${PORT_REGISTRY}.tmp" 2>/dev/null || true
     mv "${PORT_REGISTRY}.tmp" "$PORT_REGISTRY"
-    echo "${project}:${ports}" >> "$PORT_REGISTRY"
+    echo "${project}:${path}:${ports}" >> "$PORT_REGISTRY"
 }
 
 # Remove o projecto do registo (chamado em make reset)
