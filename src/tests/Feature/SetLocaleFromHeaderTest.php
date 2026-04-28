@@ -19,6 +19,8 @@ class SetLocaleFromHeaderTest extends TestCase
         $this->user = User::factory()->create();
     }
 
+    // == Accept-Language header ==
+
     public function test_defaults_to_pt_when_no_accept_language_header(): void
     {
         Passport::actingAs($this->user);
@@ -73,5 +75,46 @@ class SetLocaleFromHeaderTest extends TestCase
 
         $response->assertOk()
             ->assertJson(['message' => 'Session ended successfully.']);
+    }
+
+    // == locale.switch route ==
+
+    public function test_locale_switch_stores_locale_in_session(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->get(route('locale.switch', 'en'));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('locale', 'en');
+    }
+
+    public function test_locale_switch_stores_pt_in_session(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->get(route('locale.switch', 'pt'));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('locale', 'pt');
+    }
+
+    public function test_locale_switch_ignores_unsupported_locale(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->get(route('locale.switch', 'es'));
+
+        $response->assertRedirect();
+        $response->assertSessionMissing('locale');
+    }
+
+    public function test_session_locale_takes_priority_over_accept_language_header(): void
+    {
+        // Web route with PT Accept-Language header, but session stores 'en'
+        // Session middleware runs on web routes, so $request->hasSession() = true
+        $this->actingAs($this->user)
+            ->withHeader('Accept-Language', 'pt')
+            ->withSession(['locale' => 'en'])
+            ->get(route('home'));
+
+        $this->assertEquals('en', app()->getLocale());
     }
 }

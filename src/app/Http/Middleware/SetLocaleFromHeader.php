@@ -13,12 +13,16 @@ class SetLocaleFromHeader
 
     public function handle(Request $request, Closure $next): Response
     {
-        $header = $request->header('Accept-Language');
-
-        if ($header) {
-            $locale = $request->getPreferredLanguage(self::SUPPORTED) ?? config('app.locale');
-            App::setLocale($locale);
+        if ($request->hasSession() && $request->session()->has('locale')) {
+            $locale = $request->session()->get('locale');
+        } else {
+            $header = $request->header('Accept-Language');
+            $locale = $header
+                ? ($request->getPreferredLanguage(self::SUPPORTED) ?? config('app.locale'))
+                : config('app.locale');
         }
+
+        App::setLocale($locale);
 
         return $next($request);
     }
