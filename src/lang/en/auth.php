@@ -10,6 +10,9 @@ return [
     'logout_success'             => 'Session ended successfully.',
     'password_reset_link_sent'   => 'Password reset link sent.',
     'password_reset_success'     => 'Password reset successfully.',
+    'email_not_verified'         => 'Your email address has not been verified. A new verification link has been sent to your email.',
     'email_already_verified'     => 'Email already verified.',
     'verification_email_resent'  => 'Verification email resent.',
+    'email_activation_sent'      => 'Account not activated. Please check your inbox.',
+    'invalid_verification_link'  => 'This verification link is invalid or has already been used.',
 ];
