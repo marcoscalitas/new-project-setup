@@ -1,0 +1,13 @@
+.message-fade-out {
+    animation: messageFadeOut 4s ease forwards;
+}
+
+@keyframes messageFadeOut {
+    0%   { opacity: 1; }
+    70%  { opacity: 1; }
+    100% { opacity: 0; pointer-events: none; }
+}
+
+.message-fade-out-err {
+    opacity: 1;
+}
