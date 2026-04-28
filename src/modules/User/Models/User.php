@@ -5,6 +5,7 @@ namespace Modules\User\Models;
 use App\Contracts\MailSenderInterface;
 use App\Mail\MailMessage;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -49,6 +50,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'name',
         'email',
         'password',
+        'email_verification_token',
     ];
 
     /**
@@ -84,6 +86,20 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         $this->addMediaCollection('avatar')
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+    }
+
+    public function getEmailForVerification(): string
+    {
+        return $this->email . '|' . ($this->email_verification_token ?? '');
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->withoutTimestamps(function () {
+            $this->update(['email_verification_token' => Str::uuid()->toString()]);
+        });
+
+        parent::sendEmailVerificationNotification();
     }
 
     public function sendPasswordResetNotification($token): void

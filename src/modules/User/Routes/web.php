@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\User\Http\Controllers\UserController;
+use Modules\User\Http\Controllers\ProfileController;
 
 Route::prefix('users')
     ->middleware(['auth', 'verified', 'throttle:60,1'])
@@ -13,4 +14,12 @@ Route::prefix('users')
         Route::get('/{id}/edit',  [UserController::class, 'edit'])->name('users.edit');
         Route::put('/{id}',       [UserController::class, 'update'])->name('users.update');
         Route::delete('/{id}',    [UserController::class, 'destroy'])->name('users.destroy');
+    });
+
+Route::prefix('profile')
+    ->middleware(['auth', 'verified', 'throttle:60,1'])
+    ->group(function () {
+        Route::get('/',                [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/',                [ProfileController::class, 'update'])->name('profile.update');
+        Route::put('/password',        [ProfileController::class, 'updatePassword'])->name('profile.password');
     });

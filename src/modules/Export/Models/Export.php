@@ -2,6 +2,7 @@
 
 namespace Modules\Export\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
@@ -9,6 +10,12 @@ use Modules\User\Models\User;
 
 class Export extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory(): \Modules\Export\Database\Factories\ExportFactory
+    {
+        return \Modules\Export\Database\Factories\ExportFactory::new();
+    }
     protected $fillable = [
         'uuid',
         'user_id',

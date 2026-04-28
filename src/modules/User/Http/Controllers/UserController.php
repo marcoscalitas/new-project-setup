@@ -27,12 +27,13 @@ class UserController
         Gate::authorize('viewAny', User::class);
 
         $perPage = min((int) $request->query('per_page', 15), 100);
-        $users = $this->userService->getAll($perPage);
 
         if ($request->expectsJson()) {
+            $users = $this->userService->getAll($perPage);
             return UserResource::collection($users)->response();
         }
 
+        $users = $this->userService->getAll(null);
         return view('user::users.index', compact('users'));
     }
 

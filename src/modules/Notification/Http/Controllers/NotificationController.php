@@ -14,12 +14,13 @@ class NotificationController
     public function index(Request $request): JsonResponse|\Illuminate\View\View
     {
         $perPage = min((int) $request->query('per_page', 15), 100);
-        $notifications = $this->notificationService->getAll($request->user(), $perPage);
 
         if (request()->expectsJson()) {
+            $notifications = $this->notificationService->getAll($request->user(), $perPage);
             return NotificationResource::collection($notifications)->response();
         }
 
+        $notifications = $this->notificationService->getAll($request->user(), null);
         return view('notification::notifications.index', compact('notifications'));
     }
 

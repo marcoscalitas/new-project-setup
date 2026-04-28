@@ -20,12 +20,13 @@ class PermissionController
         Gate::authorize('viewAny', Permission::class);
 
         $perPage = min((int) $request->query('per_page', 15), 100);
-        $permissions = $this->permissionService->getAll($perPage);
 
         if ($request->expectsJson()) {
+            $permissions = $this->permissionService->getAll($perPage);
             return PermissionResource::collection($permissions)->response();
         }
 
+        $permissions = $this->permissionService->getAll(null);
         return view('permission::permissions.index', compact('permissions'));
     }
 

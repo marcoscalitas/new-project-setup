@@ -24,8 +24,20 @@ class ExportController
 
     public function __construct(private readonly ExportService $exportService) {}
 
-    public function export(ExportRequest $request): JsonResponse|BinaryFileResponse|StreamedResponse|Response
-    // Note: Response covers both Illuminate\Http\Response (PDF) and Symfony responses (Excel)
+    public function index(Request $request): JsonResponse|\Illuminate\View\View
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Use POST /api/v1/exports to request an export.']);
+        }
+
+        $exports = Export::where('user_id', Auth::id())
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return view('export::exports.index', compact('exports'));
+    }
+
+    public function export(ExportRequest $request): JsonResponse|BinaryFileResponse|StreamedResponse|Response|\Illuminate\Http\RedirectResponse
     {
         $module = $request->input('module');
 
@@ -37,12 +49,20 @@ class ExportController
 
         $result = $this->exportService->handle($exporter, $format, $filters);
 
+        if ($request->expectsJson()) {
+            if (is_array($result)) {
+                return response()->json([
+                    'message' => 'Exportação em processamento. Receberás uma notificação quando estiver pronto.',
+                    'uuid'    => $result['uuid'],
+                    'status'  => $result['status'],
+                ], 202);
+            }
+            return $result;
+        }
+
         if (is_array($result)) {
-            return response()->json([
-                'message' => 'Exportação em processamento. Receberás uma notificação quando estiver pronto.',
-                'uuid'    => $result['uuid'],
-                'status'  => $result['status'],
-            ], 202);
+            return redirect()->route('exports.index')
+                ->with('success', __('ui.export_requested'));
         }
 
         return $result;

@@ -79,6 +79,7 @@ class ProcessExportJob implements ShouldQueue
         $pdf = Browsershot::html($html)
             ->format('A4')
             ->margins(10, 10, 10, 10)
+            ->addChromiumArguments(['no-sandbox', 'disable-setuid-sandbox'])
             ->pdf();
 
         Storage::disk('local')->put($path, $pdf);

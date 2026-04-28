@@ -13,24 +13,32 @@ class ActivityLogController
 {
     public function __construct(private ActivityLogService $service) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): JsonResponse|\Illuminate\View\View
     {
         Gate::authorize('viewAny', Activity::class);
 
-        $perPage = min((int) $request->query('per_page', 15), 100);
         $filters = $request->only(['causer_id', 'subject_type', 'log_name', 'date_from', 'date_to']);
 
-        $logs = $this->service->getAll($filters, $perPage);
+        if ($request->expectsJson()) {
+            $perPage = min((int) $request->query('per_page', 15), 100);
+            $logs = $this->service->getAll($filters, $perPage);
+            return ActivityLogResource::collection($logs)->response();
+        }
 
-        return ActivityLogResource::collection($logs)->response();
+        $logs = $this->service->getAll($filters, 50);
+        return view('activitylog::activity-log.index', compact('logs', 'filters'));
     }
 
-    public function show(int $id): JsonResponse
+    public function show(int $id): JsonResponse|\Illuminate\View\View
     {
         $activity = $this->service->findById($id);
 
         Gate::authorize('view', $activity);
 
-        return response()->json(new ActivityLogResource($activity));
+        if (request()->expectsJson()) {
+            return response()->json(new ActivityLogResource($activity));
+        }
+
+        return view('activitylog::activity-log.show', compact('activity'));
     }
 }

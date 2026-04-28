@@ -21,12 +21,13 @@ class RoleController
         Gate::authorize('viewAny', Role::class);
 
         $perPage = min((int) $request->query('per_page', 15), 100);
-        $roles = $this->roleService->getAll($perPage);
 
         if ($request->expectsJson()) {
+            $roles = $this->roleService->getAll($perPage);
             return RoleResource::collection($roles)->response();
         }
 
+        $roles = $this->roleService->getAll(null);
         return view('permission::roles.index', compact('roles'));
     }
 

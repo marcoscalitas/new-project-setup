@@ -61,6 +61,7 @@ class ExportService
             ->format('A4')
             ->landscape(false)
             ->margins(10, 10, 10, 10)
+            ->addChromiumArguments(['no-sandbox', 'disable-setuid-sandbox'])
             ->pdf();
 
         return response($pdf, 200, [

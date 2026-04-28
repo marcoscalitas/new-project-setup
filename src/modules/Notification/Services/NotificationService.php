@@ -9,9 +9,10 @@ use Modules\User\Models\User;
 
 class NotificationService
 {
-    public function getAll(User $user, int $perPage = 15): LengthAwarePaginator
+    public function getAll(User $user, ?int $perPage = 15)
     {
-        return $user->notifications()->paginate($perPage);
+        $query = $user->notifications();
+        return $perPage === null ? $query->get() : $query->paginate($perPage);
     }
 
     public function getUnread(User $user, int $perPage = 15): LengthAwarePaginator
