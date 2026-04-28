@@ -68,8 +68,8 @@ class RoleWebTest extends TestCase
 
     public function test_create_role_with_permissions(): void
     {
-        $p1 = Permission::create(['name' => 'user.list', 'guard_name' => 'web']);
-        $p2 = Permission::create(['name' => 'user.view', 'guard_name' => 'web']);
+        $p1 = Permission::firstOrCreate(['name' => 'user.list', 'guard_name' => 'web']);
+        $p2 = Permission::firstOrCreate(['name' => 'user.view', 'guard_name' => 'web']);
 
         $response = $this->actingAs($this->user)
             ->postJson('/roles', [
