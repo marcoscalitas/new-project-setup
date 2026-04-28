@@ -619,7 +619,7 @@ class MakeModuleCommand extends Command
         $slug = Str::kebab(Str::plural($this->module));
 
         $this->write("Resources/views/{$slug}/index.blade.php", <<<'BLADE'
-        @extends('layouts.app')
+        @extends('admin.layouts.app')
 
         @section('title', '{{ title }}')
 
@@ -669,7 +669,7 @@ class MakeModuleCommand extends Command
         BLADE);
 
         $this->write("Resources/views/{$slug}/show.blade.php", <<<'BLADE'
-        @extends('layouts.app')
+        @extends('admin.layouts.app')
 
         @section('title', '{{ title }} Details')
 
@@ -706,7 +706,7 @@ class MakeModuleCommand extends Command
         BLADE);
 
         $this->write("Resources/views/{$slug}/create.blade.php", <<<'BLADE'
-        @extends('layouts.app')
+        @extends('admin.layouts.app')
 
         @section('title', 'Create {{ title }}')
 
@@ -733,7 +733,7 @@ class MakeModuleCommand extends Command
         BLADE);
 
         $this->write("Resources/views/{$slug}/edit.blade.php", <<<'BLADE'
-        @extends('layouts.app')
+        @extends('admin.layouts.app')
 
         @section('title', 'Edit {{ title }}')
 
