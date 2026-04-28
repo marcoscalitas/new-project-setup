@@ -1,35 +1,42 @@
-@extends('layouts.app')
+@extends('admin.layouts.app')
 
-@section('title', 'Edit ' . $permission->name)
+@section('title', __('ui.edit_permission') . ' — ' . $permission->name)
+@section('page-title', __('ui.edit_permission'))
+
+@section('breadcrumb')
+    <li class="breadcrumb-item"><a href="{{ route('home') }}">{{ __('ui.home') }}</a></li>
+    <li class="breadcrumb-item"><a href="{{ route('permissions.index') }}">{{ __('ui.permissions') }}</a></li>
+    <li class="breadcrumb-item" aria-current="page">{{ __('ui.edit_permission') }} {{ $permission->name }}</li>
+@endsection
 
 @section('content')
-<div class="mb-6">
-    <a href="{{ route('permissions.index') }}" class="text-sm hover:underline underline-offset-4">&larr; Back to permissions</a>
-</div>
+    <div class="grid grid-cols-12 gap-x-6">
+        <div class="col-span-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ __('ui.edit_permission') }} — {{ $permission->name }}</h5>
+                </div>
+                <div class="card-body">
 
-<div class="max-w-2xl">
-    <h1 class="text-2xl font-medium mb-6">Edit {{ $permission->name }}</h1>
+                    <x-admin::form-errors />
 
-    <form method="POST" action="{{ route('permissions.update', $permission->id) }}" class="flex flex-col gap-4">
-        @csrf
-        @method('PUT')
+                    <form method="POST" action="{{ route('permissions.update', $permission->id) }}">
+                        @csrf
+                        @method('PUT')
+                        <div class="grid grid-cols-12 gap-x-6">
+                            <div class="col-span-12 md:col-span-6">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ __('ui.permission_name') }}</label>
+                                    <input type="text" name="name" class="form-control" placeholder="e.g. user.create"
+                                        value="{{ old('name', $permission->name) }}" required />
+                                </div>
+                            </div>
+                            <x-admin::form-buttons :cancel-route="route('permissions.index')" :submit-label="__('ui.update_permission')" />
+                        </div>
+                    </form>
 
-        <div>
-            <label for="name" class="block text-sm font-medium mb-1">Name</label>
-            <input type="text" id="name" name="name" value="{{ old('name', $permission->name) }}" required
-                class="w-full px-3 py-2 rounded-sm border border-[#e3e3e0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
         </div>
-
-        <div class="flex gap-3 mt-2">
-            <button type="submit"
-                class="px-4 py-2 bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A] rounded-sm text-sm font-medium hover:opacity-90 transition-opacity">
-                Update
-            </button>
-            <a href="{{ route('permissions.index') }}"
-                class="px-4 py-2 border border-[#e3e3e0] dark:border-[#3E3E3A] rounded-sm text-sm font-medium hover:bg-[#f5f5f4] dark:hover:bg-[#1C1C1A] transition-colors">
-                Cancel
-            </a>
-        </div>
-    </form>
-</div>
+    </div>
 @endsection

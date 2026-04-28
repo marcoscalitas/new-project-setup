@@ -1,57 +1,79 @@
-@extends('layouts.app')
+@extends('admin.layouts.app')
 
-@section('title', 'Roles')
+@section('title', __('ui.roles'))
+@section('page-title', __('ui.roles'))
+
+@section('breadcrumb')
+    <li class="breadcrumb-item"><a href="{{ route('home') }}">{{ __('ui.home') }}</a></li>
+    <li class="breadcrumb-item" aria-current="page">{{ __('ui.roles') }}</li>
+@endsection
 
 @section('content')
-<div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-medium">Roles</h1>
-    @can('create', \Modules\Permission\Models\Role::class)
-        <a href="{{ route('roles.create') }}"
-            class="px-4 py-2 bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A] rounded-sm text-sm font-medium hover:opacity-90 transition-opacity">
-            New Role
-        </a>
-    @endcan
-</div>
-
-<div class="overflow-hidden rounded-sm border border-[#e3e3e0] dark:border-[#3E3E3A]">
-    <table class="w-full text-sm">
-        <thead class="bg-[#f5f5f4] dark:bg-[#1C1C1A]">
-            <tr>
-                <th class="text-left px-4 py-3 font-medium">Name</th>
-                <th class="text-left px-4 py-3 font-medium">Guard</th>
-                <th class="text-left px-4 py-3 font-medium">Permissions</th>
-                <th class="text-right px-4 py-3 font-medium">Actions</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-[#e3e3e0] dark:divide-[#3E3E3A]">
-            @forelse($roles as $role)
-                <tr>
-                    <td class="px-4 py-3 font-medium">{{ $role->name }}</td>
-                    <td class="px-4 py-3">{{ $role->guard_name }}</td>
-                    <td class="px-4 py-3">
-                        <span class="text-[#706f6c] dark:text-[#A1A09A]">{{ $role->permissions->count() }} permissions</span>
-                    </td>
-                    <td class="px-4 py-3 text-right space-x-2">
-                        <a href="{{ route('roles.show', $role->id) }}" class="hover:underline underline-offset-4">View</a>
-                        @can('update', $role)
-                            <a href="{{ route('roles.edit', $role->id) }}" class="hover:underline underline-offset-4">Edit</a>
-                        @endcan
-                        @can('delete', $role)
-                            <form method="POST" action="{{ route('roles.destroy', $role->id) }}" class="inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 dark:text-red-400 hover:underline underline-offset-4"
-                                    onclick="return confirm('Are you sure?')">Delete</button>
-                            </form>
-                        @endcan
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="4" class="px-4 py-8 text-center text-[#706f6c] dark:text-[#A1A09A]">No roles found.</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
-</div>
+    <div class="grid grid-cols-12 gap-x-6">
+        <div class="col-span-12">
+            <div class="card table-card">
+                <div class="card-header">
+                    <div class="sm:flex items-center justify-between">
+                        <h5 class="mb-3 mb-sm-0">{{ __('ui.roles_list') }}</h5>
+                        <div>
+                            @can('create', \Modules\Permission\Models\Role::class)
+                                <a href="{{ route('roles.create') }}" class="btn btn-primary">{{ __('ui.add_role') }}</a>
+                            @endcan
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body pt-3">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="pc-dt-simple">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>{{ __('ui.name') }}</th>
+                                    <th>{{ __('ui.guard') }}</th>
+                                    <th>{{ __('ui.permissions') }}</th>
+                                    <th>{{ __('ui.action') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($roles as $role)
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td>
+                                            <div class="flex items-center">
+                                                <div class="shrink-0">
+                                                    <div class="w-10 h-10 rounded-full inline-flex items-center justify-center bg-secondary-500/10 text-secondary-500 font-semibold">
+                                                        {{ strtoupper(substr($role->name, 0, 1)) }}
+                                                    </div>
+                                                </div>
+                                                <div class="grow ltr:ml-3 rtl:mr-3">
+                                                    <h6 class="mb-0">{{ $role->name }}</h6>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ $role->guard_name }}</td>
+                                        <td>
+                                            <x-admin::badge color="primary" :label="__('ui.permission_count', ['count' => $role->permissions->count()])" />
+                                        </td>
+                                        <td>
+                                            <x-admin::table-action-buttons
+                                                :show-route="route('roles.show', $role->id)"
+                                                :edit-route="route('roles.edit', $role->id)"
+                                                :delete-route="route('roles.destroy', $role->id)"
+                                                :model="$role"
+                                                :confirm-message="__('ui.confirm_delete_role')"
+                                            />
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <x-admin::empty-row :colspan="5" :message="__('ui.no_roles')" />
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
+
+@include('admin.layouts.partials.datatable-scripts')

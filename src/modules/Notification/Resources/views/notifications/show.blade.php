@@ -1,75 +1,85 @@
-@extends('layouts.app')
+@extends('admin.layouts.app')
 
-@section('title', 'Notification')
+@section('title', __('ui.notification'))
+@section('page-title', __('ui.notification'))
+
+@section('breadcrumb')
+  <li class="breadcrumb-item"><a href="{{ route('home') }}">{{ __('ui.home') }}</a></li>
+  <li class="breadcrumb-item"><a href="{{ route('notifications.index') }}">{{ __('ui.notifications') }}</a></li>
+  <li class="breadcrumb-item" aria-current="page">{{ __('ui.detail') }}</li>
+@endsection
 
 @section('content')
-<div class="mb-6">
-    <a href="{{ route('notifications.index') }}" class="text-sm hover:underline underline-offset-4">&larr; Back to notifications</a>
-</div>
-
-<div class="max-w-2xl">
-    <div class="flex items-center gap-3 mb-6">
-        <h1 class="text-2xl font-medium">Notification</h1>
-        @if($notification->read_at)
-            <span class="inline-block px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-800 text-[#706f6c] dark:text-[#A1A09A]">
-                Read
-            </span>
-        @else
-            <span class="inline-block px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                Unread
-            </span>
-        @endif
-    </div>
-
-    <dl class="divide-y divide-[#e3e3e0] dark:divide-[#3E3E3A]">
-        <div class="py-3 flex justify-between">
-            <dt class="font-medium">Type</dt>
-            <dd>{{ $notification->data['type'] ?? '-' }}</dd>
-        </div>
-        <div class="py-3 flex justify-between">
-            <dt class="font-medium">Message</dt>
-            <dd>{{ $notification->data['message'] ?? '-' }}</dd>
-        </div>
-        @if(!empty($notification->data['metadata']))
-            <div class="py-3">
-                <dt class="font-medium mb-2">Metadata</dt>
-                <dd class="text-sm text-[#706f6c] dark:text-[#A1A09A]">
-                    <pre class="bg-[#f5f5f4] dark:bg-[#1C1C1A] p-3 rounded-sm overflow-x-auto">{{ json_encode($notification->data['metadata'], JSON_PRETTY_PRINT) }}</pre>
-                </dd>
-            </div>
-        @endif
-        <div class="py-3 flex justify-between">
-            <dt class="font-medium">Received at</dt>
-            <dd>{{ $notification->created_at->format('d/m/Y H:i') }}</dd>
-        </div>
-        @if($notification->read_at)
-            <div class="py-3 flex justify-between">
-                <dt class="font-medium">Read at</dt>
-                <dd>{{ $notification->read_at->format('d/m/Y H:i') }}</dd>
-            </div>
-        @endif
-    </dl>
-
-    <div class="mt-6 flex gap-3">
-        @if(!$notification->read_at)
-            <form method="POST" action="{{ route('notifications.read', $notification->id) }}">
+<div class="grid grid-cols-12 gap-x-6">
+  <div class="col-span-12 md:col-span-8">
+    <div class="card">
+      <div class="card-header">
+        <div class="sm:flex items-center justify-between">
+          <h5 class="mb-3 mb-sm-0">{{ __('ui.notification_details') }}</h5>
+          <div>
+            @if(!$notification->read_at)
+              <form method="POST" action="{{ route('notifications.read', $notification->id) }}" class="inline">
                 @csrf
                 @method('PATCH')
-                <button type="submit"
-                    class="px-4 py-2 bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A] rounded-sm text-sm font-medium hover:opacity-90 transition-opacity">
-                    Mark as read
+                <button type="submit" class="btn btn-outline-secondary mr-1">
+                  <i class="ti ti-check mr-1"></i> {{ __('ui.mark_as_read') }}
                 </button>
+              </form>
+            @endif
+            <form method="POST" action="{{ route('notifications.destroy', $notification->id) }}" class="inline"
+              onsubmit="return confirm('{{ __('ui.confirm_delete_notification') }}')">
+              @csrf
+              @method('DELETE')
+              <button type="submit" class="btn btn-outline-danger">
+                <i class="ti ti-trash mr-1"></i> {{ __('ui.delete') }}
+              </button>
             </form>
-        @endif
-        <form method="POST" action="{{ route('notifications.destroy', $notification->id) }}">
-            @csrf
-            @method('DELETE')
-            <button type="submit"
-                class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-sm text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                onclick="return confirm('Are you sure?')">
-                Delete
-            </button>
-        </form>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid grid-cols-12 gap-x-6">
+          <x-admin::readonly-field :label="__('ui.type')" :value="$notification->data['type'] ?? '-'" />
+          <div class="col-span-12 md:col-span-6">
+            <div class="mb-3">
+              <label class="form-label text-muted">{{ __('ui.status') }}</label>
+              <p class="mb-0">
+                @if($notification->read_at)
+                  <x-admin::badge color="secondary" :label="__('ui.read')" />
+                @else
+                  <x-admin::badge color="primary" :label="__('ui.unread')" />
+                @endif
+              </p>
+            </div>
+          </div>
+          <x-admin::readonly-field :label="__('ui.message')" :value="$notification->data['message'] ?? '-'" :span="12" />
+          @if(!empty($notification->data['metadata']))
+            <div class="col-span-12">
+              <div class="mb-3">
+                <label class="form-label text-muted">{{ __('ui.metadata') }}</label>
+                <pre class="form-control text-sm" style="min-height: auto;">{{ json_encode($notification->data['metadata'], JSON_PRETTY_PRINT) }}</pre>
+              </div>
+            </div>
+          @endif
+          <x-admin::readonly-field :label="__('ui.received_at')" :value="$notification->created_at->format('d/m/Y H:i')" />
+          @if($notification->read_at)
+            <x-admin::readonly-field :label="__('ui.read_at')" :value="$notification->read_at->format('d/m/Y H:i')" />
+          @endif
+        </div>
+      </div>
     </div>
+  </div>
+
+  <div class="col-span-12 md:col-span-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <div class="w-20 h-20 rounded-full inline-flex items-center justify-center {{ $notification->read_at ? 'bg-secondary-500/10 text-secondary-500' : 'bg-primary-500/10 text-primary-500' }} text-3xl font-bold mx-auto mb-3">
+          <i class="ti ti-bell text-3xl leading-none"></i>
+        </div>
+        <h5 class="mb-1">{{ __('ui.notification') }}</h5>
+        <p class="text-muted mb-0">{{ $notification->created_at->diffForHumans() }}</p>
+      </div>
+    </div>
+  </div>
 </div>
 @endsection

@@ -1,52 +1,68 @@
-@extends('layouts.app')
+@extends('admin.layouts.app')
 
 @section('title', $role->name)
+@section('page-title', $role->name)
+
+@section('breadcrumb')
+    <li class="breadcrumb-item"><a href="{{ route('home') }}">{{ __('ui.home') }}</a></li>
+    <li class="breadcrumb-item"><a href="{{ route('roles.index') }}">{{ __('ui.roles') }}</a></li>
+    <li class="breadcrumb-item" aria-current="page">{{ $role->name }}</li>
+@endsection
 
 @section('content')
-<div class="mb-6">
-    <a href="{{ route('roles.index') }}" class="text-sm hover:underline underline-offset-4">&larr; Back to roles</a>
-</div>
-
-<div class="max-w-2xl">
-    <h1 class="text-2xl font-medium mb-6">{{ $role->name }}</h1>
-
-    <dl class="divide-y divide-[#e3e3e0] dark:divide-[#3E3E3A]">
-        <div class="py-3 flex justify-between">
-            <dt class="font-medium">Guard</dt>
-            <dd>{{ $role->guard_name }}</dd>
+    <div class="grid grid-cols-12 gap-x-6">
+        <div class="col-span-12 md:col-span-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="sm:flex items-center justify-between">
+                        <h5 class="mb-3 mb-sm-0">{{ __('ui.role_details') }}</h5>
+                        <div>
+                            @can('update', $role)
+                                <a href="{{ route('roles.edit', $role->id) }}" class="btn btn-outline-secondary mr-1">
+                                    <i class="ti ti-edit mr-1"></i> {{ __('ui.edit') }}
+                                </a>
+                            @endcan
+                            <x-admin::delete-form
+                                :model="$role"
+                                :delete-route="route('roles.destroy', $role->id)"
+                                :confirm-message="__('ui.confirm_delete_role')"
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="grid grid-cols-12 gap-x-6">
+                        <x-admin::readonly-field :label="__('ui.name')"  :value="$role->name" />
+                        <x-admin::readonly-field :label="__('ui.guard')" :value="$role->guard_name" />
+                        <div class="col-span-12">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">{{ __('ui.permissions') }}</label>
+                                <div class="mt-1">
+                                    @forelse($role->permissions as $permission)
+                                        <x-admin::badge color="primary" :label="$permission->name" class="mr-1 mb-1" />
+                                    @empty
+                                        <span class="text-muted">{{ __('ui.no_permissions_assigned') }}</span>
+                                    @endforelse
+                                </div>
+                            </div>
+                        </div>
+                        <x-admin::readonly-field :label="__('ui.created_at')" :value="$role->created_at->format('d/m/Y H:i')" />
+                        <x-admin::readonly-field :label="__('ui.updated_at')" :value="$role->updated_at->format('d/m/Y H:i')" />
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="py-3">
-            <dt class="font-medium mb-2">Permissions</dt>
-            <dd class="flex flex-wrap gap-2">
-                @forelse($role->permissions as $permission)
-                    <span class="inline-block px-2 py-0.5 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
-                        {{ $permission->name }}
-                    </span>
-                @empty
-                    <span class="text-[#706f6c] dark:text-[#A1A09A]">No permissions</span>
-                @endforelse
-            </dd>
-        </div>
-    </dl>
 
-    <div class="mt-6 flex gap-3">
-        @can('update', $role)
-            <a href="{{ route('roles.edit', $role->id) }}"
-                class="px-4 py-2 bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A] rounded-sm text-sm font-medium hover:opacity-90 transition-opacity">
-                Edit
-            </a>
-        @endcan
-        @can('delete', $role)
-            <form method="POST" action="{{ route('roles.destroy', $role->id) }}">
-                @csrf
-                @method('DELETE')
-                <button type="submit"
-                    class="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-sm text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    onclick="return confirm('Are you sure?')">
-                    Delete
-                </button>
-            </form>
-        @endcan
+        <div class="col-span-12 md:col-span-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="w-20 h-20 rounded-full inline-flex items-center justify-center bg-secondary-500/10 text-secondary-500 text-3xl font-bold mx-auto mb-3">
+                        {{ strtoupper(substr($role->name, 0, 1)) }}
+                    </div>
+                    <h5 class="mb-1">{{ $role->name }}</h5>
+                    <p class="text-muted mb-0">{{ __('ui.permission_count', ['count' => $role->permissions->count()]) }}</p>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
 @endsection
