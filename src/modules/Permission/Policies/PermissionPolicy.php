@@ -9,26 +9,26 @@ class PermissionPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('permission.list');
+        return $user->checkPermissionTo('permission.list');
     }
 
     public function view(User $user, Permission $permission): bool
     {
-        return $user->hasPermissionTo('permission.view');
+        return $user->checkPermissionTo('permission.view');
     }
 
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('permission.create');
+        return $user->checkPermissionTo('permission.create');
     }
 
     public function update(User $user, Permission $permission): bool
     {
-        return $user->hasPermissionTo('permission.update');
+        return $user->checkPermissionTo('permission.update');
     }
 
     public function delete(User $user, Permission $permission): bool
     {
-        return $user->hasPermissionTo('permission.delete');
+        return $user->checkPermissionTo('permission.delete');
     }
 }

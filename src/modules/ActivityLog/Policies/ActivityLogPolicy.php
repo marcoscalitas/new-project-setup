@@ -9,12 +9,12 @@ class ActivityLogPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('log.list');
+        return $user->checkPermissionTo('log.list');
     }
 
     public function view(User $user, Activity $activity): bool
     {
-        if ($user->hasPermissionTo('log.view')) {
+        if ($user->checkPermissionTo('log.view')) {
             return true;
         }
 

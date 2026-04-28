@@ -14,9 +14,10 @@ class PermissionService
         return auth('api')->check() ? 'api' : 'web';
     }
 
-    public function getAll(int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getAll(?int $perPage = 15)
     {
-        return Permission::paginate($perPage);
+        $query = Permission::query();
+        return $perPage === null ? $query->get() : $query->paginate($perPage);
     }
 
     public function findById(int $id): Permission

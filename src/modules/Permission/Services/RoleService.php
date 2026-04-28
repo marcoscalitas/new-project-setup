@@ -15,9 +15,10 @@ class RoleService
         return auth('api')->check() ? 'api' : 'web';
     }
 
-    public function getAll(int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getAll(?int $perPage = 15)
     {
-        return Role::with('permissions')->paginate($perPage);
+        $query = Role::with('permissions');
+        return $perPage === null ? $query->get() : $query->paginate($perPage);
     }
 
     public function findById(int $id): Role

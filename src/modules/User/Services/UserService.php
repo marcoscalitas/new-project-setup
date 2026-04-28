@@ -13,9 +13,10 @@ use Modules\Permission\Models\Role;
 
 class UserService
 {
-    public function getAll(int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getAll(?int $perPage = 15)
     {
-        return User::with('roles')->paginate($perPage);
+        $query = User::with('roles');
+        return $perPage === null ? $query->get() : $query->paginate($perPage);
     }
 
     public function findById(int $id): User

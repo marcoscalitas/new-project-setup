@@ -9,26 +9,26 @@ class RolePolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('role.list');
+        return $user->checkPermissionTo('role.list');
     }
 
     public function view(User $user, Role $role): bool
     {
-        return $user->hasPermissionTo('role.view');
+        return $user->checkPermissionTo('role.view');
     }
 
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('role.create');
+        return $user->checkPermissionTo('role.create');
     }
 
     public function update(User $user, Role $role): bool
     {
-        return $user->hasPermissionTo('role.update');
+        return $user->checkPermissionTo('role.update');
     }
 
     public function delete(User $user, Role $role): bool
     {
-        return $user->hasPermissionTo('role.delete');
+        return $user->checkPermissionTo('role.delete');
     }
 }
