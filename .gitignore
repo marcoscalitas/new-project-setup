@@ -13,6 +13,7 @@ src/vendor/
 src/node_modules/
 src/storage/*.key
 src/.phpunit.result.cache
+src/.vite/
 src/ableproadmin/
 
 # --- IDEs ---
