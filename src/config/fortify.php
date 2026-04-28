@@ -144,7 +144,7 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Features::registration(), // Registo público desativado — utilizadores são criados pelo admin
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::updateProfileInformation(),

@@ -17,7 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->append(\App\Http\Middleware\SetLocaleFromHeader::class);
+        // Registered per-group so web routes run AFTER StartSession (session readable)
+        // and api routes still get Accept-Language negotiation (no session involved)
+        $middleware->appendToGroup('web', \App\Http\Middleware\SetLocaleFromHeader::class);
+        $middleware->appendToGroup('api', \App\Http\Middleware\SetLocaleFromHeader::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
 

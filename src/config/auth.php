@@ -107,6 +107,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Email Verification
+    |--------------------------------------------------------------------------
+    |
+    | expire: minutes until the signed verification URL becomes invalid.
+    | throttle: seconds a user must wait before requesting another link.
+    |
+    */
+
+    'verification' => [
+        'expire'   => env('AUTH_VERIFICATION_EXPIRE', 60),
+        'throttle' => env('AUTH_VERIFICATION_THROTTLE', 60),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Password Confirmation Timeout
     |--------------------------------------------------------------------------
     |
