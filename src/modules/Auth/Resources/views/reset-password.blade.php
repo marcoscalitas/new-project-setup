@@ -1,36 +1,72 @@
-@extends('layouts.guest')
+@extends('admin.layouts.guest')
 
-@section('title', 'Reset Password')
+@section('title', __('ui.reset_password'))
 
 @section('content')
-        <h1 class="text-2xl font-medium mb-6">Reset Password</h1>
+    <div class="auth-main relative">
+        <div class="auth-wrapper v1 flex items-center w-full h-full min-h-screen">
+            <div
+                class="auth-form flex items-center justify-center grow flex-col min-h-screen bg-cover relative p-6 bg-[url('../images/authentication/img-auth-bg.jpg')] dark:bg-none dark:bg-themedark-bodybg">
+                <div class="card sm:my-12 w-full max-w-[480px] shadow-none">
+                    <div class="card-body !p-10">
 
-        <form method="POST" action="{{ route('password.update') }}" class="flex flex-col gap-4">
-            @csrf
+                        @include('admin.layouts.partials.auth-brand')
 
-            <input type="hidden" name="token" value="{{ $token }}">
+                        <div class="mb-5">
+                            <h3 class="font-semibold mb-1">{{ __('ui.reset_password') }}</h3>
+                            <p class="text-muted text-sm">{{ __('ui.choose_new_password') }}</p>
+                        </div>
 
-            <div>
-                <label for="email" class="block text-sm font-medium mb-1">Email</label>
-                <input type="email" id="email" name="email" value="{{ $email ?? old('email') }}" required
-                    class="w-full px-3 py-2 rounded-sm border border-[#e3e3e0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        @if ($errors->any())
+                            <div
+                                class="mb-4 p-3 rounded bg-danger-500/10 border border-danger-500/20 text-sm text-danger-500">
+                                @foreach ($errors->all() as $error)
+                                    <div>{{ $error }}</div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        <form method="POST" action="{{ route('password.update') }}">
+                            @csrf
+                            <input type="hidden" name="token" value="{{ $token }}" />
+                            <input type="hidden" name="email" value="{{ $email ?? old('email') }}" />
+                            <div class="mb-4">
+                                <label class="form-label" for="rp_password">
+                                    {{ __('ui.password') }} <span class="text-danger-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="password" name="password" id="rp_password" class="form-control pr-10"
+                                        placeholder="{{ __('ui.password') }}" required autofocus />
+                                    <button type="button" onclick="togglePassword('rp_password')"
+                                        style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%)"
+                                        class="text-secondary-500 hover:text-primary-500">
+                                        <i class="ti ti-eye text-lg" id="rp_password-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label" for="rp_password_confirm">
+                                    {{ __('ui.confirm_password_label') }} <span class="text-danger-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="password" name="password_confirmation" id="rp_password_confirm"
+                                        class="form-control pr-10"
+                                        placeholder="{{ __('ui.confirm_password_label') }}" required />
+                                    <button type="button" onclick="togglePassword('rp_password_confirm')"
+                                        style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%)"
+                                        class="text-secondary-500 hover:text-primary-500">
+                                        <i class="ti ti-eye text-lg" id="rp_password_confirm-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="grid mt-2">
+                                <button type="submit" class="btn btn-primary">{{ __('ui.update_password') }}</button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
             </div>
-
-            <div>
-                <label for="password" class="block text-sm font-medium mb-1">New Password</label>
-                <input type="password" id="password" name="password" required autofocus
-                    class="w-full px-3 py-2 rounded-sm border border-[#e3e3e0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-
-            <div>
-                <label for="password_confirmation" class="block text-sm font-medium mb-1">Confirm New Password</label>
-                <input type="password" id="password_confirmation" name="password_confirmation" required
-                    class="w-full px-3 py-2 rounded-sm border border-[#e3e3e0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-
-            <button type="submit"
-                class="w-full py-2 px-4 bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A] rounded-sm font-medium hover:opacity-90 transition-opacity">
-                Reset Password
-            </button>
-        </form>
+        </div>
+    </div>
 @endsection

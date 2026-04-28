@@ -9,10 +9,14 @@ use Modules\Auth\Actions\UpdateUserProfileInformation;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Fortify;
+use Modules\User\Models\User;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -29,6 +33,29 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Fortify::authenticateUsing(function (Request $request) {
+            $user = User::where('email', $request->email)->first();
+
+            if (!$user || !Hash::check($request->password, $user->password)) {
+                return null;
+            }
+
+            if (!$user->hasVerifiedEmail()) {
+                // Rate-limit resends to once every 2 minutes per user
+                $cacheKey = 'verify_resend_login:' . $user->id;
+                if (!Cache::has($cacheKey)) {
+                    $user->sendEmailVerificationNotification();
+                    Cache::put($cacheKey, true, now()->addMinutes(2));
+                }
+
+                throw ValidationException::withMessages([
+                    'activation' => [__('auth.email_activation_sent')],
+                ]);
+            }
+
+            return $user;
+        });
+
         Fortify::loginView(fn () => view('auth::login'));
         Fortify::registerView(fn () => view('auth::register'));
         Fortify::requestPasswordResetLinkView(fn () => view('auth::forgot-password'));
@@ -55,6 +82,11 @@ class FortifyServiceProvider extends ServiceProvider
 
         RateLimiter::for('two-factor', function (Request $request) {
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
+        });
+
+        RateLimiter::for('verification.send', function (Request $request) {
+            $throttleSeconds = config('auth.verification.throttle', 60);
+            return Limit::perMinutes((int) ceil($throttleSeconds / 60), 1)->by($request->user()?->id ?: $request->ip());
         });
     }
 }

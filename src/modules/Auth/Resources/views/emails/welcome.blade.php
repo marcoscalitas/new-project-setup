@@ -1,4 +1,4 @@
-@extends('emails.layout')
+@extends('auth::emails.layout')
 
 @section('title', 'Welcome to ' . config('app.name'))
 

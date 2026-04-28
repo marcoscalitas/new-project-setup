@@ -25,6 +25,10 @@ class AuthService
             return ['error' => __('auth.invalid_credentials'), 'status' => 401];
         }
 
+        if (!$user->hasVerifiedEmail()) {
+            return ['error' => __('auth.email_not_verified'), 'status' => 422];
+        }
+
         if ($user->hasEnabledTwoFactorAuthentication()) {
             $pendingToken = Str::uuid()->toString();
             Cache::put("2fa_pending:{$pendingToken}", $user->id, now()->addMinutes(5));
