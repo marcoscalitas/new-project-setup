@@ -54,38 +54,6 @@
         </a>
     </li>
 @endcan
-<li class="pc-item {{ request()->routeIs('notifications.*') ? 'active' : '' }}">
-    <a href="{{ route('notifications.index') }}" class="pc-link">
-        <span class="pc-micon">
-            <svg class="pc-icon">
-                <use xlink:href="#custom-notification"></use>
-            </svg>
-        </span>
-        <span class="pc-mtext">{{ __('ui.notifications') }}</span>
-    </a>
-</li>
-@can('viewAny', \Spatie\Activitylog\Models\Activity::class)
-    <li class="pc-item {{ request()->routeIs('activity-log.*') ? 'active' : '' }}">
-        <a href="{{ route('activity-log.index') }}" class="pc-link">
-            <span class="pc-micon">
-                <svg class="pc-icon">
-                    <use xlink:href="#custom-data"></use>
-                </svg>
-            </span>
-            <span class="pc-mtext">{{ __('ui.activity_log') }}</span>
-        </a>
-    </li>
-@endcan
-<li class="pc-item {{ request()->routeIs('exports.*') ? 'active' : '' }}">
-    <a href="{{ route('exports.index') }}" class="pc-link">
-        <span class="pc-micon">
-            <svg class="pc-icon">
-                <use xlink:href="#custom-document-download"></use>
-            </svg>
-        </span>
-        <span class="pc-mtext">{{ __('ui.exports') }}</span>
-    </a>
-</li>
 
 <li class="pc-item pc-caption">
     <label>{{ __('ui.account') }}</label>

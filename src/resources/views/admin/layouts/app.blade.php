@@ -243,7 +243,7 @@
                                 @endforelse
                             </div>
                             <div class="text-center py-2">
-                                <a href="{{ route('notifications.index') }}"
+                                <a href="/api/v1/notifications"
                                     class="text-primary-500 hover:text-primary-600">
                                     {{ __('ui.view_all_notifications') }}
                                 </a>
