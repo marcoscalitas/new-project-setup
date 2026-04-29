@@ -10,44 +10,33 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaController
 {
-    public function index(Request $request): JsonResponse|\Illuminate\View\View
+    public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Media::class);
 
         $perPage = min((int) $request->query('per_page', 15), 100);
         $media   = Media::orderByDesc('created_at')->paginate($perPage);
 
-        if ($request->expectsJson()) {
-            return MediaResource::collection($media)->response();
-        }
-
-        return view('media::media.index', compact('media'));
+        return MediaResource::collection($media)->response();
     }
 
-    public function show(Request $request, int $id): JsonResponse|\Illuminate\View\View
+    public function show(int $id): JsonResponse
     {
-        Gate::authorize('view', Media::class);
-
         $media = Media::findOrFail($id);
 
-        if ($request->expectsJson()) {
-            return (new MediaResource($media))->response();
-        }
+        Gate::authorize('view', $media);
 
-        return view('media::media.show', compact('media'));
+        return new MediaResource($media)->response();
     }
 
-    public function destroy(Request $request, int $id): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function destroy(int $id): JsonResponse
     {
-        Gate::authorize('delete', Media::class);
-
         $media = Media::findOrFail($id);
+
+        Gate::authorize('delete', $media);
+
         $media->delete();
 
-        if ($request->expectsJson()) {
-            return response()->json(null, 204);
-        }
-
-        return redirect()->route('media.index')->with('success', __('ui.media_deleted'));
+        return response()->json(null, 204);
     }
 }

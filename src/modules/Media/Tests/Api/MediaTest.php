@@ -39,7 +39,7 @@ class MediaTest extends TestCase
 
         $this->admin = User::factory()->create();
         $this->adminToken = $this->admin->createToken('test')->accessToken;
-        $this->grantPermissions($this->admin, ['media.list', 'media.delete']);
+        $this->grantPermissions($this->admin, ['media.list', 'media.view', 'media.delete']);
 
         $this->regular = User::factory()->create();
         $this->regularToken = $this->regular->createToken('test')->accessToken;
