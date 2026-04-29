@@ -3,18 +3,15 @@
 namespace Modules\Permission\Http\Resources;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Core\Http\Resources\BaseResource;
 
-class RoleResource extends JsonResource
+class RoleResource extends BaseResource
 {
     public function toArray(Request $request): array
     {
-        return [
-            'id'          => $this->id,
+        return array_merge($this->base(), [
             'name'        => $this->name,
             'permissions' => PermissionResource::collection($this->whenLoaded('permissions')),
-            'created_at'  => $this->created_at,
-            'updated_at'  => $this->updated_at,
-        ];
+        ]);
     }
 }

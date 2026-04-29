@@ -3,20 +3,18 @@
 namespace Modules\Media\Http\Resources;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Core\Http\Resources\BaseResource;
 
-class MediaResource extends JsonResource
+class MediaResource extends BaseResource
 {
     public function toArray(Request $request): array
     {
-        return [
-            'id'         => $this->id,
+        return array_merge($this->base(), [
             'name'       => $this->name,
             'file_name'  => $this->file_name,
             'mime_type'  => $this->mime_type,
             'size'       => $this->size,
             'collection' => $this->collection_name,
-            'created_at' => $this->created_at,
-        ];
+        ]);
     }
 }
