@@ -2,32 +2,23 @@
 
 namespace Modules\User\Policies;
 
+use Modules\Core\Policies\BasePolicy;
 use Modules\User\Models\User;
 
-class UserPolicy
+class UserPolicy extends BasePolicy
 {
-    public function viewAny(User $user): bool
+    protected function permissionPrefix(): string
     {
-        return $user->checkPermissionTo('user.list');
+        return 'user';
     }
 
-    public function view(User $user, User $model): bool
+    public function view(User $user, mixed $model): bool
     {
-        return $user->id === $model->id || $user->checkPermissionTo('user.view');
+        return $user->id === $model->id || parent::view($user, $model);
     }
 
-    public function create(User $user): bool
+    public function update(User $user, mixed $model): bool
     {
-        return $user->checkPermissionTo('user.create');
-    }
-
-    public function update(User $user, User $model): bool
-    {
-        return $user->id === $model->id || $user->checkPermissionTo('user.update');
-    }
-
-    public function delete(User $user, User $model): bool
-    {
-        return $user->checkPermissionTo('user.delete');
+        return $user->id === $model->id || parent::update($user, $model);
     }
 }

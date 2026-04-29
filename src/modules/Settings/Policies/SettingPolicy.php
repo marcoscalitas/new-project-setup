@@ -2,27 +2,31 @@
 
 namespace Modules\Settings\Policies;
 
+use Modules\Core\Policies\BasePolicy;
 use Modules\User\Models\User;
 
-class SettingPolicy
+class SettingPolicy extends BasePolicy
 {
-    public function viewAny(User $user): bool
+    protected function permissionPrefix(): string
     {
-        return $user->hasPermissionTo('setting.list');
+        return 'setting';
     }
 
-    public function view(User $user): bool
+    // Settings are managed by key — actions are authorized against the class,
+    // not a model instance, so these overrides make $model optional.
+
+    public function view(User $user, mixed $model = null): bool
     {
-        return $user->hasPermissionTo('setting.view');
+        return $user->checkPermissionTo('setting.view');
     }
 
-    public function update(User $user): bool
+    public function update(User $user, mixed $model = null): bool
     {
-        return $user->hasPermissionTo('setting.update');
+        return $user->checkPermissionTo('setting.update');
     }
 
-    public function delete(User $user): bool
+    public function delete(User $user, mixed $model = null): bool
     {
-        return $user->hasPermissionTo('setting.delete');
+        return $user->checkPermissionTo('setting.delete');
     }
 }

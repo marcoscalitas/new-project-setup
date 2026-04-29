@@ -2,22 +2,19 @@
 
 namespace Modules\ActivityLog\Policies;
 
+use Modules\Core\Policies\BasePolicy;
 use Modules\User\Models\User;
 use Spatie\Activitylog\Models\Activity;
 
-class ActivityLogPolicy
+class ActivityLogPolicy extends BasePolicy
 {
-    public function viewAny(User $user): bool
+    protected function permissionPrefix(): string
     {
-        return $user->checkPermissionTo('log.list');
+        return 'log';
     }
 
-    public function view(User $user, Activity $activity): bool
+    public function view(User $user, mixed $model): bool
     {
-        if ($user->checkPermissionTo('log.view')) {
-            return true;
-        }
-
-        return $user->id === $activity->causer_id;
+        return parent::view($user, $model) || $user->id === $model->causer_id;
     }
 }

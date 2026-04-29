@@ -2,22 +2,12 @@
 
 namespace Modules\Media\Policies;
 
-use Modules\User\Models\User;
+use Modules\Core\Policies\BasePolicy;
 
-class MediaPolicy
+class MediaPolicy extends BasePolicy
 {
-    public function viewAny(User $user): bool
+    protected function permissionPrefix(): string
     {
-        return $user->hasPermissionTo('media.list');
-    }
-
-    public function view(User $user): bool
-    {
-        return $user->hasPermissionTo('media.list');
-    }
-
-    public function delete(User $user): bool
-    {
-        return $user->hasPermissionTo('media.delete');
+        return 'media';
     }
 }
