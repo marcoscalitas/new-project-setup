@@ -11,72 +11,47 @@ class NotificationController
 {
     public function __construct(private NotificationService $notificationService) {}
 
-    public function index(Request $request): JsonResponse|\Illuminate\View\View
+    public function index(Request $request): JsonResponse
     {
-        $perPage = min((int) $request->query('per_page', 15), 100);
+        $perPage       = min((int) $request->query('per_page', 15), 100);
+        $notifications = $this->notificationService->getAll($request->user(), $perPage);
 
-        if (request()->expectsJson()) {
-            $notifications = $this->notificationService->getAll($request->user(), $perPage);
-            return NotificationResource::collection($notifications)->response();
-        }
-
-        $notifications = $this->notificationService->getAll($request->user(), null);
-        return view('notification::notifications.index', compact('notifications'));
+        return NotificationResource::collection($notifications)->response();
     }
 
-    public function unread(Request $request): JsonResponse|\Illuminate\View\View
+    public function unread(Request $request): JsonResponse
     {
-        $perPage = min((int) $request->query('per_page', 15), 100);
+        $perPage       = min((int) $request->query('per_page', 15), 100);
         $notifications = $this->notificationService->getUnread($request->user(), $perPage);
 
-        if (request()->expectsJson()) {
-            return NotificationResource::collection($notifications)->response();
-        }
-
-        return view('notification::notifications.index', compact('notifications'));
+        return NotificationResource::collection($notifications)->response();
     }
 
-    public function show(Request $request, string $id): JsonResponse|\Illuminate\View\View
+    public function show(Request $request, string $id): JsonResponse
     {
         $notification = $this->notificationService->findById($request->user(), $id);
 
-        if (request()->expectsJson()) {
-            return response()->json(new NotificationResource($notification));
-        }
-
-        return view('notification::notifications.show', compact('notification'));
+        return response()->json(new NotificationResource($notification));
     }
 
-    public function markAsRead(Request $request, string $id): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function markAsRead(Request $request, string $id): JsonResponse
     {
         $this->notificationService->markAsRead($request->user(), $id);
 
-        if (request()->expectsJson()) {
-            return response()->json(['message' => __('notifications.marked_as_read')]);
-        }
-
-        return redirect()->route('notifications.index')->with('success', __('notifications.marked_as_read'));
+        return response()->json(['message' => __('notifications.marked_as_read')]);
     }
 
-    public function markAllAsRead(Request $request): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function markAllAsRead(Request $request): JsonResponse
     {
         $this->notificationService->markAllAsRead($request->user());
 
-        if (request()->expectsJson()) {
-            return response()->json(['message' => __('notifications.all_marked_as_read')]);
-        }
-
-        return redirect()->route('notifications.index')->with('success', __('notifications.all_marked_as_read'));
+        return response()->json(['message' => __('notifications.all_marked_as_read')]);
     }
 
-    public function destroy(Request $request, string $id): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
         $this->notificationService->delete($request->user(), $id);
 
-        if (request()->expectsJson()) {
-            return response()->json(null, 204);
-        }
-
-        return redirect()->route('notifications.index')->with('success', __('notifications.deleted'));
+        return response()->json(null, 204);
     }
 }
