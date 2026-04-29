@@ -244,11 +244,9 @@ class MakeModuleCommandTest extends TestCase
 
         $content = file_get_contents("{$this->modulePath}/Policies/DummyPolicy.php");
 
-        $this->assertStringContainsString("'dummy.list'", $content);
-        $this->assertStringContainsString("'dummy.view'", $content);
-        $this->assertStringContainsString("'dummy.create'", $content);
-        $this->assertStringContainsString("'dummy.update'", $content);
-        $this->assertStringContainsString("'dummy.delete'", $content);
+        // Policy extends BasePolicy; only the prefix is declared here
+        $this->assertStringContainsString('extends BasePolicy', $content);
+        $this->assertStringContainsString("return 'dummy'", $content);
     }
 
     public function test_routes_use_plural_kebab_slug(): void
@@ -280,8 +278,9 @@ class MakeModuleCommandTest extends TestCase
 
         $content = file_get_contents(base_path('modules/DummyTwo/Policies/DummyTwoPolicy.php'));
 
-        $this->assertStringContainsString("'dummy_two.list'", $content);
-        $this->assertStringContainsString("'dummy_two.create'", $content);
+        // Policy extends BasePolicy; prefix uses snake_case of module name
+        $this->assertStringContainsString('extends BasePolicy', $content);
+        $this->assertStringContainsString("return 'dummy_two'", $content);
     }
 
     public function test_irregular_plural_in_routes(): void
@@ -322,9 +321,13 @@ class MakeModuleCommandTest extends TestCase
         $apiTest = file_get_contents("{$this->modulePath}/Tests/Api/DummyTest.php");
         $webTest = file_get_contents("{$this->modulePath}/Tests/Web/DummyWebTest.php");
 
-        $this->assertStringNotContainsString('Passport', $apiTest);
+        // API test uses Passport for bearer token authentication
+        $this->assertStringContainsString('Laravel\Passport\Client', $apiTest);
+        $this->assertStringContainsString('createToken', $apiTest);
+        // Web test uses actingAs (session-based), no Passport
         $this->assertStringNotContainsString('Passport', $webTest);
-        $this->assertStringNotContainsString('createToken', $apiTest);
+        $this->assertStringNotContainsString('createToken', $webTest);
+        $this->assertStringContainsString('actingAs', $webTest);
     }
 
     // == NAME VALIDATION ==
@@ -474,9 +477,11 @@ class MakeModuleCommandTest extends TestCase
 
         $content = file_get_contents("{$this->modulePath}/Http/Resources/DummyResource.php");
 
-        $this->assertStringContainsString('extends JsonResource', $content);
+        // Resource extends BaseResource (which itself extends JsonResource)
+        $this->assertStringContainsString('extends BaseResource', $content);
         $this->assertStringContainsString('public function toArray(Request $request): array', $content);
-        $this->assertStringContainsString("'id' => \$this->id", $content);
+        // BaseResource::base() provides id + timestamps; toArray calls $this->base()
+        $this->assertStringContainsString('$this->base()', $content);
     }
 
     // == JOB ==

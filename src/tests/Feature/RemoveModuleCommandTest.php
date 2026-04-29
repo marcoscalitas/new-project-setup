@@ -209,7 +209,7 @@ class RemoveModuleCommandTest extends TestCase
         $this->assertStringContainsString('name="Permission-Api"', $phpunit);
         $this->assertStringContainsString('name="Permission-Web"', $phpunit);
         $this->assertStringContainsString('name="Notification-Api"', $phpunit);
-        $this->assertStringContainsString('name="Notification-Web"', $phpunit);
+        // Notification is an infrastructure module — no Web test suite
     }
 
     public function test_full_cycle_restores_exact_phpunit_xml(): void
