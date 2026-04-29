@@ -14,59 +14,41 @@ class SettingsController
 {
     public function __construct(private readonly SettingsService $settingsService) {}
 
-    public function index(Request $request): JsonResponse|\Illuminate\View\View
+    public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Setting::class);
 
         $settings = Setting::orderBy('key')->get();
 
-        if ($request->expectsJson()) {
-            return SettingResource::collection($settings)->response();
-        }
-
-        return view('settings::settings.index', compact('settings'));
+        return SettingResource::collection($settings)->response();
     }
 
-    public function show(Request $request, string $key): JsonResponse|\Illuminate\View\View
+    public function show(string $key): JsonResponse
     {
-        Gate::authorize('view', Setting::class);
-
         $setting = Setting::findOrFail($key);
 
-        if ($request->expectsJson()) {
-            return (new SettingResource($setting))->response();
-        }
+        Gate::authorize('view', $setting);
 
-        return view('settings::settings.show', compact('setting'));
+        return SettingResource::make($setting)->response();
     }
 
-    public function update(UpdateSettingRequest $request, string $key): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function update(UpdateSettingRequest $request, string $key): JsonResponse
     {
         Gate::authorize('update', Setting::class);
 
         $this->settingsService->set($key, $request->input('value'));
 
-        $setting = Setting::findOrFail($key);
-
-        if ($request->expectsJson()) {
-            return (new SettingResource($setting))->response();
-        }
-
-        return redirect()->route('settings.index')->with('success', __('ui.setting_updated'));
+        return SettingResource::make(Setting::findOrFail($key))->response();
     }
 
-    public function destroy(Request $request, string $key): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function destroy(string $key): JsonResponse
     {
-        Gate::authorize('delete', Setting::class);
+        $setting = Setting::findOrFail($key);
 
-        Setting::findOrFail($key);
+        Gate::authorize('delete', $setting);
 
         $this->settingsService->forget($key);
 
-        if ($request->expectsJson()) {
-            return response()->json(null, 204);
-        }
-
-        return redirect()->route('settings.index')->with('success', __('ui.setting_deleted'));
+        return response()->json(null, 204);
     }
 }
