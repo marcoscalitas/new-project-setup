@@ -34,6 +34,8 @@ class MakeModuleCommand extends Command
         $this->createModel();
         $this->createMigration();
         $this->createFactory();
+        $this->createSeeder();
+        $this->createEvents();
         $this->createController();
         $this->createService();
         $this->createJob();
@@ -55,9 +57,9 @@ class MakeModuleCommand extends Command
         $this->components->bulletList([
             "Provider registered in <comment>bootstrap/providers.php</comment>",
             "Test suite registered in <comment>phpunit.xml</comment>",
-            "Job stub created at <comment>modules/{$this->module}/Jobs/Process{$this->module}Job.php</comment>",
-            "Add event bindings to <comment>app/Providers/EventServiceProvider.php</comment>",
-            "Add seeder call to <comment>database/seeders/DatabaseSeeder.php</comment> if needed",
+            "Events scaffolded: <comment>{$this->module}Created</comment>, <comment>{$this->module}Updated</comment>, <comment>{$this->module}Deleted</comment>",
+            "Add permission seeds to <comment>modules/{$this->module}/Database/Seeders/{$this->module}Seeder.php</comment>",
+            "Register cross-module listeners in <comment>modules/{$this->module}/Providers/{$this->module}ServiceProvider.php</comment>",
             "Run <comment>php artisan migrate</comment> after creating migrations",
         ]);
 
@@ -91,6 +93,8 @@ class MakeModuleCommand extends Command
         $fileWillExist = [
             'Database/Factories',
             'Database/Migrations',
+            'Database/Seeders',
+            'Events',
             'Http/Controllers',
             'Http/Requests',
             'Http/Resources',
@@ -121,9 +125,9 @@ class MakeModuleCommand extends Command
 
     private function createProvider(): void
     {
-        $namespace = Str::lower($this->module);
+        $lower = Str::lower($this->module);
         $viewsLine = $this->option('with-views')
-            ? "\n        \$this->loadViewsFrom(__DIR__ . '/../Resources/views', '{$namespace}');"
+            ? "\n        \$this->loadViewsFrom(__DIR__ . '/../Resources/views', '{$lower}');"
             : '';
 
         $this->write('Providers/' . $this->module . 'ServiceProvider.php', <<<PHP
@@ -131,8 +135,12 @@ class MakeModuleCommand extends Command
 
         namespace Modules\\{$this->module}\Providers;
 
+        use Illuminate\Support\Facades\Event;
+        use Illuminate\Support\Facades\Gate;
         use Illuminate\Support\Facades\Route;
         use Illuminate\Support\ServiceProvider;
+        use Modules\\{$this->module}\Models\\{$this->module};
+        use Modules\\{$this->module}\Policies\\{$this->module}Policy;
 
         class {$this->module}ServiceProvider extends ServiceProvider
         {
@@ -151,6 +159,11 @@ class MakeModuleCommand extends Command
                     ->group(__DIR__ . '/../Routes/api.php');
 
                 \$this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');{$viewsLine}
+
+                Gate::policy({$this->module}::class, {$this->module}Policy::class);
+
+                // Register cross-module listeners here:
+                // Event::listen(SomeOtherModuleEvent::class, Handle{$this->module}Listener::class);
             }
         }
         PHP);
@@ -187,12 +200,12 @@ class MakeModuleCommand extends Command
 
     private function createController(): void
     {
-        $lower = Str::camel($this->module);
-
         if ($this->option('with-views')) {
             $this->createDualController();
             return;
         }
+
+        $lower = Str::camel($this->module);
 
         $this->write("Http/Controllers/{$this->module}Controller.php", <<<PHP
         <?php
@@ -201,9 +214,11 @@ class MakeModuleCommand extends Command
 
         use Illuminate\Http\JsonResponse;
         use Illuminate\Http\Request;
+        use Illuminate\Support\Facades\Gate;
         use Modules\\{$this->module}\Http\Requests\Store{$this->module}Request;
         use Modules\\{$this->module}\Http\Requests\Update{$this->module}Request;
         use Modules\\{$this->module}\Http\Resources\\{$this->module}Resource;
+        use Modules\\{$this->module}\Models\\{$this->module};
         use Modules\\{$this->module}\Services\\{$this->module}Service;
 
         class {$this->module}Controller
@@ -214,6 +229,8 @@ class MakeModuleCommand extends Command
 
             public function index(Request \$request): JsonResponse
             {
+                Gate::authorize('viewAny', {$this->module}::class);
+
                 \$perPage = min((int) \$request->query('per_page', 15), 100);
                 \$items = \$this->{$lower}Service->getAll(\$perPage);
 
@@ -222,6 +239,8 @@ class MakeModuleCommand extends Command
 
             public function store(Store{$this->module}Request \$request): JsonResponse
             {
+                Gate::authorize('create', {$this->module}::class);
+
                 \$item = \$this->{$lower}Service->create(\$request->validated());
 
                 return response()->json(new {$this->module}Resource(\$item), 201);
@@ -231,11 +250,15 @@ class MakeModuleCommand extends Command
             {
                 \$item = \$this->{$lower}Service->findById(\$id);
 
+                Gate::authorize('view', \$item);
+
                 return response()->json(new {$this->module}Resource(\$item));
             }
 
             public function update(Update{$this->module}Request \$request, int \$id): JsonResponse
             {
+                Gate::authorize('update', {$this->module}::findOrFail(\$id));
+
                 \$item = \$this->{$lower}Service->update(\$id, \$request->validated());
 
                 return response()->json(new {$this->module}Resource(\$item));
@@ -243,6 +266,8 @@ class MakeModuleCommand extends Command
 
             public function destroy(int \$id): JsonResponse
             {
+                Gate::authorize('delete', {$this->module}::findOrFail(\$id));
+
                 \$this->{$lower}Service->delete(\$id);
 
                 return response()->json(null, 204);
@@ -265,10 +290,12 @@ class MakeModuleCommand extends Command
         use Illuminate\Http\JsonResponse;
         use Illuminate\Http\RedirectResponse;
         use Illuminate\Http\Request;
+        use Illuminate\Support\Facades\Gate;
         use Illuminate\View\View;
         use Modules\\{$this->module}\Http\Requests\Store{$this->module}Request;
         use Modules\\{$this->module}\Http\Requests\Update{$this->module}Request;
         use Modules\\{$this->module}\Http\Resources\\{$this->module}Resource;
+        use Modules\\{$this->module}\Models\\{$this->module};
         use Modules\\{$this->module}\Services\\{$this->module}Service;
 
         class {$this->module}Controller
@@ -279,6 +306,8 @@ class MakeModuleCommand extends Command
 
             public function index(Request \$request): JsonResponse|View
             {
+                Gate::authorize('viewAny', {$this->module}::class);
+
                 \$perPage = min((int) \$request->query('per_page', 15), 100);
                 \$items = \$this->{$lower}Service->getAll(\$perPage);
 
@@ -291,11 +320,15 @@ class MakeModuleCommand extends Command
 
             public function create(): View
             {
+                Gate::authorize('create', {$this->module}::class);
+
                 return view('{$namespace}::{$slug}.create');
             }
 
             public function store(Store{$this->module}Request \$request): JsonResponse|RedirectResponse
             {
+                Gate::authorize('create', {$this->module}::class);
+
                 \$item = \$this->{$lower}Service->create(\$request->validated());
 
                 if (request()->expectsJson()) {
@@ -309,6 +342,8 @@ class MakeModuleCommand extends Command
             {
                 \$item = \$this->{$lower}Service->findById(\$id);
 
+                Gate::authorize('view', \$item);
+
                 if (request()->expectsJson()) {
                     return response()->json(new {$this->module}Resource(\$item));
                 }
@@ -318,13 +353,17 @@ class MakeModuleCommand extends Command
 
             public function edit(int \$id): View
             {
-                \$item = \$this->{$lower}Service->findById(\$id);
+                \$item = {$this->module}::findOrFail(\$id);
+
+                Gate::authorize('update', \$item);
 
                 return view('{$namespace}::{$slug}.edit', compact('item'));
             }
 
             public function update(Update{$this->module}Request \$request, int \$id): JsonResponse|RedirectResponse
             {
+                Gate::authorize('update', {$this->module}::findOrFail(\$id));
+
                 \$item = \$this->{$lower}Service->update(\$id, \$request->validated());
 
                 if (request()->expectsJson()) {
@@ -336,6 +375,8 @@ class MakeModuleCommand extends Command
 
             public function destroy(int \$id): JsonResponse|RedirectResponse
             {
+                Gate::authorize('delete', {$this->module}::findOrFail(\$id));
+
                 \$this->{$lower}Service->delete(\$id);
 
                 if (request()->expectsJson()) {
@@ -355,11 +396,15 @@ class MakeModuleCommand extends Command
 
         namespace Modules\\{$this->module}\Services;
 
+        use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+        use Modules\\{$this->module}\Events\\{$this->module}Created;
+        use Modules\\{$this->module}\Events\\{$this->module}Deleted;
+        use Modules\\{$this->module}\Events\\{$this->module}Updated;
         use Modules\\{$this->module}\Models\\{$this->module};
 
         class {$this->module}Service
         {
-            public function getAll(int \$perPage = 15): \\Illuminate\\Contracts\\Pagination\\LengthAwarePaginator
+            public function getAll(int \$perPage = 15): LengthAwarePaginator
             {
                 return {$this->module}::paginate(\$perPage);
             }
@@ -371,13 +416,19 @@ class MakeModuleCommand extends Command
 
             public function create(array \$data): {$this->module}
             {
-                return {$this->module}::create(\$data);
+                \$item = {$this->module}::create(\$data);
+
+                {$this->module}Created::dispatch(\$item);
+
+                return \$item;
             }
 
             public function update(int \$id, array \$data): {$this->module}
             {
                 \$item = {$this->module}::findOrFail(\$id);
                 \$item->update(\$data);
+
+                {$this->module}Updated::dispatch(\$item);
 
                 return \$item;
             }
@@ -386,6 +437,70 @@ class MakeModuleCommand extends Command
             {
                 \$item = {$this->module}::findOrFail(\$id);
                 \$item->delete();
+
+                {$this->module}Deleted::dispatch(\$id);
+            }
+        }
+        PHP);
+    }
+
+    private function createEvents(): void
+    {
+        foreach (['Created', 'Updated', 'Deleted'] as $event) {
+            $property = $event === 'Deleted'
+                ? "public readonly int \$id"
+                : "public readonly {$this->module} \$item";
+
+            $param = $event === 'Deleted'
+                ? "int \$id"
+                : "{$this->module} \$item";
+
+            $import = $event === 'Deleted'
+                ? ''
+                : "\nuse Modules\\{$this->module}\Models\\{$this->module};";
+
+            $this->write("Events/{$this->module}{$event}.php", <<<PHP
+            <?php
+
+            namespace Modules\\{$this->module}\Events;
+            {$import}
+            class {$this->module}{$event}
+            {
+                public function __construct({$property}) {}
+            }
+            PHP);
+        }
+    }
+
+    private function createSeeder(): void
+    {
+        $lower = Str::snake($this->module);
+
+        $this->write("Database/Seeders/{$this->module}Seeder.php", <<<PHP
+        <?php
+
+        namespace Modules\\{$this->module}\Database\Seeders;
+
+        use Illuminate\Database\Seeder;
+        use Modules\Permission\Models\Permission;
+
+        class {$this->module}Seeder extends Seeder
+        {
+            public function run(): void
+            {
+                \$permissions = [
+                    '{$lower}.list',
+                    '{$lower}.view',
+                    '{$lower}.create',
+                    '{$lower}.update',
+                    '{$lower}.delete',
+                ];
+
+                foreach (\$permissions as \$permission) {
+                    Permission::firstOrCreate(
+                        ['name' => \$permission, 'guard_name' => 'api'],
+                    );
+                }
             }
         }
         PHP);
@@ -508,7 +623,6 @@ class MakeModuleCommand extends Command
 
     private function createRoutes(): void
     {
-        $lower = Str::camel($this->module);
         $slug = Str::kebab(Str::plural($this->module));
 
         $this->write('Routes/api.php', <<<PHP
@@ -540,11 +654,11 @@ class MakeModuleCommand extends Command
         Route::prefix('{$slug}')
             ->middleware(['auth', 'throttle:60,1'])
             ->group(function () {
-                Route::get('/',         [{$this->module}Controller::class, 'index'])->name('{$slug}.index');
-                Route::post('/',        [{$this->module}Controller::class, 'store'])->name('{$slug}.store');
-                Route::get('/{id}',     [{$this->module}Controller::class, 'show'])->name('{$slug}.show');
-                Route::put('/{id}',     [{$this->module}Controller::class, 'update'])->name('{$slug}.update');
-                Route::delete('/{id}',  [{$this->module}Controller::class, 'destroy'])->name('{$slug}.destroy');
+                Route::get('/',        [{$this->module}Controller::class, 'index'])->name('{$slug}.index');
+                Route::post('/',       [{$this->module}Controller::class, 'store'])->name('{$slug}.store');
+                Route::get('/{id}',    [{$this->module}Controller::class, 'show'])->name('{$slug}.show');
+                Route::put('/{id}',    [{$this->module}Controller::class, 'update'])->name('{$slug}.update');
+                Route::delete('/{id}', [{$this->module}Controller::class, 'destroy'])->name('{$slug}.destroy');
             });
         PHP);
     }
@@ -560,21 +674,114 @@ class MakeModuleCommand extends Command
         Route::prefix('{$slug}')
             ->middleware(['auth', 'throttle:60,1'])
             ->group(function () {
-                Route::get('/',         [{$this->module}Controller::class, 'index'])->name('{$slug}.index');
-                Route::get('/create',   [{$this->module}Controller::class, 'create'])->name('{$slug}.create');
-                Route::post('/',        [{$this->module}Controller::class, 'store'])->name('{$slug}.store');
-                Route::get('/{id}',     [{$this->module}Controller::class, 'show'])->name('{$slug}.show');
+                Route::get('/',          [{$this->module}Controller::class, 'index'])->name('{$slug}.index');
+                Route::get('/create',    [{$this->module}Controller::class, 'create'])->name('{$slug}.create');
+                Route::post('/',         [{$this->module}Controller::class, 'store'])->name('{$slug}.store');
+                Route::get('/{id}',      [{$this->module}Controller::class, 'show'])->name('{$slug}.show');
                 Route::get('/{id}/edit', [{$this->module}Controller::class, 'edit'])->name('{$slug}.edit');
-                Route::put('/{id}',     [{$this->module}Controller::class, 'update'])->name('{$slug}.update');
-                Route::delete('/{id}',  [{$this->module}Controller::class, 'destroy'])->name('{$slug}.destroy');
+                Route::put('/{id}',      [{$this->module}Controller::class, 'update'])->name('{$slug}.update');
+                Route::delete('/{id}',   [{$this->module}Controller::class, 'destroy'])->name('{$slug}.destroy');
             });
+        PHP);
+    }
+
+    private function createMigration(): void
+    {
+        $table = Str::snake(Str::plural($this->module));
+        $filename = date('Y_m_d_His') . "_create_{$table}_table.php";
+
+        $this->write("Database/Migrations/{$filename}", <<<PHP
+        <?php
+
+        use Illuminate\Database\Migrations\Migration;
+        use Illuminate\Database\Schema\Blueprint;
+        use Illuminate\Support\Facades\Schema;
+
+        return new class extends Migration
+        {
+            public function up(): void
+            {
+                Schema::create('{$table}', function (Blueprint \$table) {
+                    \$table->id();
+                    // TODO: add columns
+                    // Use ->jsonb() for JSON columns (PostgreSQL)
+                    \$table->timestamps();
+                    \$table->softDeletes();
+                });
+            }
+
+            public function down(): void
+            {
+                Schema::dropIfExists('{$table}');
+            }
+        };
+        PHP);
+    }
+
+    private function createFactory(): void
+    {
+        $this->write("Database/Factories/{$this->module}Factory.php", <<<PHP
+        <?php
+
+        namespace Modules\\{$this->module}\Database\Factories;
+
+        use Illuminate\Database\Eloquent\Factories\Factory;
+        use Modules\\{$this->module}\Models\\{$this->module};
+
+        class {$this->module}Factory extends Factory
+        {
+            protected \$model = {$this->module}::class;
+
+            public function definition(): array
+            {
+                return [
+                    // TODO: add fields
+                ];
+            }
+        }
+        PHP);
+    }
+
+    private function createJob(): void
+    {
+        $this->write("Jobs/Process{$this->module}Job.php", <<<PHP
+        <?php
+
+        namespace Modules\\{$this->module}\\Jobs;
+
+        use Illuminate\\Bus\\Queueable;
+        use Illuminate\\Contracts\\Queue\\ShouldQueue;
+        use Illuminate\\Foundation\\Bus\\Dispatchable;
+        use Illuminate\\Queue\\InteractsWithQueue;
+        use Illuminate\\Queue\\SerializesModels;
+        use Throwable;
+
+        class Process{$this->module}Job implements ShouldQueue
+        {
+            use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+            public int \$tries = 3;
+            public int \$timeout = 60;
+
+            public function __construct(
+                // TODO: inject dependencies
+            ) {}
+
+            public function handle(): void
+            {
+                // TODO: implement job logic
+            }
+
+            public function failed(Throwable \$e): void
+            {
+                // TODO: handle failure
+            }
+        }
         PHP);
     }
 
     private function createTests(): void
     {
-        $slug = Str::kebab(Str::plural($this->module));
-
         $this->write("Tests/Api/{$this->module}Test.php", <<<PHP
         <?php
 
@@ -617,17 +824,32 @@ class MakeModuleCommand extends Command
     private function createViews(): void
     {
         $slug = Str::kebab(Str::plural($this->module));
+        $title = Str::plural($this->module);
 
-        $this->write("Resources/views/{$slug}/index.blade.php", <<<'BLADE'
+        $views = [
+            'index'  => $this->indexViewStub($slug, $title),
+            'show'   => $this->showViewStub($slug, $title),
+            'create' => $this->createViewStub($slug, $title),
+            'edit'   => $this->editViewStub($slug, $title),
+        ];
+
+        foreach ($views as $name => $content) {
+            $this->write("Resources/views/{$slug}/{$name}.blade.php", $content);
+        }
+    }
+
+    private function indexViewStub(string $slug, string $title): string
+    {
+        return <<<BLADE
         @extends('admin.layouts.app')
 
-        @section('title', '{{ title }}')
+        @section('title', '{$title}')
 
         @section('content')
         <div class="max-w-7xl mx-auto">
             <div class="flex items-center justify-between mb-6">
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ title }}</h1>
-                <a href="{{ route('{{ slug }}.create') }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{$title}</h1>
+                <a href="{{ route('{$slug}.create') }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
                     Create
                 </a>
             </div>
@@ -642,14 +864,14 @@ class MakeModuleCommand extends Command
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                        @forelse($items as $item)
+                        @forelse(\$items as \$item)
                             <tr>
-                                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ $item->id }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $item->created_at->format('Y-m-d H:i') }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ \$item->id }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ \$item->created_at->format('Y-m-d H:i') }}</td>
                                 <td class="px-6 py-4 text-right text-sm space-x-2">
-                                    <a href="{{ route('{{ slug }}.show', $item->id) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">View</a>
-                                    <a href="{{ route('{{ slug }}.edit', $item->id) }}" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400">Edit</a>
-                                    <form action="{{ route('{{ slug }}.destroy', $item->id) }}" method="POST" class="inline">
+                                    <a href="{{ route('{$slug}.show', \$item->id) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">View</a>
+                                    <a href="{{ route('{$slug}.edit', \$item->id) }}" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400">Edit</a>
+                                    <form action="{{ route('{$slug}.destroy', \$item->id) }}" method="POST" class="inline">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400" onclick="return confirm('Are you sure?')">Delete</button>
@@ -666,35 +888,38 @@ class MakeModuleCommand extends Command
             </div>
         </div>
         @endsection
-        BLADE);
+        BLADE;
+    }
 
-        $this->write("Resources/views/{$slug}/show.blade.php", <<<'BLADE'
+    private function showViewStub(string $slug, string $title): string
+    {
+        return <<<BLADE
         @extends('admin.layouts.app')
 
-        @section('title', '{{ title }} Details')
+        @section('title', '{$title} Details')
 
         @section('content')
         <div class="max-w-3xl mx-auto">
             <div class="flex items-center justify-between mb-6">
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ title }} Details</h1>
-                <a href="{{ route('{{ slug }}.index') }}" class="text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">&larr; Back to list</a>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{$title} Details</h1>
+                <a href="{{ route('{$slug}.index') }}" class="text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">&larr; Back to list</a>
             </div>
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <dl class="grid grid-cols-1 gap-4">
                     <div>
                         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">ID</dt>
-                        <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $item->id }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ \$item->id }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Created At</dt>
-                        <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ $item->created_at->format('Y-m-d H:i:s') }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ \$item->created_at->format('Y-m-d H:i:s') }}</dd>
                     </div>
                 </dl>
 
                 <div class="mt-6 flex space-x-3">
-                    <a href="{{ route('{{ slug }}.edit', $item->id) }}" class="rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-400">Edit</a>
-                    <form action="{{ route('{{ slug }}.destroy', $item->id) }}" method="POST">
+                    <a href="{{ route('{$slug}.edit', \$item->id) }}" class="rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-400">Edit</a>
+                    <form action="{{ route('{$slug}.destroy', \$item->id) }}" method="POST">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500" onclick="return confirm('Are you sure?')">Delete</button>
@@ -703,22 +928,25 @@ class MakeModuleCommand extends Command
             </div>
         </div>
         @endsection
-        BLADE);
+        BLADE;
+    }
 
-        $this->write("Resources/views/{$slug}/create.blade.php", <<<'BLADE'
+    private function createViewStub(string $slug, string $title): string
+    {
+        return <<<BLADE
         @extends('admin.layouts.app')
 
-        @section('title', 'Create {{ title }}')
+        @section('title', 'Create {$title}')
 
         @section('content')
         <div class="max-w-3xl mx-auto">
             <div class="flex items-center justify-between mb-6">
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Create {{ title }}</h1>
-                <a href="{{ route('{{ slug }}.index') }}" class="text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">&larr; Back to list</a>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Create {$title}</h1>
+                <a href="{{ route('{$slug}.index') }}" class="text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">&larr; Back to list</a>
             </div>
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form action="{{ route('{{ slug }}.store') }}" method="POST" class="space-y-4">
+                <form action="{{ route('{$slug}.store') }}" method="POST" class="space-y-4">
                     @csrf
 
                     {{-- Add your form fields here --}}
@@ -730,22 +958,25 @@ class MakeModuleCommand extends Command
             </div>
         </div>
         @endsection
-        BLADE);
+        BLADE;
+    }
 
-        $this->write("Resources/views/{$slug}/edit.blade.php", <<<'BLADE'
+    private function editViewStub(string $slug, string $title): string
+    {
+        return <<<BLADE
         @extends('admin.layouts.app')
 
-        @section('title', 'Edit {{ title }}')
+        @section('title', 'Edit {$title}')
 
         @section('content')
         <div class="max-w-3xl mx-auto">
             <div class="flex items-center justify-between mb-6">
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Edit {{ title }}</h1>
-                <a href="{{ route('{{ slug }}.show', $item->id) }}" class="text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">&larr; Back to details</a>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Edit {$title}</h1>
+                <a href="{{ route('{$slug}.show', \$item->id) }}" class="text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">&larr; Back to details</a>
             </div>
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form action="{{ route('{{ slug }}.update', $item->id) }}" method="POST" class="space-y-4">
+                <form action="{{ route('{$slug}.update', \$item->id) }}" method="POST" class="space-y-4">
                     @csrf
                     @method('PUT')
 
@@ -758,18 +989,7 @@ class MakeModuleCommand extends Command
             </div>
         </div>
         @endsection
-        BLADE);
-
-        // Replace placeholders with actual values
-        $viewsPath = "{$this->modulePath}/Resources/views/{$slug}";
-        $title = Str::plural($this->module);
-
-        foreach (glob("{$viewsPath}/*.blade.php") as $file) {
-            $content = file_get_contents($file);
-            $content = str_replace('{{ title }}', $title, $content);
-            $content = str_replace('{{ slug }}', $slug, $content);
-            file_put_contents($file, $content);
-        }
+        BLADE;
     }
 
     private function registerTestSuite(): void
@@ -817,105 +1037,10 @@ class MakeModuleCommand extends Command
         file_put_contents($providersPath, $content);
     }
 
-    private function createMigration(): void
-    {
-        $table = Str::snake(Str::plural($this->module));
-        $filename = date('Y_m_d_His') . "_create_{$table}_table.php";
-
-        $this->write("Database/Migrations/{$filename}", <<<PHP
-        <?php
-
-        use Illuminate\Database\Migrations\Migration;
-        use Illuminate\Database\Schema\Blueprint;
-        use Illuminate\Support\Facades\Schema;
-
-        return new class extends Migration
-        {
-            public function up(): void
-            {
-                Schema::create('{$table}', function (Blueprint \$table) {
-                    \$table->id();
-                    // TODO: add columns
-                    \$table->timestamps();
-                    \$table->softDeletes();
-                });
-            }
-
-            public function down(): void
-            {
-                Schema::dropIfExists('{$table}');
-            }
-        };
-        PHP);
-    }
-
-    private function createJob(): void
-    {
-        $this->write("Jobs/Process{$this->module}Job.php", <<<PHP
-        <?php
-
-        namespace Modules\\{$this->module}\\Jobs;
-
-        use Illuminate\\Bus\\Queueable;
-        use Illuminate\\Contracts\\Queue\\ShouldQueue;
-        use Illuminate\\Foundation\\Bus\\Dispatchable;
-        use Illuminate\\Queue\\InteractsWithQueue;
-        use Illuminate\\Queue\\SerializesModels;
-        use Throwable;
-
-        class Process{$this->module}Job implements ShouldQueue
-        {
-            use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-            public int \$tries = 3;
-            public int \$timeout = 60;
-
-            public function __construct(
-                // TODO: inject dependencies
-            ) {}
-
-            public function handle(): void
-            {
-                // TODO: implement job logic
-            }
-
-            public function failed(Throwable \$e): void
-            {
-                // TODO: handle failure
-            }
-        }
-        PHP);
-    }
-
-    private function createFactory(): void
-    {
-        $this->write("Database/Factories/{$this->module}Factory.php", <<<PHP
-        <?php
-
-        namespace Modules\\{$this->module}\Database\Factories;
-
-        use Illuminate\Database\Eloquent\Factories\Factory;
-        use Modules\\{$this->module}\Models\\{$this->module};
-
-        class {$this->module}Factory extends Factory
-        {
-            protected \$model = {$this->module}::class;
-
-            public function definition(): array
-            {
-                return [
-                    // TODO: add fields
-                ];
-            }
-        }
-        PHP);
-    }
-
     private function write(string $relativePath, string $content): void
     {
         $path = "{$this->modulePath}/{$relativePath}";
 
-        // Remove leading indentation from heredoc
         $lines = explode("\n", $content);
         $minIndent = PHP_INT_MAX;
 

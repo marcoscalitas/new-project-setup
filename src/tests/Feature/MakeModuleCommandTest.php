@@ -96,14 +96,14 @@ class MakeModuleCommandTest extends TestCase
             ->assertSuccessful();
 
         $shouldHaveGitkeep = [
-            'Database/Seeders',
-            'Events',
             'Listeners',
         ];
 
         $shouldNotHaveGitkeep = [
             'Database/Migrations',
             'Database/Factories',
+            'Database/Seeders',
+            'Events',
             'Http/Controllers',
             'Http/Requests',
             'Http/Resources',
