@@ -403,8 +403,8 @@ class MakeModuleCommandTest extends TestCase
 
         $content = file_get_contents("{$this->modulePath}/Models/Dummy.php");
 
-        $this->assertStringContainsString('extends Model', $content);
-        $this->assertStringContainsString('use HasFactory, SoftDeletes;', $content);
+        $this->assertStringContainsString('extends BaseModel', $content);
+        $this->assertStringContainsString('use Modules\\Core\\Models\\BaseModel;', $content);
         $this->assertStringContainsString('protected $fillable', $content);
     }
 

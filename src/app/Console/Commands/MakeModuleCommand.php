@@ -216,15 +216,11 @@ class MakeModuleCommand extends Command
         namespace Modules\\{$this->module}\Models;
 
         use Illuminate\Database\Eloquent\Factories\Factory;
-        use Illuminate\Database\Eloquent\Factories\HasFactory;
-        use Illuminate\Database\Eloquent\Model;
-        use Illuminate\Database\Eloquent\SoftDeletes;
+        use Modules\Core\Models\BaseModel;
         use Modules\\{$this->module}\Database\Factories\\{$this->module}Factory;
 
-        class {$this->module} extends Model
+        class {$this->module} extends BaseModel
         {
-            use HasFactory, SoftDeletes;
-
             protected \$fillable = [
                 //
             ];
