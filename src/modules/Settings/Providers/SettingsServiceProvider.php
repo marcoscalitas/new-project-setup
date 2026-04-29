@@ -23,9 +23,7 @@ class SettingsServiceProvider extends ServiceProvider
         Gate::policy(Setting::class, SettingPolicy::class);
 
         Route::prefix('api/v1')->middleware('api')->group(__DIR__ . '/../Routes/api.php');
-        Route::middleware('web')->group(__DIR__ . '/../Routes/web.php');
 
-        $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'settings');
         $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
     }
 }
