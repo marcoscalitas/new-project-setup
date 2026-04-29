@@ -7,7 +7,10 @@ use Illuminate\Support\Str;
 
 class MakeModuleCommand extends Command
 {
-    protected $signature = 'make:module {name : The module name (e.g. Product)} {--with-views : Generate Blade views and dual response controller}';
+    protected $signature = 'make:module
+        {name : The module name (e.g. Product)}
+        {--type=domain : Module type: domain or infrastructure}
+        {--with-views : (domain only) Generate Blade views and dual-response controller}';
 
     protected $description = 'Generate a new module following the project pattern';
 
@@ -16,7 +19,7 @@ class MakeModuleCommand extends Command
 
     public function handle(): int
     {
-        $this->module = Str::studly($this->argument('name'));
+        $this->module     = Str::studly($this->argument('name'));
         $this->modulePath = base_path("modules/{$this->module}");
 
         if (empty($this->module) || !preg_match('/^[A-Z][a-zA-Z0-9]*$/', $this->module)) {
@@ -27,6 +30,17 @@ class MakeModuleCommand extends Command
         if (is_dir($this->modulePath)) {
             $this->error("Module [{$this->module}] already exists!");
             return self::FAILURE;
+        }
+
+        $type = $this->option('type');
+
+        if (!in_array($type, ['domain', 'infrastructure'])) {
+            $this->error('Invalid --type. Use: domain or infrastructure.');
+            return self::FAILURE;
+        }
+
+        if ($this->isInfrastructure() && $this->option('with-views')) {
+            $this->warn('--with-views is ignored for infrastructure modules.');
         }
 
         $this->createDirectories();
@@ -44,7 +58,7 @@ class MakeModuleCommand extends Command
         $this->createPolicy();
         $this->createRoutes();
 
-        if ($this->option('with-views')) {
+        if ($this->isDomain() && $this->option('with-views')) {
             $this->createViews();
         }
 
@@ -52,18 +66,36 @@ class MakeModuleCommand extends Command
         $this->registerProvider();
         $this->registerTestSuite();
 
-        $this->components->info("Module [{$this->module}] created successfully.");
+        $typeLabel = $this->isInfrastructure() ? 'infrastructure' : 'domain';
+        $this->components->info("Module [{$this->module}] ({$typeLabel}) created successfully.");
 
-        $this->components->bulletList([
+        $bullets = [
             "Provider registered in <comment>bootstrap/providers.php</comment>",
             "Test suite registered in <comment>phpunit.xml</comment>",
             "Events scaffolded: <comment>{$this->module}Created</comment>, <comment>{$this->module}Updated</comment>, <comment>{$this->module}Deleted</comment>",
             "Add permission seeds to <comment>modules/{$this->module}/Database/Seeders/{$this->module}Seeder.php</comment>",
             "Register cross-module listeners in <comment>modules/{$this->module}/Providers/{$this->module}ServiceProvider.php</comment>",
             "Run <comment>php artisan migrate</comment> after creating migrations",
-        ]);
+        ];
+
+        if ($this->isInfrastructure()) {
+            $bullets[] = "Infrastructure module: API-only, no web routes or views";
+            $bullets[] = "Bind your service interface in <comment>register()</comment> inside the ServiceProvider";
+        }
+
+        $this->components->bulletList($bullets);
 
         return self::SUCCESS;
+    }
+
+    private function isDomain(): bool
+    {
+        return $this->option('type') === 'domain';
+    }
+
+    private function isInfrastructure(): bool
+    {
+        return $this->option('type') === 'infrastructure';
     }
 
     private function createDirectories(): void
@@ -87,7 +119,6 @@ class MakeModuleCommand extends Command
             'Routes',
             'Services',
             'Tests/Api',
-            'Tests/Web',
         ];
 
         $fileWillExist = [
@@ -105,11 +136,17 @@ class MakeModuleCommand extends Command
             'Routes',
             'Services',
             'Tests/Api',
-            'Tests/Web',
         ];
 
-        if ($this->option('with-views')) {
-            $dirs[] = "Resources/views/{$slug}";
+        // Domain modules also have web tests
+        if ($this->isDomain()) {
+            $dirs[]          = 'Tests/Web';
+            $fileWillExist[] = 'Tests/Web';
+        }
+
+        // Domain modules with views
+        if ($this->isDomain() && $this->option('with-views')) {
+            $dirs[]          = "Resources/views/{$slug}";
             $fileWillExist[] = "Resources/views/{$slug}";
         }
 
@@ -125,9 +162,13 @@ class MakeModuleCommand extends Command
 
     private function createProvider(): void
     {
-        $lower = Str::lower($this->module);
-        $viewsLine = $this->option('with-views')
+        $lower     = Str::lower($this->module);
+        $viewsLine = ($this->isDomain() && $this->option('with-views'))
             ? "\n        \$this->loadViewsFrom(__DIR__ . '/../Resources/views', '{$lower}');"
+            : '';
+
+        $webRouteBlock = $this->isDomain()
+            ? "\n                Route::middleware('web')\n                    ->group(__DIR__ . '/../Routes/web.php');\n"
             : '';
 
         $this->write('Providers/' . $this->module . 'ServiceProvider.php', <<<PHP
@@ -151,9 +192,7 @@ class MakeModuleCommand extends Command
 
             public function boot(): void
             {
-                Route::middleware('web')
-                    ->group(__DIR__ . '/../Routes/web.php');
-
+                {$webRouteBlock}
                 Route::prefix('api/v1')
                     ->middleware('api')
                     ->group(__DIR__ . '/../Routes/api.php');
@@ -200,7 +239,7 @@ class MakeModuleCommand extends Command
 
     private function createController(): void
     {
-        if ($this->option('with-views')) {
+        if ($this->isDomain() && $this->option('with-views')) {
             $this->createDualController();
             return;
         }
@@ -278,8 +317,8 @@ class MakeModuleCommand extends Command
 
     private function createDualController(): void
     {
-        $lower = Str::camel($this->module);
-        $slug = Str::kebab(Str::plural($this->module));
+        $lower     = Str::camel($this->module);
+        $slug      = Str::kebab(Str::plural($this->module));
         $namespace = Str::lower($this->module);
 
         $this->write("Http/Controllers/{$this->module}Controller.php", <<<PHP
@@ -397,21 +436,22 @@ class MakeModuleCommand extends Command
         namespace Modules\\{$this->module}\Services;
 
         use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+        use Modules\Core\Services\BaseService;
         use Modules\\{$this->module}\Events\\{$this->module}Created;
         use Modules\\{$this->module}\Events\\{$this->module}Deleted;
         use Modules\\{$this->module}\Events\\{$this->module}Updated;
         use Modules\\{$this->module}\Models\\{$this->module};
 
-        class {$this->module}Service
+        class {$this->module}Service extends BaseService
         {
+            protected function model(): string
+            {
+                return {$this->module}::class;
+            }
+
             public function getAll(int \$perPage = 15): LengthAwarePaginator
             {
                 return {$this->module}::paginate(\$perPage);
-            }
-
-            public function findById(int \$id): {$this->module}
-            {
-                return {$this->module}::findOrFail(\$id);
             }
 
             public function create(array \$data): {$this->module}
@@ -450,10 +490,6 @@ class MakeModuleCommand extends Command
             $property = $event === 'Deleted'
                 ? "public readonly int \$id"
                 : "public readonly {$this->module} \$item";
-
-            $param = $event === 'Deleted'
-                ? "int \$id"
-                : "{$this->module} \$item";
 
             $import = $event === 'Deleted'
                 ? ''
@@ -563,17 +599,13 @@ class MakeModuleCommand extends Command
         namespace Modules\\{$this->module}\Http\Resources;
 
         use Illuminate\Http\Request;
-        use Illuminate\Http\Resources\Json\JsonResource;
+        use Modules\Core\Http\Resources\BaseResource;
 
-        class {$this->module}Resource extends JsonResource
+        class {$this->module}Resource extends BaseResource
         {
             public function toArray(Request \$request): array
             {
-                return [
-                    'id' => \$this->id,
-                    'created_at' => \$this->created_at,
-                    'updated_at' => \$this->updated_at,
-                ];
+                return \$this->base();
             }
         }
         PHP);
@@ -588,34 +620,13 @@ class MakeModuleCommand extends Command
 
         namespace Modules\\{$this->module}\Policies;
 
-        use Modules\User\Models\User;
-        use Modules\\{$this->module}\Models\\{$this->module};
+        use Modules\Core\Policies\BasePolicy;
 
-        class {$this->module}Policy
+        class {$this->module}Policy extends BasePolicy
         {
-            public function viewAny(User \$user): bool
+            protected function permissionPrefix(): string
             {
-                return \$user->hasPermissionTo('{$lower}.list');
-            }
-
-            public function view(User \$user, {$this->module} \$item): bool
-            {
-                return \$user->hasPermissionTo('{$lower}.view');
-            }
-
-            public function create(User \$user): bool
-            {
-                return \$user->hasPermissionTo('{$lower}.create');
-            }
-
-            public function update(User \$user, {$this->module} \$item): bool
-            {
-                return \$user->hasPermissionTo('{$lower}.update');
-            }
-
-            public function delete(User \$user, {$this->module} \$item): bool
-            {
-                return \$user->hasPermissionTo('{$lower}.delete');
+                return '{$lower}';
             }
         }
         PHP);
@@ -636,10 +647,12 @@ class MakeModuleCommand extends Command
         });
         PHP);
 
-        if ($this->option('with-views')) {
-            $this->createWebRoutesWithViews($slug);
-        } else {
-            $this->createWebRoutes($slug);
+        if ($this->isDomain()) {
+            if ($this->option('with-views')) {
+                $this->createWebRoutesWithViews($slug);
+            } else {
+                $this->createWebRoutes($slug);
+            }
         }
     }
 
@@ -687,7 +700,7 @@ class MakeModuleCommand extends Command
 
     private function createMigration(): void
     {
-        $table = Str::snake(Str::plural($this->module));
+        $table    = Str::snake(Str::plural($this->module));
         $filename = date('Y_m_d_His') . "_create_{$table}_table.php";
 
         $this->write("Database/Migrations/{$filename}", <<<PHP
@@ -704,7 +717,6 @@ class MakeModuleCommand extends Command
                 Schema::create('{$table}', function (Blueprint \$table) {
                     \$table->id();
                     // TODO: add columns
-                    // Use ->jsonb() for JSON columns (PostgreSQL)
                     \$table->timestamps();
                     \$table->softDeletes();
                 });
@@ -788,42 +800,139 @@ class MakeModuleCommand extends Command
         namespace Modules\\{$this->module}\Tests\Api;
 
         use Illuminate\Foundation\Testing\RefreshDatabase;
+        use Laravel\Passport\Client;
+        use Modules\Permission\Models\Permission;
+        use Modules\User\Models\User;
         use Tests\TestCase;
 
         class {$this->module}Test extends TestCase
         {
             use RefreshDatabase;
 
-            public function test_example(): void
+            private User \$user;
+            private string \$token;
+
+            protected function setUp(): void
             {
-                \$this->assertTrue(true);
+                parent::setUp();
+
+                if (!file_exists(storage_path('oauth-private.key'))) {
+                    \$this->artisan('passport:keys', ['--force' => true]);
+                }
+
+                Client::create([
+                    'name'          => 'Test Personal Client',
+                    'secret'        => null,
+                    'redirect_uris' => [],
+                    'grant_types'   => ['personal_access'],
+                    'provider'      => 'users',
+                    'revoked'       => false,
+                ]);
+
+                \$this->user  = User::factory()->create();
+                \$this->token = \$this->user->createToken('test')->accessToken;
+
+                \$this->grantPermissions();
+            }
+
+            private function grantPermissions(): void
+            {
+                \$names = ['{$this->permSnake()}.list', '{$this->permSnake()}.view', '{$this->permSnake()}.create', '{$this->permSnake()}.update', '{$this->permSnake()}.delete'];
+                \$perms = array_map(fn (\$n) => Permission::firstOrCreate(['name' => \$n, 'guard_name' => 'api']), \$names);
+                \$this->user->givePermissionTo(\$perms);
+            }
+
+            private function authHeaders(): array
+            {
+                return ['Authorization' => 'Bearer ' . \$this->token];
+            }
+
+            public function test_unauthenticated_cannot_list(): void
+            {
+                \$this->getJson('/api/v1/{$this->slug()}')->assertUnauthorized();
+            }
+
+            public function test_user_without_permission_cannot_list(): void
+            {
+                \$guest = User::factory()->create();
+                \$token = \$guest->createToken('test')->accessToken;
+
+                \$this->getJson('/api/v1/{$this->slug()}', ['Authorization' => 'Bearer ' . \$token])->assertForbidden();
+            }
+
+            public function test_authenticated_user_can_list(): void
+            {
+                \$response = \$this->getJson('/api/v1/{$this->slug()}', \$this->authHeaders());
+
+                \$response->assertOk()->assertJsonStructure(['data', 'links', 'meta']);
+            }
+
+            public function test_unauthenticated_cannot_create(): void
+            {
+                \$this->postJson('/api/v1/{$this->slug()}', [])->assertUnauthorized();
+            }
+
+            public function test_user_without_permission_cannot_create(): void
+            {
+                \$guest = User::factory()->create();
+                \$token = \$guest->createToken('test')->accessToken;
+
+                \$this->postJson('/api/v1/{$this->slug()}', [], ['Authorization' => 'Bearer ' . \$token])->assertForbidden();
+            }
+
+            public function test_show_returns_404_for_nonexistent(): void
+            {
+                \$this->getJson('/api/v1/{$this->slug()}/999', \$this->authHeaders())->assertNotFound();
+            }
+
+            public function test_destroy_returns_404_for_nonexistent(): void
+            {
+                \$this->deleteJson('/api/v1/{$this->slug()}/999', [], \$this->authHeaders())->assertNotFound();
+            }
+
+            public function test_user_without_permission_cannot_delete(): void
+            {
+                \$guest = User::factory()->create();
+                \$token = \$guest->createToken('test')->accessToken;
+
+                \$this->deleteJson('/api/v1/{$this->slug()}/1', [], ['Authorization' => 'Bearer ' . \$token])->assertForbidden();
             }
         }
         PHP);
 
-        $this->write("Tests/Web/{$this->module}WebTest.php", <<<PHP
-        <?php
+        if ($this->isDomain()) {
+            $this->write("Tests/Web/{$this->module}WebTest.php", <<<PHP
+            <?php
 
-        namespace Modules\\{$this->module}\Tests\Web;
+            namespace Modules\\{$this->module}\Tests\Web;
 
-        use Illuminate\Foundation\Testing\RefreshDatabase;
-        use Tests\TestCase;
+            use Illuminate\Foundation\Testing\RefreshDatabase;
+            use Modules\User\Models\User;
+            use Tests\TestCase;
 
-        class {$this->module}WebTest extends TestCase
-        {
-            use RefreshDatabase;
-
-            public function test_example(): void
+            class {$this->module}WebTest extends TestCase
             {
-                \$this->assertTrue(true);
+                use RefreshDatabase;
+
+                public function test_guest_is_redirected_from_index(): void
+                {
+                    \$this->get('/{$this->slug()}')->assertRedirect();
+                }
+
+                public function test_authenticated_user_can_access_index(): void
+                {
+                    \$user = User::factory()->create();
+
+                    \$this->actingAs(\$user)->get('/{$this->slug()}')->assertOk();
+                }
             }
+            PHP);
         }
-        PHP);
     }
 
     private function createViews(): void
     {
-        $slug = Str::kebab(Str::plural($this->module));
+        $slug  = Str::kebab(Str::plural($this->module));
         $title = Str::plural($this->module);
 
         $views = [
@@ -838,6 +947,16 @@ class MakeModuleCommand extends Command
         }
     }
 
+    private function permSnake(): string
+    {
+        return Str::snake($this->module);
+    }
+
+    private function slug(): string
+    {
+        return Str::kebab(Str::plural($this->module));
+    }
+
     private function indexViewStub(string $slug, string $title): string
     {
         return <<<BLADE
@@ -849,9 +968,7 @@ class MakeModuleCommand extends Command
         <div class="max-w-7xl mx-auto">
             <div class="flex items-center justify-between mb-6">
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{$title}</h1>
-                <a href="{{ route('{$slug}.create') }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
-                    Create
-                </a>
+                <a href="{{ route('{$slug}.create') }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Create</a>
             </div>
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
@@ -869,19 +986,16 @@ class MakeModuleCommand extends Command
                                 <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ \$item->id }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ \$item->created_at->format('Y-m-d H:i') }}</td>
                                 <td class="px-6 py-4 text-right text-sm space-x-2">
-                                    <a href="{{ route('{$slug}.show', \$item->id) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">View</a>
-                                    <a href="{{ route('{$slug}.edit', \$item->id) }}" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400">Edit</a>
+                                    <a href="{{ route('{$slug}.show', \$item->id) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                    <a href="{{ route('{$slug}.edit', \$item->id) }}" class="text-yellow-600 hover:text-yellow-900">Edit</a>
                                     <form action="{{ route('{$slug}.destroy', \$item->id) }}" method="POST" class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400" onclick="return confirm('Are you sure?')">Delete</button>
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Are you sure?')">Delete</button>
                                     </form>
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">No records found.</td>
-                            </tr>
+                            <tr><td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500">No records found.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -902,27 +1016,24 @@ class MakeModuleCommand extends Command
         <div class="max-w-3xl mx-auto">
             <div class="flex items-center justify-between mb-6">
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{$title} Details</h1>
-                <a href="{{ route('{$slug}.index') }}" class="text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">&larr; Back to list</a>
+                <a href="{{ route('{$slug}.index') }}" class="text-sm text-indigo-600">&larr; Back</a>
             </div>
-
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
                 <dl class="grid grid-cols-1 gap-4">
                     <div>
-                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">ID</dt>
+                        <dt class="text-sm font-medium text-gray-500">ID</dt>
                         <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ \$item->id }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Created At</dt>
+                        <dt class="text-sm font-medium text-gray-500">Created At</dt>
                         <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ \$item->created_at->format('Y-m-d H:i:s') }}</dd>
                     </div>
                 </dl>
-
                 <div class="mt-6 flex space-x-3">
-                    <a href="{{ route('{$slug}.edit', \$item->id) }}" class="rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-400">Edit</a>
+                    <a href="{{ route('{$slug}.edit', \$item->id) }}" class="rounded-md bg-yellow-500 px-4 py-2 text-sm font-semibold text-white">Edit</a>
                     <form action="{{ route('{$slug}.destroy', \$item->id) }}" method="POST">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500" onclick="return confirm('Are you sure?')">Delete</button>
+                        @csrf @method('DELETE')
+                        <button type="submit" class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white" onclick="return confirm('Are you sure?')">Delete</button>
                     </form>
                 </div>
             </div>
@@ -942,17 +1053,14 @@ class MakeModuleCommand extends Command
         <div class="max-w-3xl mx-auto">
             <div class="flex items-center justify-between mb-6">
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Create {$title}</h1>
-                <a href="{{ route('{$slug}.index') }}" class="text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">&larr; Back to list</a>
+                <a href="{{ route('{$slug}.index') }}" class="text-sm text-indigo-600">&larr; Back</a>
             </div>
-
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
                 <form action="{{ route('{$slug}.store') }}" method="POST" class="space-y-4">
                     @csrf
-
                     {{-- Add your form fields here --}}
-
                     <div class="flex justify-end">
-                        <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Create</button>
+                        <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Create</button>
                     </div>
                 </form>
             </div>
@@ -972,18 +1080,14 @@ class MakeModuleCommand extends Command
         <div class="max-w-3xl mx-auto">
             <div class="flex items-center justify-between mb-6">
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Edit {$title}</h1>
-                <a href="{{ route('{$slug}.show', \$item->id) }}" class="text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400">&larr; Back to details</a>
+                <a href="{{ route('{$slug}.show', \$item->id) }}" class="text-sm text-indigo-600">&larr; Back</a>
             </div>
-
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
                 <form action="{{ route('{$slug}.update', \$item->id) }}" method="POST" class="space-y-4">
-                    @csrf
-                    @method('PUT')
-
+                    @csrf @method('PUT')
                     {{-- Add your form fields here --}}
-
                     <div class="flex justify-end">
-                        <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Update</button>
+                        <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Update</button>
                     </div>
                 </form>
             </div>
@@ -995,19 +1099,21 @@ class MakeModuleCommand extends Command
     private function registerTestSuite(): void
     {
         $phpunitPath = base_path('phpunit.xml');
-        $content = file_get_contents($phpunitPath);
+        $content     = file_get_contents($phpunitPath);
 
         $apiSuite = "{$this->module}-Api";
         if (str_contains($content, "name=\"{$apiSuite}\"")) {
             return;
         }
 
+        $webSuite = $this->isDomain()
+            ? "\n        <testsuite name=\"{$this->module}-Web\">\n            <directory>modules/{$this->module}/Tests/Web</directory>\n        </testsuite>"
+            : '';
+
         $suite = "        <testsuite name=\"{$this->module}-Api\">\n"
                . "            <directory>modules/{$this->module}/Tests/Api</directory>\n"
-               . "        </testsuite>\n"
-               . "        <testsuite name=\"{$this->module}-Web\">\n"
-               . "            <directory>modules/{$this->module}/Tests/Web</directory>\n"
-               . "        </testsuite>";
+               . "        </testsuite>"
+               . $webSuite;
 
         $content = preg_replace(
             '/(\s*<\/testsuites>)/',
@@ -1022,7 +1128,7 @@ class MakeModuleCommand extends Command
     {
         $providerClass = "Modules\\{$this->module}\\Providers\\{$this->module}ServiceProvider::class";
         $providersPath = base_path('bootstrap/providers.php');
-        $content = file_get_contents($providersPath);
+        $content       = file_get_contents($providersPath);
 
         if (str_contains($content, $providerClass)) {
             return;
@@ -1041,7 +1147,7 @@ class MakeModuleCommand extends Command
     {
         $path = "{$this->modulePath}/{$relativePath}";
 
-        $lines = explode("\n", $content);
+        $lines     = explode("\n", $content);
         $minIndent = PHP_INT_MAX;
 
         foreach ($lines as $line) {
