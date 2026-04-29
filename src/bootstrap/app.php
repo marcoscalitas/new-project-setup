@@ -1,14 +1,15 @@
 <?php
 
 use Illuminate\Auth\AuthenticationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,8 +18,6 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Registered per-group so web routes run AFTER StartSession (session readable)
-        // and api routes still get Accept-Language negotiation (no session involved)
         $middleware->appendToGroup('web', \App\Http\Middleware\SetLocaleFromHeader::class);
         $middleware->appendToGroup('api', \App\Http\Middleware\SetLocaleFromHeader::class);
     })
@@ -26,7 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $isApi = fn (Request $request): bool => $request->is('api/*') || $request->expectsJson();
 
-        // 401 — AuthenticationException is NOT transformed by prepareException, so this callback runs.
+        // 401
         $exceptions->render(function (AuthenticationException $e, Request $request) use ($isApi) {
             if ($isApi($request)) {
                 return response()->json(['message' => 'Unauthenticated.'], 401);
@@ -35,30 +34,51 @@ return Application::configure(basePath: dirname(__DIR__))
             return redirect()->guest(route('login'));
         });
 
-        // 403 — prepareException converts AuthorizationException → AccessDeniedHttpException before
-        //        renderViaCallbacks runs, so we must handle the converted type.
-        //        For API requests, Laravel's default JSON rendering already returns the right response;
-        //        we only need to redirect web clients.
+        // 403 — prepareException converts AuthorizationException → AccessDeniedHttpException
         $exceptions->render(function (AccessDeniedHttpException $e, Request $request) use ($isApi) {
-            if (!$isApi($request)) {
-                return redirect('/')->with('error', 'You do not have permission to perform this action.');
+            if ($isApi($request)) {
+                return response()->json(['message' => 'Forbidden.'], 403);
             }
+
+            return redirect('/')->with('error', 'You do not have permission to perform this action.');
         });
 
-        // 404 — NotFoundHttpException covers both direct route-not-found and the ModelNotFoundException
-        //        that prepareException converts to NotFoundHttpException.
+        // 404 — covers ModelNotFoundException (converted by prepareException) and missing routes
         $exceptions->render(function (NotFoundHttpException $e, Request $request) use ($isApi) {
             if ($isApi($request)) {
                 return response()->json(['message' => 'Not found.'], 404);
             }
         });
 
-        // 405 — MethodNotAllowedHttpException is NOT transformed by prepareException.
+        // 405
         $exceptions->render(function (MethodNotAllowedHttpException $e, Request $request) use ($isApi) {
             if ($isApi($request)) {
                 return response()->json(['message' => 'Method not allowed.'], 405);
             }
         });
 
-    })->create();
+        // 422 — validation failures
+        $exceptions->render(function (ValidationException $e, Request $request) use ($isApi) {
+            if ($isApi($request)) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'errors'  => $e->errors(),
+                ], 422);
+            }
+        });
 
+        // 429 — rate limiting
+        $exceptions->render(function (TooManyRequestsHttpException $e, Request $request) use ($isApi) {
+            if ($isApi($request)) {
+                return response()->json(['message' => 'Too many requests.'], 429);
+            }
+        });
+
+        // 500 — unhandled exceptions; suppress stack trace on API in production
+        $exceptions->render(function (\Throwable $e, Request $request) use ($isApi) {
+            if ($isApi($request) && !config('app.debug')) {
+                return response()->json(['message' => 'Server error.'], 500);
+            }
+        });
+
+    })->create();
