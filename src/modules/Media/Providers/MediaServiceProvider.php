@@ -1,0 +1,29 @@
+<?php
+
+namespace Modules\Media\Providers;
+
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
+use Modules\Core\Contracts\FileUploadInterface;
+use Modules\Media\Policies\MediaPolicy;
+use Modules\Media\Services\MediaService;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
+class MediaServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->app->bind(FileUploadInterface::class, MediaService::class);
+    }
+
+    public function boot(): void
+    {
+        Gate::policy(Media::class, MediaPolicy::class);
+
+        Route::prefix('api/v1')->middleware('api')->group(__DIR__ . '/../Routes/api.php');
+        Route::middleware('web')->group(__DIR__ . '/../Routes/web.php');
+
+        $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'media');
+    }
+}

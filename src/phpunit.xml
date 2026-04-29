@@ -47,6 +47,18 @@
         <testsuite name="Export-Web">
             <directory>modules/Export/Tests/Web</directory>
         </testsuite>
+        <testsuite name="Settings-Api">
+            <directory>modules/Settings/Tests/Api</directory>
+        </testsuite>
+        <testsuite name="Settings-Web">
+            <directory>modules/Settings/Tests/Web</directory>
+        </testsuite>
+        <testsuite name="Media-Api">
+            <directory>modules/Media/Tests/Api</directory>
+        </testsuite>
+        <testsuite name="Media-Web">
+            <directory>modules/Media/Tests/Web</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
