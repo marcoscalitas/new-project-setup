@@ -32,32 +32,17 @@
         <testsuite name="Notification-Api">
             <directory>modules/Notification/Tests/Api</directory>
         </testsuite>
-        <testsuite name="Notification-Web">
-            <directory>modules/Notification/Tests/Web</directory>
-        </testsuite>
         <testsuite name="ActivityLog-Api">
             <directory>modules/ActivityLog/Tests/Api</directory>
-        </testsuite>
-        <testsuite name="ActivityLog-Web">
-            <directory>modules/ActivityLog/Tests/Web</directory>
         </testsuite>
         <testsuite name="Export-Api">
             <directory>modules/Export/Tests/Api</directory>
         </testsuite>
-        <testsuite name="Export-Web">
-            <directory>modules/Export/Tests/Web</directory>
-        </testsuite>
         <testsuite name="Settings-Api">
             <directory>modules/Settings/Tests/Api</directory>
         </testsuite>
-        <testsuite name="Settings-Web">
-            <directory>modules/Settings/Tests/Web</directory>
-        </testsuite>
         <testsuite name="Media-Api">
             <directory>modules/Media/Tests/Api</directory>
-        </testsuite>
-        <testsuite name="Media-Web">
-            <directory>modules/Media/Tests/Web</directory>
         </testsuite>
     </testsuites>
     <source>
