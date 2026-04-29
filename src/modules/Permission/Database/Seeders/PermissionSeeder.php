@@ -14,6 +14,8 @@ class PermissionSeeder extends Seeder
             'role'       => ['list', 'view', 'create', 'update', 'delete'],
             'permission' => ['list', 'view', 'create', 'update', 'delete'],
             'log'        => ['list', 'view'],
+            'media'      => ['list', 'view', 'create', 'update', 'delete'],
+            'setting'    => ['list', 'view', 'create', 'update', 'delete'],
         ];
 
         foreach ($modules as $module => $actions) {

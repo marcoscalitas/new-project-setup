@@ -11,7 +11,7 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         foreach (['api', 'web'] as $guard) {
-            // Admin — todas as permissions
+            // Admin — all permissions
             $admin = Role::withTrashed()->firstOrCreate([
                 'name'       => 'admin',
                 'guard_name' => $guard,
@@ -23,7 +23,7 @@ class RoleSeeder extends Seeder
                 Permission::where('guard_name', $guard)->get()
             );
 
-            // User — apenas visualização
+            // User — read-only access to own resources and shared read permissions
             $user = Role::withTrashed()->firstOrCreate([
                 'name'       => 'user',
                 'guard_name' => $guard,
@@ -33,7 +33,16 @@ class RoleSeeder extends Seeder
             }
             $user->syncPermissions(
                 Permission::where('guard_name', $guard)
-                    ->whereIn('name', ['user.list', 'user.view'])
+                    ->whereIn('name', [
+                        'user.list',
+                        'user.view',
+                        'log.list',
+                        'log.view',
+                        'media.list',
+                        'media.view',
+                        'setting.list',
+                        'setting.view',
+                    ])
                     ->get()
             );
         }
