@@ -5,6 +5,8 @@ namespace Modules\Notification\Providers;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\Core\Contracts\NotificationSenderInterface;
+use Modules\Notification\Services\NotificationDispatcher;
 use Modules\Auth\Events\UserCreated;
 use Modules\Notification\Events\NotificationDeleted;
 use Modules\Notification\Events\NotificationRead;
@@ -31,7 +33,7 @@ class NotificationServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(NotificationSenderInterface::class, NotificationDispatcher::class);
     }
 
     /**
