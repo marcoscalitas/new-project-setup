@@ -4,22 +4,19 @@ namespace Modules\Auth\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Modules\Permission\Http\Resources\RoleResource;
 
 class AuthResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
         return [
-            'id'    => $this->id,
-            'name'  => $this->name,
-            'email' => $this->email,
-            'roles' => RoleResource::collection($this->whenLoaded('roles')),
+            'id'         => $this->id,
+            'name'       => $this->name,
+            'email'      => $this->email,
+            'roles'      => $this->whenLoaded('roles', fn () => $this->roles->map(fn ($role) => [
+                'id'   => $role->id,
+                'name' => $role->name,
+            ])),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

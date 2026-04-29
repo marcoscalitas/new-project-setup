@@ -13,6 +13,18 @@ class ActivityLogController
 {
     public function __construct(private ActivityLogService $service) {}
 
+    public function forUser(Request $request, int $userId): JsonResponse
+    {
+        if ($request->user()?->id !== $userId) {
+            Gate::authorize('viewAny', Activity::class);
+        }
+
+        $perPage = min((int) $request->query('per_page', 15), 100);
+        $logs = $this->service->getForUser($userId, $perPage);
+
+        return ActivityLogResource::collection($logs)->response();
+    }
+
     public function index(Request $request): JsonResponse|\Illuminate\View\View
     {
         Gate::authorize('viewAny', Activity::class);

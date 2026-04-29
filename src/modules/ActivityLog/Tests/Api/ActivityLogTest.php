@@ -154,7 +154,7 @@ class ActivityLogTest extends TestCase
         $this->createActivity($this->regularUser);
 
         $response = $this->getJson(
-            "/api/v1/users/{$this->regularUser->id}/activity",
+            "/api/v1/activity-log/users/{$this->regularUser->id}",
             $this->userHeaders()
         );
 
@@ -168,7 +168,7 @@ class ActivityLogTest extends TestCase
         $this->createActivity($this->regularUser);
 
         $response = $this->getJson(
-            "/api/v1/users/{$this->regularUser->id}/activity",
+            "/api/v1/activity-log/users/{$this->regularUser->id}",
             $this->adminHeaders()
         );
 
@@ -181,7 +181,7 @@ class ActivityLogTest extends TestCase
         $other = User::factory()->create();
 
         $response = $this->getJson(
-            "/api/v1/users/{$other->id}/activity",
+            "/api/v1/activity-log/users/{$other->id}",
             $this->userHeaders()
         );
 
@@ -190,7 +190,7 @@ class ActivityLogTest extends TestCase
 
     public function test_unauthenticated_user_cannot_view_user_activity(): void
     {
-        $response = $this->getJson("/api/v1/users/{$this->regularUser->id}/activity");
+        $response = $this->getJson("/api/v1/activity-log/users/{$this->regularUser->id}");
 
         $response->assertUnauthorized();
     }

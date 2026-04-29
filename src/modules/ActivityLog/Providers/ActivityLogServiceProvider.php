@@ -12,7 +12,7 @@ class ActivityLogServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->bind('export.activity_log', \Modules\ActivityLog\Services\ActivityLogExportService::class);
     }
 
     public function boot(): void

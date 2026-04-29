@@ -6,22 +6,15 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Modules\ActivityLog\Services\ActivityLogExportService;
 use Modules\Export\Http\Requests\ExportRequest;
 use Modules\Export\Models\Export;
 use Modules\Export\Services\ExportService;
-use Modules\User\Services\UserExportService;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Http\Response;
 
 class ExportController
 {
-    private const EXPORTERS = [
-        'users'        => UserExportService::class,
-        'activity_log' => ActivityLogExportService::class,
-    ];
-
     public function __construct(private readonly ExportService $exportService) {}
 
     public function index(Request $request): JsonResponse|\Illuminate\View\View
@@ -40,10 +33,11 @@ class ExportController
     public function export(ExportRequest $request): JsonResponse|BinaryFileResponse|StreamedResponse|Response|\Illuminate\Http\RedirectResponse
     {
         $module = $request->input('module');
+        $key    = "export.{$module}";
 
-        abort_unless(isset(self::EXPORTERS[$module]), 422, 'Módulo de exportação inválido.');
+        abort_unless(app()->bound($key), 422, 'Módulo de exportação inválido.');
 
-        $exporter = app(self::EXPORTERS[$module]);
+        $exporter = app($key);
         $filters  = $request->input('filters', []);
         $format   = $request->input('format');
 

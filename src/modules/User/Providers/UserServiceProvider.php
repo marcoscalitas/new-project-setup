@@ -20,7 +20,7 @@ class UserServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind('export.users', \Modules\User\Services\UserExportService::class);
     }
 
     /**
