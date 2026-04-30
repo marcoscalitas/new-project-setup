@@ -7,6 +7,8 @@ use App\Mail\MailMessage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Passport\Client;
 use Mockery\MockInterface;
+use Modules\Auth\Events\UserCreated;
+use Modules\Auth\Listeners\SendWelcomeEmail;
 use Modules\User\Models\User;
 use Tests\TestCase;
 
@@ -32,7 +34,7 @@ class MailTest extends TestCase
         ]);
     }
 
-    public function test_welcome_email_is_queued_on_register(): void
+    public function test_welcome_email_is_queued_on_user_created_event(): void
     {
         $this->mock(MailSenderInterface::class, function (MockInterface $mock) {
             $mock->shouldReceive('queue')
@@ -44,12 +46,9 @@ class MailTest extends TestCase
                 );
         });
 
-        $this->postJson('/api/v1/auth/register', [
-            'name'                  => 'John Doe',
-            'email'                 => 'john@example.com',
-            'password'              => 'SecurePass1!',
-            'password_confirmation' => 'SecurePass1!',
-        ])->assertCreated();
+        (new SendWelcomeEmail(app(MailSenderInterface::class)))->handle(
+            new UserCreated('01FAKE', 'John Doe', 'john@example.com')
+        );
     }
 
     public function test_welcome_email_contains_correct_user_data(): void
@@ -63,25 +62,9 @@ class MailTest extends TestCase
                 );
         });
 
-        $this->postJson('/api/v1/auth/register', [
-            'name'                  => 'Maria Silva',
-            'email'                 => 'maria@example.com',
-            'password'              => 'SecurePass1!',
-            'password_confirmation' => 'SecurePass1!',
-        ])->assertCreated();
-    }
-
-    public function test_welcome_email_not_queued_on_failed_register(): void
-    {
-        $this->mock(MailSenderInterface::class, function (MockInterface $mock) {
-            $mock->shouldReceive('queue')->never();
-        });
-
-        $this->postJson('/api/v1/auth/register', [
-            'name'     => 'John Doe',
-            'email'    => 'not-an-email',
-            'password' => 'SecurePass1!',
-        ])->assertUnprocessable();
+        (new SendWelcomeEmail(app(MailSenderInterface::class)))->handle(
+            new UserCreated('01FAKE', 'Maria Silva', 'maria@example.com')
+        );
     }
 
     public function test_password_reset_email_is_queued_on_forgot_password(): void

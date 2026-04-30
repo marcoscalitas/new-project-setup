@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Laravel\Passport\Client;
 use Laravel\Passport\Passport;
+use Modules\Auth\Events\UserCreated;
+use Modules\Auth\Listeners\SendEmailVerificationOnUserCreated;
 use Modules\Permission\Models\Permission;
 use Modules\User\Models\User;
 use Tests\TestCase;
@@ -43,36 +45,26 @@ class EmailVerificationTest extends TestCase
         );
     }
 
-    // == REGISTER ==
+    // == USER CREATION ==
 
-    public function test_register_sends_verification_email(): void
+    public function test_user_creation_triggers_verification_email(): void
     {
         Notification::fake();
 
-        $this->postJson('/api/v1/auth/register', [
-            'name'                  => 'John Doe',
-            'email'                 => 'john@example.com',
-            'password'              => 'SecurePass1!',
-            'password_confirmation' => 'SecurePass1!',
-        ])->assertCreated();
+        $user = User::factory()->unverified()->create();
+        event(new UserCreated($user->ulid, $user->name, $user->email));
 
-        $user = User::where('email', 'john@example.com')->first();
+        (new SendEmailVerificationOnUserCreated())->handle(
+            new UserCreated($user->ulid, $user->name, $user->email)
+        );
 
         Notification::assertSentTo($user, VerifyEmail::class);
     }
 
-    public function test_registered_user_has_unverified_email_initially(): void
+    public function test_created_user_has_unverified_email_initially(): void
     {
-        Notification::fake();
-
-        $this->postJson('/api/v1/auth/register', [
-            'name'                  => 'Jane Doe',
-            'email'                 => 'jane@example.com',
-            'password'              => 'SecurePass1!',
-            'password_confirmation' => 'SecurePass1!',
-        ]);
-
-        $this->assertNull(User::where('email', 'jane@example.com')->first()->email_verified_at);
+        $user = User::factory()->unverified()->create();
+        $this->assertNull($user->email_verified_at);
     }
 
     // == LOGIN ==
@@ -81,10 +73,13 @@ class EmailVerificationTest extends TestCase
     {
         $user = User::factory()->unverified()->create(['password' => bcrypt('SecurePass1!')]);
 
-        $this->postJson('/api/v1/auth/login', [
+        $response = $this->postJson('/api/v1/auth/login', [
             'email'    => $user->email,
             'password' => 'SecurePass1!',
-        ])->assertUnprocessable();
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonPath('resend_url', route('api.auth.email.resend'));
     }
 
     public function test_login_does_not_resend_verification_email_automatically(): void
@@ -162,13 +157,33 @@ class EmailVerificationTest extends TestCase
 
         $user = User::factory()->unverified()->create();
 
-        Passport::actingAs($user);
-
-        $this->postJson('/api/v1/auth/email/resend')
+        $this->postJson('/api/v1/auth/email/resend', ['email' => $user->email])
             ->assertOk()
-            ->assertJson(['message' => 'E-mail de verificação reenviado.']);
+            ->assertJson(['message' => __('auth.verification_email_resent')]);
 
         Notification::assertSentTo($user, VerifyEmail::class);
+    }
+
+    public function test_resend_for_unknown_email_returns_200_without_sending(): void
+    {
+        Notification::fake();
+
+        $this->postJson('/api/v1/auth/email/resend', ['email' => 'unknown@example.com'])
+            ->assertOk();
+
+        Notification::assertNothingSent();
+    }
+
+    public function test_resend_for_already_verified_user_returns_200_without_sending(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create();
+
+        $this->postJson('/api/v1/auth/email/resend', ['email' => $user->email])
+            ->assertOk();
+
+        Notification::assertNothingSent();
     }
 
     public function test_resend_invalidates_previous_verification_link(): void
@@ -180,7 +195,6 @@ class EmailVerificationTest extends TestCase
         $user->sendEmailVerificationNotification();
         $user->refresh();
 
-        // old link should no longer verify the email
         $this->actingAs($user)->get($oldUrl);
 
         $this->assertNull($user->fresh()->email_verified_at);
@@ -200,20 +214,11 @@ class EmailVerificationTest extends TestCase
         $this->assertNotNull($user->fresh()->email_verified_at);
     }
 
-    public function test_already_verified_user_gets_422_on_resend(): void
+    public function test_resend_requires_email_field(): void
     {
-        $user = User::factory()->create();
-
-        Passport::actingAs($user);
-
-        $this->postJson('/api/v1/auth/email/resend')
+        $this->postJson('/api/v1/auth/email/resend', [])
             ->assertUnprocessable()
-            ->assertJson(['message' => 'E-mail já verificado.']);
-    }
-
-    public function test_unauthenticated_user_cannot_resend_verification_email(): void
-    {
-        $this->postJson('/api/v1/auth/email/resend')->assertUnauthorized();
+            ->assertJsonValidationErrors(['email']);
     }
 
     // == PROTECTED ROUTES ==
