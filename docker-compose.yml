@@ -95,6 +95,8 @@ services:
         image: postgres:17-alpine
         container_name: ${PROJECT_NAME}-postgres
         restart: unless-stopped
+        ports:
+            - "127.0.0.1:5432:5432"
         command: >
             postgres -c shared_buffers=128MB -c effective_cache_size=256MB -c work_mem=4MB -c maintenance_work_mem=64MB
         environment:
