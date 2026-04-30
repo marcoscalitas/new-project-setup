@@ -53,7 +53,6 @@ class NotificationServiceProvider extends ServiceProvider
         Event::listen(PermissionDeleted::class, [NotifyOnPermissionDeleted::class, 'handle']);
 
         Route::prefix('api/v1')->middleware('api')->group(__DIR__ . '/../Routes/api.php');
-        Route::middleware('web')->group(__DIR__ . '/../Routes/web.php');
         $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
     }
 }
