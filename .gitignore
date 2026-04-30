@@ -23,6 +23,7 @@ src/ableproadmin/
 *.swo
 
 # --- Claude Code ---
+.claude/
 .claude/settings.local.json
 CLAUDE.md
 
