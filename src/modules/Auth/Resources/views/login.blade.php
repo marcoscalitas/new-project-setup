@@ -18,6 +18,12 @@
                             <div
                                 class="mb-4 p-3 rounded bg-primary-500/10 border border-primary-500/20 text-sm text-primary-500">
                                 {{ $errors->first('activation') }}
+                                <div class="mt-2">
+                                    <a href="{{ route('web.auth.email.resend') }}?email={{ urlencode(old('email', '')) }}"
+                                        class="underline hover:no-underline">
+                                        {{ __('ui.did_not_receive_email') }}
+                                    </a>
+                                </div>
                             </div>
                         @elseif ($errors->any())
                             <div

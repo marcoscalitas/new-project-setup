@@ -70,10 +70,13 @@ return [
     'update_password'          => 'Update Password',
 
     // Auth - Verify Email
-    'verify_email_title'       => 'Check Your Mail',
-    'verify_email_subtitle'    => 'We have sent a verification link to your email.',
-    'verification_link_sent'   => 'A new verification link has been sent to your email address.',
-    'resend_verification'      => 'Resend Verification Email',
+    'verify_email_title'            => 'Check Your Mail',
+    'verify_email_subtitle'         => 'We have sent a verification link to your email.',
+    'verification_link_sent'        => 'A new verification link has been sent to your email address.',
+    'resend_verification'           => 'Resend Verification Email',
+    'resend_verification_title'     => 'Resend Verification Email',
+    'resend_verification_subtitle'  => 'Enter your email address and we will send you a new activation link.',
+    'did_not_receive_email'         => 'Did not receive the email? Resend',
 
     // Layout - guest / customizer
     'theme_mode'               => 'Theme Mode',

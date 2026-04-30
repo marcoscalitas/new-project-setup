@@ -4,6 +4,7 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Modules\Auth\Services\AuthService;
 use Modules\User\Models\User;
 
 // Web auth routes are handled by Fortify (prefix 'auth' set in config/fortify.php)
@@ -26,3 +27,13 @@ Route::get('/auth/email/activate/{id}/{hash}', function (Request $request, strin
 
     return redirect('/')->with('status', 'email-verified');
 })->middleware(['signed', 'throttle:6,1'])->name('verification.activate');
+
+// Public resend verification page — no authentication required.
+Route::get('/auth/email/resend', fn () => view('auth::resend-verification'))
+    ->name('web.auth.email.resend');
+
+Route::post('/auth/email/resend', function (Request $request, AuthService $authService) {
+    $request->validate(['email' => ['required', 'email']]);
+    $authService->resendVerificationEmail($request->input('email'));
+    return back()->with('status', 'verification-link-sent');
+})->middleware('throttle:3,1')->name('web.auth.email.resend.send');

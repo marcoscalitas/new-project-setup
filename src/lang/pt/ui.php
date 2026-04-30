@@ -70,10 +70,13 @@ return [
     'update_password'          => 'Atualizar Palavra-passe',
 
     // Auth - Verificar Email
-    'verify_email_title'       => 'Verifica o teu Email',
-    'verify_email_subtitle'    => 'Enviámos um link de verificação para o teu email.',
-    'verification_link_sent'   => 'Um novo link de verificação foi enviado para o teu endereço de email.',
-    'resend_verification'      => 'Reenviar Email de Verificação',
+    'verify_email_title'            => 'Verifica o teu Email',
+    'verify_email_subtitle'         => 'Enviámos um link de verificação para o teu email.',
+    'verification_link_sent'        => 'Um novo link de verificação foi enviado para o teu endereço de email.',
+    'resend_verification'           => 'Reenviar Email de Verificação',
+    'resend_verification_title'     => 'Reenviar Email de Verificação',
+    'resend_verification_subtitle'  => 'Introduz o teu endereço de email e receberás um novo link de ativação.',
+    'did_not_receive_email'         => 'Não recebeu o email? Reenviar',
 
     // Layout - guest / personalizador
     'theme_mode'               => 'Modo do Tema',
