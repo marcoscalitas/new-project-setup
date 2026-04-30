@@ -168,7 +168,7 @@ class MakeModuleCommand extends Command
             : '';
 
         $webRouteBlock = $this->isDomain()
-            ? "\n                Route::middleware('web')\n                    ->group(__DIR__ . '/../Routes/web.php');\n"
+            ? "\n                if (file_exists(\\\$web = __DIR__ . '/../Routes/web.php')) {\n                    Route::middleware('web')->group(\\\$web);\n                }\n"
             : '';
 
         $this->write('Providers/' . $this->module . 'ServiceProvider.php', <<<PHP
@@ -193,9 +193,11 @@ class MakeModuleCommand extends Command
             public function boot(): void
             {
                 {$webRouteBlock}
-                Route::prefix('api/v1')
-                    ->middleware('api')
-                    ->group(__DIR__ . '/../Routes/api.php');
+                if (file_exists(\$api = __DIR__ . '/../Routes/api.php')) {
+                    Route::prefix('api/v1')
+                        ->middleware('api')
+                        ->group(\$api);
+                }
 
                 \$this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');{$viewsLine}
 
