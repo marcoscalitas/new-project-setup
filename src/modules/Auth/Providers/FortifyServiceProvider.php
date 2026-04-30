@@ -9,7 +9,6 @@ use Modules\Auth\Actions\UpdateUserProfileInformation;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -41,13 +40,6 @@ class FortifyServiceProvider extends ServiceProvider
             }
 
             if (!$user->hasVerifiedEmail()) {
-                // Rate-limit resends to once every 2 minutes per user
-                $cacheKey = 'verify_resend_login:' . $user->id;
-                if (!Cache::has($cacheKey)) {
-                    $user->sendEmailVerificationNotification();
-                    Cache::put($cacheKey, true, now()->addMinutes(2));
-                }
-
                 throw ValidationException::withMessages([
                     'activation' => [__('auth.email_activation_sent')],
                 ]);
