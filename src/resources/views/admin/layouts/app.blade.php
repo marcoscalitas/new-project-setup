@@ -209,14 +209,6 @@
                         <div class="dropdown-menu dropdown-notification dropdown-menu-end pc-h-dropdown p-2">
                             <div class="dropdown-header flex items-center justify-between py-4 px-5">
                                 <h5 class="m-0">{{ __('ui.notifications') }}</h5>
-                                @if ($unreadNotifications->count() > 0)
-                                    <form method="POST" action="{{ route('notifications.readAll') }}"
-                                        class="inline">
-                                        @csrf
-                                        <button type="submit"
-                                            class="btn btn-link btn-sm">{{ __('ui.mark_all_read') }}</button>
-                                    </form>
-                                @endif
                             </div>
                             <div class="dropdown-body header-notification-scroll relative py-4 px-5"
                                 style="max-height: calc(100vh - 215px)">
@@ -241,12 +233,6 @@
                                 @empty
                                     <p class="text-center text-muted py-4 mb-0">No new notifications</p>
                                 @endforelse
-                            </div>
-                            <div class="text-center py-2">
-                                <a href="/api/v1/notifications"
-                                    class="text-primary-500 hover:text-primary-600">
-                                    {{ __('ui.view_all_notifications') }}
-                                </a>
                             </div>
                         </div>
                     </li>
