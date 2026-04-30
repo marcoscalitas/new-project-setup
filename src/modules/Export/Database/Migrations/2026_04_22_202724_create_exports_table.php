@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('exports', function (Blueprint $table) {
             $table->id();
-            $table->char('ulid', 26)->unique();
+            $table->ulid()->unique();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('module');
             $table->enum('format', ['csv', 'xlsx', 'pdf']);

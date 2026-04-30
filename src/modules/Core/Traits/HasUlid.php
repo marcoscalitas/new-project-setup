@@ -6,13 +6,11 @@ use Illuminate\Support\Str;
 
 trait HasUlid
 {
-    protected static function bootHasUlid(): void
+    protected function initializeHasUlid(): void
     {
-        static::creating(function ($model) {
-            if (empty($model->ulid)) {
-                $model->ulid = (string) Str::ulid();
-            }
-        });
+        if (empty($this->ulid)) {
+            $this->ulid = (string) Str::ulid();
+        }
     }
 
     public function getRouteKeyName(): string
