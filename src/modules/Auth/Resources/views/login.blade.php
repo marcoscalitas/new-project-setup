@@ -14,6 +14,13 @@
 
                         <h3 class="font-semibold mb-5">{{ __('ui.login_with_email') }}</h3>
 
+                        @if (session('status') === 'verification-link-sent')
+                            <div
+                                class="mb-4 p-3 rounded bg-success-500/10 border border-success-500/20 text-sm text-success-500">
+                                {{ __('ui.verification_link_sent') }}
+                            </div>
+                        @endif
+
                         @if ($errors->has('activation'))
                             <div
                                 class="mb-4 p-3 rounded bg-primary-500/10 border border-primary-500/20 text-sm text-primary-500">

@@ -11,7 +11,7 @@ use Modules\User\Models\User;
 
 // Public email verification route — does not require authentication.
 // After verifying, the user is automatically logged in via web session.
-Route::get('/auth/email/activate/{id}/{hash}', function (Request $request, string $id, string $hash) {
+Route::get('/auth/email/activate/{id}/{hash}', function (string $id, string $hash) {
     $user = User::findOrFail($id);
 
     if (!hash_equals(sha1($user->getEmailForVerification()), $hash)) {
@@ -35,5 +35,5 @@ Route::get('/auth/email/resend', fn () => view('auth::resend-verification'))
 Route::post('/auth/email/resend', function (Request $request, AuthService $authService) {
     $request->validate(['email' => ['required', 'email']]);
     $authService->resendVerificationEmail($request->input('email'));
-    return back()->with('status', 'verification-link-sent');
+    return redirect()->route('login')->with('status', 'verification-link-sent');
 })->middleware('throttle:3,1')->name('web.auth.email.resend.send');
