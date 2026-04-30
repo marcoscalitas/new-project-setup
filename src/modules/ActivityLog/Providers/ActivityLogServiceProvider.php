@@ -19,6 +19,8 @@ class ActivityLogServiceProvider extends ServiceProvider
     {
         Gate::policy(Activity::class, ActivityLogPolicy::class);
 
-        Route::prefix('api/v1')->middleware('api')->group(__DIR__ . '/../Routes/api.php');
+        if (file_exists($api = __DIR__ . '/../Routes/api.php')) {
+            Route::prefix('api/v1')->middleware('api')->group($api);
+        }
     }
 }

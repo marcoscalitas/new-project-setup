@@ -51,8 +51,12 @@ class PermissionServiceProvider extends ServiceProvider
         Event::listen(PermissionUpdated::class, [LogPermissionUpdate::class, 'handle']);
         Event::listen(PermissionDeleted::class, [LogPermissionDeletion::class, 'handle']);
 
-        Route::middleware('web')->group(__DIR__ . '/../Routes/web.php');
-        Route::prefix('api/v1')->middleware('api')->group(__DIR__ . '/../Routes/api.php');
+        if (file_exists($web = __DIR__ . '/../Routes/web.php')) {
+            Route::middleware('web')->group($web);
+        }
+        if (file_exists($api = __DIR__ . '/../Routes/api.php')) {
+            Route::prefix('api/v1')->middleware('api')->group($api);
+        }
         $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
         $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'permission');
     }
