@@ -20,7 +20,7 @@ class NotifyOnUserDeleted implements ShouldQueue
             $admin->notify(new ActivityNotification(
                 type: 'user_deleted',
                 message: "User deleted: {$event->userEmail}",
-                data: ['user_id' => $event->userId, 'email' => $event->userEmail],
+                data: ['user_ulid' => $event->userUlid, 'email' => $event->userEmail],
             ));
         }
     }

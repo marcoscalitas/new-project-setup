@@ -23,11 +23,10 @@ class LogRoleChange implements ShouldQueue
     public function handle(RoleAssigned $event): void
     {
         logger()->info("Role assigned to user", [
-            'user_id' => $event->user->id,
-            'user_email' => $event->user->email,
-            'role_id' => $event->role->id,
-            'role_name' => $event->role->name,
-            'timestamp' => now()->toDateTimeString(),
+            'user_ulid'  => $event->userUlid,
+            'user_email' => $event->userEmail,
+            'role_name'  => $event->roleName,
+            'timestamp'  => now()->toDateTimeString(),
         ]);
     }
 }

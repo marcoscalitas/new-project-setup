@@ -23,9 +23,9 @@ class LogUserCreation implements ShouldQueue
     public function handle(UserCreated $event): void
     {
         logger()->info("User created", [
-            'user_id' => $event->user->id,
-            'user_email' => $event->user->email,
-            'timestamp' => now()->toDateTimeString(),
+            'user_ulid'  => $event->userUlid,
+            'user_email' => $event->userEmail,
+            'timestamp'  => now()->toDateTimeString(),
         ]);
     }
 }

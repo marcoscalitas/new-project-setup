@@ -17,8 +17,8 @@ class LogRoleCreation implements ShouldQueue
     public function handle(RoleCreated $event): void
     {
         logger()->info("Role created", [
-            'role_id'   => $event->role->id,
-            'role_name' => $event->role->name,
+            'role_ulid' => $event->roleUlid,
+            'role_name' => $event->roleName,
             'timestamp' => now()->toDateTimeString(),
         ]);
     }

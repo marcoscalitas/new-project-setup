@@ -29,7 +29,7 @@ class NotificationService
     {
         $user->notifications()->findOrFail($id)->markAsRead();
 
-        NotificationRead::dispatch($user->id, $id);
+        NotificationRead::dispatch($user->ulid, $id);
     }
 
     public function markAllAsRead(User $user): void
@@ -39,10 +39,8 @@ class NotificationService
 
     public function delete(User $user, string $id): void
     {
-        $userId = $user->id;
-
         $user->notifications()->findOrFail($id)->delete();
 
-        NotificationDeleted::dispatch($userId, $id);
+        NotificationDeleted::dispatch($user->ulid, $id);
     }
 }

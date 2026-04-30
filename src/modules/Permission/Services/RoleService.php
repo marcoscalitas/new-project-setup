@@ -34,7 +34,7 @@ class RoleService
             $role->syncPermissions($data['permissions']);
         }
 
-        RoleCreated::dispatch($role);
+        RoleCreated::dispatch($role->ulid, $role->name);
 
         return $role->load('permissions');
     }

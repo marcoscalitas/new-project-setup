@@ -23,8 +23,8 @@ class LogUserUpdate implements ShouldQueue
     public function handle(UserUpdated $event): void
     {
         logger()->info("User updated", [
-            'user_id'    => $event->user->id,
-            'user_email' => $event->user->email,
+            'user_ulid'  => $event->userUlid,
+            'user_email' => $event->userEmail,
             'timestamp'  => now()->toDateTimeString(),
         ]);
     }

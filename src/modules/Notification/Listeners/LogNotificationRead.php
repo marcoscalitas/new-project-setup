@@ -23,7 +23,7 @@ class LogNotificationRead implements ShouldQueue
     public function handle(NotificationRead $event): void
     {
         logger()->info("Notification marked as read", [
-            'user_id'         => $event->userId,
+            'user_ulid'       => $event->userUlid,
             'notification_id' => $event->notificationId,
             'timestamp'       => now()->toDateTimeString(),
         ]);

@@ -13,9 +13,7 @@ class NotificationDeleted
     /**
      * Create a new event instance.
      */
-    public function __construct(public int $userId, public string $notificationId)
-    {
-    }
+    public function __construct(public string $userUlid, public string $notificationId) {}
 
     /**
      * Get the channels the event should broadcast on.

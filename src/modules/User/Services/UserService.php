@@ -36,7 +36,7 @@ class UserService
             $this->assignRolesToUser($user, $data['roles']);
         }
 
-        UserCreated::dispatch($user);
+        UserCreated::dispatch($user->ulid, $user->name, $user->email);
 
         return $user->load('roles');
     }
@@ -58,7 +58,7 @@ class UserService
             $this->assignRolesToUser($user, $data['roles'] ?? []);
         }
 
-        UserUpdated::dispatch($user);
+        UserUpdated::dispatch($user->ulid, $user->name, $user->email);
 
         return $user->load('roles');
     }
@@ -69,12 +69,12 @@ class UserService
 
         $this->guardAgainstLastAdminDeletion($user);
 
-        $userId = $user->id;
+        $userUlid = $user->ulid;
         $userEmail = $user->email;
 
         $user->delete();
 
-        UserDeleted::dispatch($userId, $userEmail);
+        UserDeleted::dispatch($userUlid, $userEmail);
     }
 
     /**
@@ -87,7 +87,7 @@ class UserService
         foreach ($roleNames as $roleName) {
             $role = Role::where('name', $roleName)->first();
             if ($role) {
-                RoleAssigned::dispatch($user, $role);
+                RoleAssigned::dispatch($user->ulid, $user->email, $role->name);
             }
         }
     }

@@ -97,7 +97,7 @@ class AuthService
             'password' => Hash::make($data['password']),
         ]);
 
-        UserCreated::dispatch($user);
+        UserCreated::dispatch($user->ulid, $user->name, $user->email);
         event(new Registered($user));
 
         $token = $user->createToken('api-token')->accessToken;

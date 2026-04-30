@@ -15,14 +15,14 @@ class NotifyOnUserUpdated implements ShouldQueue
     public function handle(UserUpdated $event): void
     {
         $admins = User::whereHas('roles', fn ($q) => $q->where('name', 'admin'))
-            ->where('id', '!=', $event->user->id)
+            ->where('ulid', '!=', $event->userUlid)
             ->get();
 
         foreach ($admins as $admin) {
             $admin->notify(new ActivityNotification(
                 type: 'user_updated',
-                message: "User updated: {$event->user->email}",
-                data: ['user_id' => $event->user->id, 'email' => $event->user->email],
+                message: "User updated: {$event->userEmail}",
+                data: ['user_ulid' => $event->userUlid, 'email' => $event->userEmail],
             ));
         }
     }

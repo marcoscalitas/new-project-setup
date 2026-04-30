@@ -23,7 +23,7 @@ class LogUserDeletion implements ShouldQueue
     public function handle(UserDeleted $event): void
     {
         logger()->info("User deleted", [
-            'user_id'    => $event->userId,
+            'user_ulid'  => $event->userUlid,
             'user_email' => $event->userEmail,
             'timestamp'  => now()->toDateTimeString(),
         ]);

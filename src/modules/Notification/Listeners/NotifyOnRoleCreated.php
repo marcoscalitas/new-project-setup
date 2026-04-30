@@ -19,8 +19,8 @@ class NotifyOnRoleCreated implements ShouldQueue
         foreach ($admins as $admin) {
             $admin->notify(new ActivityNotification(
                 type: 'role_created',
-                message: "New role created: {$event->role->name}",
-                data: ['role_id' => $event->role->id, 'role_name' => $event->role->name],
+                message: "New role created: {$event->roleName}",
+                data: ['role_ulid' => $event->roleUlid, 'role_name' => $event->roleName],
             ));
         }
     }

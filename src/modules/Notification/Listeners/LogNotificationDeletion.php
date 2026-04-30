@@ -23,7 +23,7 @@ class LogNotificationDeletion implements ShouldQueue
     public function handle(NotificationDeleted $event): void
     {
         logger()->info("Notification deleted", [
-            'user_id'         => $event->userId,
+            'user_ulid'       => $event->userUlid,
             'notification_id' => $event->notificationId,
             'timestamp'       => now()->toDateTimeString(),
         ]);

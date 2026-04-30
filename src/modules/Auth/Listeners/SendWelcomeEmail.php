@@ -14,10 +14,10 @@ class SendWelcomeEmail
     {
         $this->mail->queue(
             MailMessage::make(
-                to: $event->user->email,
+                to: $event->userEmail,
                 subject: 'Welcome to ' . config('app.name'),
                 view: 'auth::emails.welcome',
-                data: ['user' => $event->user],
+                data: ['user' => (object)['name' => $event->userName, 'email' => $event->userEmail]],
             )
         );
     }
