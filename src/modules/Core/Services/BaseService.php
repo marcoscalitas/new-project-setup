@@ -19,6 +19,11 @@ abstract class BaseService
         return $this->model()::findOrFail($id);
     }
 
+    public function findByUlid(string $ulid): Model
+    {
+        return $this->model()::where('ulid', $ulid)->firstOrFail();
+    }
+
     public function create(array $data): Model
     {
         return $this->model()::create($data);

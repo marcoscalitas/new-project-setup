@@ -2,6 +2,7 @@
 
 namespace Modules\Core\Http\Controllers;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -25,20 +26,18 @@ abstract class BaseApiController
         return $this->resourceClass()::collection($items)->response();
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Model $model): JsonResponse
     {
-        $item = $this->service->findById($id);
+        Gate::authorize('view', $model);
 
-        Gate::authorize('view', $item);
-
-        return response()->json(new ($this->resourceClass())($item));
+        return response()->json(new ($this->resourceClass())($model));
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(Model $model): JsonResponse
     {
-        Gate::authorize('delete', $this->modelClass()::findOrFail($id));
+        Gate::authorize('delete', $model);
 
-        $this->service->delete($id);
+        $this->service->delete($model->id);
 
         return response()->json(null, 204);
     }

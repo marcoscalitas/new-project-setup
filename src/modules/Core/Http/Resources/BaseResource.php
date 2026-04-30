@@ -16,6 +16,6 @@ abstract class BaseResource extends JsonResource
 
     protected function base(): array
     {
-        return array_merge(['id' => $this->id], $this->timestamps());
+        return array_merge(['id' => $this->ulid], $this->timestamps());
     }
 }

@@ -712,6 +712,7 @@ class MakeModuleCommand extends Command
             {
                 Schema::create('{$table}', function (Blueprint \$table) {
                     \$table->id();
+                    \$table->char('ulid', 26)->unique();
                     // TODO: add columns
                     \$table->timestamps();
                     \$table->softDeletes();
