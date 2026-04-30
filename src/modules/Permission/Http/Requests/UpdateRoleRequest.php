@@ -4,7 +4,6 @@ namespace Modules\Permission\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Modules\Permission\Models\Role;
 
 class UpdateRoleRequest extends FormRequest
 {
@@ -22,7 +21,7 @@ class UpdateRoleRequest extends FormRequest
 
     public function rules(): array
     {
-        $role = Role::findOrFail($this->route('id'));
+        $role = $this->route('role');
 
         return [
             'name'          => ['required', 'string', 'max:255', Rule::unique('roles')->ignore($role->id)->where('guard_name', $role->guard_name)->whereNull('deleted_at')],

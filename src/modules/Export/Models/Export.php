@@ -5,19 +5,20 @@ namespace Modules\Export\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Str;
+use Modules\Core\Traits\HasUlid;
 use Modules\User\Models\User;
 
 class Export extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUlid;
 
     protected static function newFactory(): \Modules\Export\Database\Factories\ExportFactory
     {
         return \Modules\Export\Database\Factories\ExportFactory::new();
     }
+
     protected $fillable = [
-        'uuid',
+        'ulid',
         'user_id',
         'module',
         'format',
@@ -31,15 +32,6 @@ class Export extends Model
     protected $casts = [
         'expires_at' => 'datetime',
     ];
-
-    protected static function boot(): void
-    {
-        parent::boot();
-
-        static::creating(function (Export $export) {
-            $export->uuid ??= (string) Str::uuid();
-        });
-    }
 
     public function user(): BelongsTo
     {

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Modules\ActivityLog\Http\Resources\ActivityLogResource;
 use Modules\ActivityLog\Services\ActivityLogService;
+use Modules\User\Models\User;
 use Spatie\Activitylog\Models\Activity;
 
 class ActivityLogController
@@ -24,14 +25,16 @@ class ActivityLogController
         return ActivityLogResource::collection($logs)->response();
     }
 
-    public function forUser(Request $request, int $userId): JsonResponse
+    public function forUser(Request $request, string $userUlid): JsonResponse
     {
-        if ($request->user()?->id !== $userId) {
+        $target = User::where('ulid', $userUlid)->firstOrFail();
+
+        if ($request->user()?->id !== $target->id) {
             Gate::authorize('viewAny', Activity::class);
         }
 
         $perPage = min((int) $request->query('per_page', 15), 100);
-        $logs    = $this->service->getForUser($userId, $perPage);
+        $logs    = $this->service->getForUser($target->id, $perPage);
 
         return ActivityLogResource::collection($logs)->response();
     }

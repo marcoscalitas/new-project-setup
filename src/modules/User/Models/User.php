@@ -13,6 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Passport\HasApiTokens;
+use Modules\Core\Traits\HasUlid;
 use Modules\Notification\Models\Notification;
 use Modules\User\Database\Factories\UserFactory;
 use Spatie\Activitylog\Support\LogOptions;
@@ -24,7 +25,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, HasRoles, InteractsWithMedia, LogsActivity, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, HasRoles, HasUlid, InteractsWithMedia, LogsActivity, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
     protected static $recordEvents = ['created', 'updated', 'deleted'];
 

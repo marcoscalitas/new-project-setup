@@ -50,10 +50,8 @@ class PermissionController
         return redirect()->route('permissions.index')->with('success', __('permissions.permission_created'));
     }
 
-    public function show(int $id): JsonResponse|\Illuminate\View\View
+    public function show(Permission $permission): JsonResponse|\Illuminate\View\View
     {
-        $permission = $this->permissionService->findById($id);
-
         Gate::authorize('view', $permission);
 
         if (request()->expectsJson()) {
@@ -63,20 +61,18 @@ class PermissionController
         return view('permission::permissions.show', compact('permission'));
     }
 
-    public function edit(int $id): \Illuminate\View\View
+    public function edit(Permission $permission): \Illuminate\View\View
     {
-        $permission = Permission::findOrFail($id);
-
         Gate::authorize('update', $permission);
 
         return view('permission::permissions.edit', compact('permission'));
     }
 
-    public function update(UpdatePermissionRequest $request, int $id): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function update(UpdatePermissionRequest $request, Permission $permission): JsonResponse|\Illuminate\Http\RedirectResponse
     {
-        Gate::authorize('update', Permission::findOrFail($id));
+        Gate::authorize('update', $permission);
 
-        $permission = $this->permissionService->update($id, $request->validated());
+        $permission = $this->permissionService->update($permission->id, $request->validated());
 
         if (request()->expectsJson()) {
             return response()->json(new PermissionResource($permission));
@@ -85,11 +81,11 @@ class PermissionController
         return redirect()->route('permissions.index')->with('success', __('permissions.permission_updated'));
     }
 
-    public function destroy(int $id): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function destroy(Permission $permission): JsonResponse|\Illuminate\Http\RedirectResponse
     {
-        Gate::authorize('delete', Permission::findOrFail($id));
+        Gate::authorize('delete', $permission);
 
-        $this->permissionService->delete($id);
+        $this->permissionService->delete($permission->id);
 
         if (request()->expectsJson()) {
             return response()->json(null, 204);

@@ -32,7 +32,7 @@ class ExportController
         if (is_array($result)) {
             return response()->json([
                 'message' => 'Exportação em processamento. Receberás uma notificação quando estiver pronto.',
-                'uuid'    => $result['uuid'],
+                'ulid'    => $result['ulid'],
                 'status'  => $result['status'],
             ], 202);
         }
@@ -40,14 +40,14 @@ class ExportController
         return $result;
     }
 
-    public function status(string $uuid): JsonResponse
+    public function status(string $ulid): JsonResponse
     {
-        $export = Export::where('uuid', $uuid)
+        $export = Export::where('ulid', $ulid)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
         return response()->json([
-            'uuid'       => $export->uuid,
+            'ulid'       => $export->ulid,
             'module'     => $export->module,
             'format'     => $export->format,
             'status'     => $export->status,
@@ -55,9 +55,9 @@ class ExportController
         ]);
     }
 
-    public function download(string $uuid): BinaryFileResponse|JsonResponse
+    public function download(string $ulid): BinaryFileResponse|JsonResponse
     {
-        $export = Export::where('uuid', $uuid)
+        $export = Export::where('ulid', $ulid)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 

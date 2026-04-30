@@ -10,6 +10,7 @@ class ActivityLogResource extends BaseResource
     public function toArray(Request $request): array
     {
         return array_merge($this->base(), [
+            'id'          => $this->id,  // Spatie Activity has no ulid — expose int PK
             'log_name'    => $this->log_name,
             'description' => $this->description,
             'subject'     => $this->when($this->subject_type, [

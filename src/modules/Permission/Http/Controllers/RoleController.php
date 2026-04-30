@@ -53,10 +53,8 @@ class RoleController
         return redirect()->route('roles.index')->with('success', __('permissions.role_created'));
     }
 
-    public function show(int $id): JsonResponse|\Illuminate\View\View
+    public function show(Role $role): JsonResponse|\Illuminate\View\View
     {
-        $role = $this->roleService->findById($id);
-
         Gate::authorize('view', $role);
 
         if (request()->expectsJson()) {
@@ -66,10 +64,8 @@ class RoleController
         return view('permission::roles.show', compact('role'));
     }
 
-    public function edit(int $id): \Illuminate\View\View
+    public function edit(Role $role): \Illuminate\View\View
     {
-        $role = Role::findOrFail($id);
-
         Gate::authorize('update', $role);
 
         $permissions = Permission::where('guard_name', 'web')->get();
@@ -77,11 +73,11 @@ class RoleController
         return view('permission::roles.edit', compact('role', 'permissions'));
     }
 
-    public function update(UpdateRoleRequest $request, int $id): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function update(UpdateRoleRequest $request, Role $role): JsonResponse|\Illuminate\Http\RedirectResponse
     {
-        Gate::authorize('update', Role::findOrFail($id));
+        Gate::authorize('update', $role);
 
-        $role = $this->roleService->update($id, $request->validated());
+        $role = $this->roleService->update($role->id, $request->validated());
 
         if (request()->expectsJson()) {
             return response()->json(new RoleResource($role));
@@ -90,11 +86,11 @@ class RoleController
         return redirect()->route('roles.index')->with('success', __('permissions.role_updated'));
     }
 
-    public function destroy(int $id): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function destroy(Role $role): JsonResponse|\Illuminate\Http\RedirectResponse
     {
-        Gate::authorize('delete', Role::findOrFail($id));
+        Gate::authorize('delete', $role);
 
-        $this->roleService->delete($id);
+        $this->roleService->delete($role->id);
 
         if (request()->expectsJson()) {
             return response()->json(null, 204);

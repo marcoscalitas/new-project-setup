@@ -10,6 +10,7 @@ class MediaResource extends BaseResource
     public function toArray(Request $request): array
     {
         return array_merge($this->base(), [
+            'id'         => $this->id,  // Spatie Media has no ulid — expose int PK
             'name'       => $this->name,
             'file_name'  => $this->file_name,
             'mime_type'  => $this->mime_type,

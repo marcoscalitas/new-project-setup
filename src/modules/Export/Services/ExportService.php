@@ -85,7 +85,7 @@ class ExportService
 
         ProcessExportJob::dispatch($export, $exporter, $format, $filters);
 
-        return ['uuid' => $export->uuid, 'status' => 'pending'];
+        return ['ulid' => $export->ulid, 'status' => 'pending'];
     }
 
     public static function getSyncLimit(): int

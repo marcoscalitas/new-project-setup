@@ -58,10 +58,8 @@ class UserController
         return redirect()->route('users.index')->with('success', __('users.created'));
     }
 
-    public function show(int $id): JsonResponse|\Illuminate\View\View
+    public function show(User $user): JsonResponse|\Illuminate\View\View
     {
-        $user = $this->userService->findById($id);
-
         Gate::authorize('view', $user);
 
         if (request()->expectsJson()) {
@@ -71,10 +69,8 @@ class UserController
         return view('user::users.show', compact('user'));
     }
 
-    public function edit(int $id): \Illuminate\View\View
+    public function edit(User $user): \Illuminate\View\View
     {
-        $user = User::findOrFail($id);
-
         Gate::authorize('update', $user);
 
         $roles = Role::where('guard_name', 'web')->get();
@@ -82,11 +78,11 @@ class UserController
         return view('user::users.edit', compact('user', 'roles'));
     }
 
-    public function update(UpdateUserRequest $request, int $id): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function update(UpdateUserRequest $request, User $user): JsonResponse|\Illuminate\Http\RedirectResponse
     {
-        Gate::authorize('update', User::findOrFail($id));
+        Gate::authorize('update', $user);
 
-        $user = $this->userService->update($id, $request->validated());
+        $user = $this->userService->update($user->id, $request->validated());
 
         if (request()->expectsJson()) {
             return response()->json(new UserResource($user));
@@ -95,11 +91,11 @@ class UserController
         return redirect()->route('users.index')->with('success', __('users.updated'));
     }
 
-    public function destroy(int $id): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function destroy(User $user): JsonResponse|\Illuminate\Http\RedirectResponse
     {
-        Gate::authorize('delete', User::findOrFail($id));
+        Gate::authorize('delete', $user);
 
-        $this->userService->delete($id);
+        $this->userService->delete($user->id);
 
         if (request()->expectsJson()) {
             return response()->json(null, 204);
@@ -108,10 +104,8 @@ class UserController
         return redirect()->route('users.index')->with('success', __('users.deleted'));
     }
 
-    public function uploadAvatar(UploadAvatarRequest $request, int $id): JsonResponse
+    public function uploadAvatar(UploadAvatarRequest $request, User $user): JsonResponse
     {
-        $user = User::findOrFail($id);
-
         Gate::authorize('update', $user);
 
         $this->media->upload($request->file('avatar'), 'avatar', $user);
@@ -119,10 +113,8 @@ class UserController
         return (new UserResource($user->fresh()))->response();
     }
 
-    public function deleteAvatar(int $id): JsonResponse
+    public function deleteAvatar(User $user): JsonResponse
     {
-        $user = User::findOrFail($id);
-
         Gate::authorize('update', $user);
 
         $this->media->delete($user, 'avatar');
