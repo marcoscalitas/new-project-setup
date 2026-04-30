@@ -2,8 +2,6 @@
 
 namespace Modules\Auth\Providers;
 
-use Illuminate\Auth\Events\Registered;
-use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +10,7 @@ use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
 use Modules\Auth\Events\UserCreated;
 use Modules\Auth\Listeners\LogUserCreation;
+use Modules\Auth\Listeners\SendEmailVerificationOnUserCreated;
 use Modules\Auth\Listeners\SendWelcomeEmail;
 use Modules\User\Models\User;
 
@@ -40,7 +39,7 @@ class AuthServiceProvider extends ServiceProvider
             );
         });
 
-        Event::listen(Registered::class, SendEmailVerificationNotification::class);
+        Event::listen(UserCreated::class, [SendEmailVerificationOnUserCreated::class, 'handle']);
         Event::listen(UserCreated::class, [SendWelcomeEmail::class, 'handle']);
         Event::listen(UserCreated::class, [LogUserCreation::class, 'handle']);
 
