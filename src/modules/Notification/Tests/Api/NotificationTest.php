@@ -45,7 +45,7 @@ class NotificationTest extends TestCase
     private function createNotification(array $overrides = []): DatabaseNotification
     {
         return DatabaseNotification::create(array_merge([
-            'id'              => Str::uuid()->toString(),
+            'id'              => (string) Str::ulid(),
             'type'            => 'App\\Notifications\\TestNotification',
             'notifiable_type' => User::class,
             'notifiable_id'   => $this->user->id,
@@ -116,7 +116,7 @@ class NotificationTest extends TestCase
 
     public function test_view_notification_returns_404_for_invalid_id(): void
     {
-        $response = $this->getJson('/api/v1/notifications/' . Str::uuid(), $this->authHeaders());
+        $response = $this->getJson('/api/v1/notifications/' . Str::ulid(), $this->authHeaders());
 
         $response->assertNotFound();
     }
@@ -137,7 +137,7 @@ class NotificationTest extends TestCase
 
     public function test_mark_as_read_returns_404_for_invalid_id(): void
     {
-        $response = $this->patchJson('/api/v1/notifications/' . Str::uuid() . '/read', [], $this->authHeaders());
+        $response = $this->patchJson('/api/v1/notifications/' . Str::ulid() . '/read', [], $this->authHeaders());
 
         $response->assertNotFound();
     }
@@ -172,7 +172,7 @@ class NotificationTest extends TestCase
 
     public function test_delete_notification_returns_404_for_invalid_id(): void
     {
-        $response = $this->deleteJson('/api/v1/notifications/' . Str::uuid(), [], $this->authHeaders());
+        $response = $this->deleteJson('/api/v1/notifications/' . Str::ulid(), [], $this->authHeaders());
 
         $response->assertNotFound();
     }
@@ -193,7 +193,7 @@ class NotificationTest extends TestCase
     {
         $other         = User::factory()->create();
         $notification  = DatabaseNotification::create([
-            'id'              => Str::uuid()->toString(),
+            'id'              => (string) Str::ulid(),
             'type'            => 'App\\Notifications\\TestNotification',
             'notifiable_type' => User::class,
             'notifiable_id'   => $other->id,
@@ -210,7 +210,7 @@ class NotificationTest extends TestCase
     {
         $other         = User::factory()->create();
         $notification  = DatabaseNotification::create([
-            'id'              => Str::uuid()->toString(),
+            'id'              => (string) Str::ulid(),
             'type'            => 'App\\Notifications\\TestNotification',
             'notifiable_type' => User::class,
             'notifiable_id'   => $other->id,
