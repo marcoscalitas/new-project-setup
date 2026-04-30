@@ -2,13 +2,11 @@
 
 namespace Modules\Auth\Services;
 
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
-use Modules\Auth\Events\UserCreated;
 use Modules\User\Models\User;
 
 class AuthService
@@ -26,7 +24,11 @@ class AuthService
         }
 
         if (!$user->hasVerifiedEmail()) {
-            return ['error' => __('auth.email_not_verified'), 'status' => 422];
+            return [
+                'error'      => __('auth.email_not_verified'),
+                'resend_url' => route('api.auth.email.resend'),
+                'status'     => 422,
+            ];
         }
 
         if ($user->hasEnabledTwoFactorAuthentication()) {
@@ -87,25 +89,6 @@ class AuthService
     }
 
     /**
-     * Register a new user and return an access token.
-     */
-    public function register(array $data): array
-    {
-        $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
-        ]);
-
-        UserCreated::dispatch($user->ulid, $user->name, $user->email);
-        event(new Registered($user));
-
-        $token = $user->createToken('api-token')->accessToken;
-
-        return ['token' => $token, 'user' => $user, 'status' => 201];
-    }
-
-    /**
      * Revoke the current user's access token.
      */
     public function logout(User $user): void
@@ -133,9 +116,15 @@ class AuthService
 
     /**
      * Resend the email verification notification.
+     * Accepts email string — no authentication required.
+     * Silently ignores unknown or already verified emails (OWASP).
      */
-    public function resendVerificationEmail(User $user): void
+    public function resendVerificationEmail(string $email): void
     {
-        $user->sendEmailVerificationNotification();
+        $user = User::where('email', $email)->first();
+
+        if ($user && !$user->hasVerifiedEmail()) {
+            $user->sendEmailVerificationNotification();
+        }
     }
 }

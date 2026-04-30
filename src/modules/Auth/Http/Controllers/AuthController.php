@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 use Modules\Auth\Http\Requests\ForgotPasswordRequest;
 use Modules\Auth\Http\Requests\LoginRequest;
-use Modules\Auth\Http\Requests\RegisterRequest;
 use Modules\Auth\Http\Requests\ResetPasswordRequest;
 use Modules\Auth\Http\Requests\TwoFactorChallengeRequest;
 use Modules\Auth\Http\Resources\AuthResource;
@@ -22,7 +21,11 @@ class AuthController
         $result = $this->authService->login($request->only('email', 'password'));
 
         if (isset($result['error'])) {
-            return response()->json(['message' => $result['error']], $result['status']);
+            $body = ['message' => $result['error']];
+            if (isset($result['resend_url'])) {
+                $body['resend_url'] = $result['resend_url'];
+            }
+            return response()->json($body, $result['status']);
         }
 
         if (isset($result['two_factor'])) {
@@ -56,16 +59,6 @@ class AuthController
         ], $result['status']);
     }
 
-    public function register(RegisterRequest $request): JsonResponse
-    {
-        $result = $this->authService->register($request->validated());
-
-        return response()->json([
-            'token' => $result['token'],
-            'user'  => new AuthResource($result['user']),
-        ], $result['status']);
-    }
-
     public function logout(Request $request): JsonResponse
     {
         $this->authService->logout($request->user());
@@ -92,11 +85,9 @@ class AuthController
 
     public function resendVerificationEmail(Request $request): JsonResponse
     {
-        if ($request->user()->hasVerifiedEmail()) {
-            return response()->json(['message' => __('auth.email_already_verified')], 422);
-        }
+        $request->validate(['email' => ['required', 'email']]);
 
-        $this->authService->resendVerificationEmail($request->user());
+        $this->authService->resendVerificationEmail($request->input('email'));
 
         return response()->json(['message' => __('auth.verification_email_resent')]);
     }
