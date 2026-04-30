@@ -2,6 +2,17 @@
 
 Um boilerplate profissional e production-ready baseado em **Laravel 12**, **Docker**, e **arquitetura modular**. Inclui autenticação com **Passport**, permissões com **Spatie**, e uma estrutura pronta pra escalabilidade.
 
+## 🎯 Público-Alvo
+
+Este boilerplate é desenhado para **projectos de médio e grande porte** que precisam de:
+
+- Escalabilidade e preparação para migração para microserviços
+- Integração com apps mobile (iOS, Android) via OAuth2
+- Integração com terceiros (gateways de pagamento, APIs externas, parceiros)
+- Auditoria, exportação de dados e gestão de permissões desde o início
+
+> ⚠️ **Não recomendado** para projectos simples, blogs ou MVPs sem estes requisitos. Para esses casos, considera [Laravel Breeze](https://laravel.com/docs/starter-kits).
+
 ## 🚀 Stack Tecnológico
 
 ### Infraestrutura (Docker)
@@ -9,14 +20,14 @@ Um boilerplate profissional e production-ready baseado em **Laravel 12**, **Dock
 | Serviço | Imagem | Porta (default) | Notas |
 |---------|--------|-----------------|-------|
 | **App (PHP-FPM)** | `php:8.4-fpm-alpine` | — (interna 9000) | Multi-stage build, utilizador não-root |
-| **Nginx** | `nginx:1-alpine` | `APP_PORT` (8080) | Reverse proxy para PHP-FPM |
-| **PostgreSQL** | `postgres:17-alpine` | — (interna 5432) | Healthcheck, tuning de memória |
-| **Redis** | `redis:7-alpine` | `REDIS_PORT` (6379) | Cache, sessões, filas |
-| **Queue Worker** | (reutiliza app) | — | `queue:work redis` com limits |
+| **Nginx** | `nginx:1.26.3-alpine` | `APP_PORT` (8080) | Reverse proxy para PHP-FPM |
+| **PostgreSQL** | `postgres:17.4-alpine` | — (interna 5432) | Healthcheck, tuning de memória |
+| **Redis** | `redis:7.4.2-alpine` | `REDIS_PORT` (6379) | Cache, sessões, filas |
+| **Queue Worker** | (reutiliza app) | — | Laravel Horizon (processa filas + dashboard em `/horizon`) |
 | **Scheduler** | (reutiliza app) | — | `schedule:work` |
-| **Node/Vite** ¹ | `node:22-alpine` | `VITE_PORT` (5173) | HMR em desenvolvimento |
-| **Mailpit** ¹ | `axllent/mailpit` | `MAILPIT_PORT` (8025) / `MAILPIT_SMTP_PORT` (1025) | Captura emails em dev |
-| **MinIO** ¹ | `minio/minio:latest` | `MINIO_PORT` (9000) / `MINIO_CONSOLE_PORT` (9001) | Object storage compatível S3 (dev) |
+| **Node/Vite** ¹ | `node:22.14.0-alpine` | `VITE_PORT` (5173) | HMR em desenvolvimento |
+| **Mailpit** ¹ | `axllent/mailpit:v1.29.7` | `MAILPIT_PORT` (8025) / `MAILPIT_SMTP_PORT` (1025) | Captura emails em dev |
+| **MinIO** ¹ | `minio/minio:RELEASE.2025-09-07T16-13-09Z` | `MINIO_PORT` (9000) / `MINIO_CONSOLE_PORT` (9001) | Object storage compatível S3 (dev) |
 
 > ¹ Apenas em desenvolvimento (`docker-compose.override.yml`).
 
@@ -42,8 +53,8 @@ O projeto usa uma arquitetura **module-first**, cada módulo é autocontido:
 ```
 src/
 ├── modules/
-│   ├── Auth/              # Autenticação (Login, Register, 2FA, Fortify)
-│   ├── User/              # CRUD de usuários
+│   ├── Auth/              # Autenticação — "quem és tu?" (Login, Register, 2FA, tokens OAuth, Fortify)
+│   ├── User/              # Gestão de utilizadores — "como giro os utilizadores?" (CRUD, perfil, avatar, export)
 │   ├── Permission/        # RBAC (Roles & Permissions → Spatie)
 │   ├── Notification/      # Notificações + hub cross-module (Events/Listeners)
 │   ├── ActivityLog/       # Auditoria de acções (activity log)
@@ -126,6 +137,8 @@ O script fará automaticamente:
 > ⚠️ **Produção:** O `setup.sh --prod` **não executa seed** — estas credenciais padrão nunca existem em produção. Se precisares de dados iniciais, cria um seeder dedicado com passwords seguras.
 
 ## 🔑 Autenticação
+
+> **Porquê Passport e não Sanctum?** O boilerplate usa **Laravel Passport** (OAuth 2.0 completo) porque é desenhado para ecossistemas que incluem apps mobile, integrações com terceiros (gateways de pagamento, parceiros) e fluxos OAuth2 (Authorization Code, Client Credentials). Sanctum é suficiente para SPAs no mesmo domínio, mas não cobre estes casos de uso.
 
 ### API (OAuth 2.0 - Passport)
 
