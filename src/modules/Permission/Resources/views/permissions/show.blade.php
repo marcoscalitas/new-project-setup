@@ -18,13 +18,13 @@
                         <h5 class="mb-3 mb-sm-0">{{ __('ui.permission_details') }}</h5>
                         <div>
                             @can('update', $permission)
-                                <a href="{{ route('permissions.edit', $permission->id) }}" class="btn btn-outline-secondary mr-1">
+                                <a href="{{ route('permissions.edit', $permission->ulid) }}" class="btn btn-outline-secondary mr-1">
                                     <i class="ti ti-edit mr-1"></i> {{ __('ui.edit') }}
                                 </a>
                             @endcan
                             <x-admin::delete-form
                                 :model="$permission"
-                                :delete-route="route('permissions.destroy', $permission->id)"
+                                :delete-route="route('permissions.destroy', $permission->ulid)"
                                 :confirm-message="__('ui.confirm_delete_permission')"
                             />
                         </div>

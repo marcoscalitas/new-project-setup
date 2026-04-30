@@ -20,7 +20,7 @@
 
                     <x-admin::form-errors />
 
-                    <form method="POST" action="{{ route('users.update', $user->id) }}">
+                    <form method="POST" action="{{ route('users.update', $user->ulid) }}">
                         @csrf
                         @method('PUT')
                         <div class="grid grid-cols-12 gap-x-6">

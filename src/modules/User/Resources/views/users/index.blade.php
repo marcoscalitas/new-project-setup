@@ -60,9 +60,9 @@
                                         <td>{{ $user->created_at->format('d/m/Y') }}</td>
                                         <td>
                                             <x-admin::table-action-buttons
-                                                :show-route="route('users.show', $user->id)"
-                                                :edit-route="route('users.edit', $user->id)"
-                                                :delete-route="route('users.destroy', $user->id)"
+                                                :show-route="route('users.show', $user->ulid)"
+                                                :edit-route="route('users.edit', $user->ulid)"
+                                                :delete-route="route('users.destroy', $user->ulid)"
                                                 :model="$user"
                                                 :confirm-message="__('ui.confirm_delete_user')"
                                             />

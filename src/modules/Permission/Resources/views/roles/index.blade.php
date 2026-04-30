@@ -56,9 +56,9 @@
                                         </td>
                                         <td>
                                             <x-admin::table-action-buttons
-                                                :show-route="route('roles.show', $role->id)"
-                                                :edit-route="route('roles.edit', $role->id)"
-                                                :delete-route="route('roles.destroy', $role->id)"
+                                                :show-route="route('roles.show', $role->ulid)"
+                                                :edit-route="route('roles.edit', $role->ulid)"
+                                                :delete-route="route('roles.destroy', $role->ulid)"
                                                 :model="$role"
                                                 :confirm-message="__('ui.confirm_delete_role')"
                                             />

@@ -18,13 +18,13 @@
                         <h5 class="mb-3 mb-sm-0">{{ __('ui.role_details') }}</h5>
                         <div>
                             @can('update', $role)
-                                <a href="{{ route('roles.edit', $role->id) }}" class="btn btn-outline-secondary mr-1">
+                                <a href="{{ route('roles.edit', $role->ulid) }}" class="btn btn-outline-secondary mr-1">
                                     <i class="ti ti-edit mr-1"></i> {{ __('ui.edit') }}
                                 </a>
                             @endcan
                             <x-admin::delete-form
                                 :model="$role"
-                                :delete-route="route('roles.destroy', $role->id)"
+                                :delete-route="route('roles.destroy', $role->ulid)"
                                 :confirm-message="__('ui.confirm_delete_role')"
                             />
                         </div>

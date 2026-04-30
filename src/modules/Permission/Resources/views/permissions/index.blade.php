@@ -54,9 +54,9 @@
                                         <td>{{ $permission->created_at->format('d/m/Y') }}</td>
                                         <td>
                                             <x-admin::table-action-buttons
-                                                :show-route="route('permissions.show', $permission->id)"
-                                                :edit-route="route('permissions.edit', $permission->id)"
-                                                :delete-route="route('permissions.destroy', $permission->id)"
+                                                :show-route="route('permissions.show', $permission->ulid)"
+                                                :edit-route="route('permissions.edit', $permission->ulid)"
+                                                :delete-route="route('permissions.destroy', $permission->ulid)"
                                                 :model="$permission"
                                                 :confirm-message="__('ui.confirm_delete_permission')"
                                             />
