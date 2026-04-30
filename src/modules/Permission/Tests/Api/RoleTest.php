@@ -151,7 +151,7 @@ class RoleTest extends TestCase
     {
         $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
-        $response = $this->getJson("/api/v1/roles/{$role->id}", $this->authHeaders());
+        $response = $this->getJson("/api/v1/roles/{$role->ulid}", $this->authHeaders());
 
         $response->assertOk()
             ->assertJsonPath('name', 'admin');
@@ -170,7 +170,7 @@ class RoleTest extends TestCase
     {
         $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
-        $response = $this->putJson("/api/v1/roles/{$role->id}", [
+        $response = $this->putJson("/api/v1/roles/{$role->ulid}", [
             'name' => 'super-admin',
         ], $this->authHeaders());
 
@@ -186,7 +186,7 @@ class RoleTest extends TestCase
         Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
         Permission::create(['name' => 'user.create', 'guard_name' => 'api']);
 
-        $response = $this->putJson("/api/v1/roles/{$role->id}", [
+        $response = $this->putJson("/api/v1/roles/{$role->ulid}", [
             'name'        => 'admin',
             'permissions' => ['user.list'],
         ], $this->authHeaders());
@@ -200,7 +200,7 @@ class RoleTest extends TestCase
         Role::create(['name' => 'admin', 'guard_name' => 'api']);
         $role = Role::create(['name' => 'editor', 'guard_name' => 'api']);
 
-        $response = $this->putJson("/api/v1/roles/{$role->id}", [
+        $response = $this->putJson("/api/v1/roles/{$role->ulid}", [
             'name' => 'admin',
         ], $this->authHeaders());
 
@@ -212,7 +212,7 @@ class RoleTest extends TestCase
     {
         $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
-        $response = $this->putJson("/api/v1/roles/{$role->id}", [
+        $response = $this->putJson("/api/v1/roles/{$role->ulid}", [
             'name' => 'admin',
         ], $this->authHeaders());
 
@@ -226,7 +226,7 @@ class RoleTest extends TestCase
         $perm = Permission::create(['name' => 'test.perm', 'guard_name' => 'api']);
         $role->givePermissionTo($perm);
 
-        $response = $this->putJson("/api/v1/roles/{$role->id}", [
+        $response = $this->putJson("/api/v1/roles/{$role->ulid}", [
             'name'        => 'admin',
             'permissions' => [],
         ], $this->authHeaders());
@@ -241,7 +241,7 @@ class RoleTest extends TestCase
     {
         $role = Role::create(['name' => 'editor', 'guard_name' => 'api']);
 
-        $response = $this->deleteJson("/api/v1/roles/{$role->id}", [], $this->authHeaders());
+        $response = $this->deleteJson("/api/v1/roles/{$role->ulid}", [], $this->authHeaders());
 
         $response->assertNoContent();
         $this->assertSoftDeleted('roles', ['id' => $role->id]);
@@ -251,7 +251,7 @@ class RoleTest extends TestCase
     {
         $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
-        $response = $this->deleteJson("/api/v1/roles/{$role->id}", [], $this->authHeaders());
+        $response = $this->deleteJson("/api/v1/roles/{$role->ulid}", [], $this->authHeaders());
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['role']);
@@ -268,7 +268,7 @@ class RoleTest extends TestCase
     public function test_deleted_role_is_not_listed(): void
     {
         $role = Role::create(['name' => 'temp-role', 'guard_name' => 'api']);
-        $this->deleteJson("/api/v1/roles/{$role->id}", [], $this->authHeaders());
+        $this->deleteJson("/api/v1/roles/{$role->ulid}", [], $this->authHeaders());
 
         $response = $this->getJson('/api/v1/roles', $this->authHeaders());
 
@@ -280,7 +280,7 @@ class RoleTest extends TestCase
     public function test_can_create_role_with_same_name_after_soft_delete(): void
     {
         $role = Role::create(['name' => 'reusable', 'guard_name' => 'api']);
-        $this->deleteJson("/api/v1/roles/{$role->id}", [], $this->authHeaders());
+        $this->deleteJson("/api/v1/roles/{$role->ulid}", [], $this->authHeaders());
 
         $response = $this->postJson('/api/v1/roles', [
             'name' => 'reusable',
@@ -313,7 +313,7 @@ class RoleTest extends TestCase
         $token  = $guest->createToken('test')->accessToken;
         $role   = Role::create(['name' => 'target', 'guard_name' => 'api']);
 
-        $this->deleteJson("/api/v1/roles/{$role->id}", [], ['Authorization' => 'Bearer ' . $token])
+        $this->deleteJson("/api/v1/roles/{$role->ulid}", [], ['Authorization' => 'Bearer ' . $token])
             ->assertForbidden();
     }
 }

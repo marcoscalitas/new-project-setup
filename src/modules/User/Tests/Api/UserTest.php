@@ -227,7 +227,7 @@ class UserTest extends TestCase
     {
         $target = User::factory()->create(['name' => 'Maria Silva']);
 
-        $response = $this->getJson("/api/v1/users/{$target->id}", $this->authHeaders());
+        $response = $this->getJson("/api/v1/users/{$target->ulid}", $this->authHeaders());
 
         $response->assertOk()
             ->assertJsonPath('name', 'Maria Silva');
@@ -246,7 +246,7 @@ class UserTest extends TestCase
     {
         $target = User::factory()->create();
 
-        $response = $this->putJson("/api/v1/users/{$target->id}", [
+        $response = $this->putJson("/api/v1/users/{$target->ulid}", [
             'name'  => 'Updated Name',
             'email' => 'updated@example.com',
         ], $this->authHeaders());
@@ -261,7 +261,7 @@ class UserTest extends TestCase
         $target = User::factory()->create();
         Role::create(['name' => 'editor', 'guard_name' => 'api']);
 
-        $response = $this->putJson("/api/v1/users/{$target->id}", [
+        $response = $this->putJson("/api/v1/users/{$target->ulid}", [
             'name'  => $target->name,
             'roles' => ['editor'],
         ], $this->authHeaders());
@@ -276,7 +276,7 @@ class UserTest extends TestCase
         $role = Role::create(['name' => 'editor', 'guard_name' => 'api']);
         $target->assignRole($role);
 
-        $response = $this->putJson("/api/v1/users/{$target->id}", [
+        $response = $this->putJson("/api/v1/users/{$target->ulid}", [
             'name'  => $target->name,
             'roles' => [],
         ], $this->authHeaders());
@@ -290,7 +290,7 @@ class UserTest extends TestCase
         User::factory()->create(['email' => 'taken@example.com']);
         $target = User::factory()->create();
 
-        $response = $this->putJson("/api/v1/users/{$target->id}", [
+        $response = $this->putJson("/api/v1/users/{$target->ulid}", [
             'email' => 'taken@example.com',
         ], $this->authHeaders());
 
@@ -304,7 +304,7 @@ class UserTest extends TestCase
     {
         $target = User::factory()->create();
 
-        $response = $this->deleteJson("/api/v1/users/{$target->id}", [], $this->authHeaders());
+        $response = $this->deleteJson("/api/v1/users/{$target->ulid}", [], $this->authHeaders());
 
         $response->assertNoContent();
         $this->assertSoftDeleted('users', ['id' => $target->id]);
@@ -325,7 +325,7 @@ class UserTest extends TestCase
         $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'api']);
         $admin->assignRole($adminRole);
 
-        $response = $this->putJson("/api/v1/users/{$admin->id}", [
+        $response = $this->putJson("/api/v1/users/{$admin->ulid}", [
             'name'  => $admin->name,
             'roles' => [],
         ], $this->authHeaders());
@@ -343,7 +343,7 @@ class UserTest extends TestCase
         $admin2 = User::factory()->create();
         $admin2->assignRole($adminRole);
 
-        $response = $this->putJson("/api/v1/users/{$admin1->id}", [
+        $response = $this->putJson("/api/v1/users/{$admin1->ulid}", [
             'name'  => $admin1->name,
             'roles' => [],
         ], $this->authHeaders());
@@ -358,7 +358,7 @@ class UserTest extends TestCase
         $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'api']);
         $admin->assignRole($adminRole);
 
-        $response = $this->deleteJson("/api/v1/users/{$admin->id}", [], $this->authHeaders());
+        $response = $this->deleteJson("/api/v1/users/{$admin->ulid}", [], $this->authHeaders());
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['user']);
@@ -373,7 +373,7 @@ class UserTest extends TestCase
         $admin2 = User::factory()->create();
         $admin2->assignRole($adminRole);
 
-        $response = $this->deleteJson("/api/v1/users/{$admin1->id}", [], $this->authHeaders());
+        $response = $this->deleteJson("/api/v1/users/{$admin1->ulid}", [], $this->authHeaders());
 
         $response->assertNoContent();
         $this->assertSoftDeleted('users', ['id' => $admin1->id]);
@@ -382,19 +382,19 @@ class UserTest extends TestCase
     public function test_deleted_user_is_not_listed(): void
     {
         $target = User::factory()->create();
-        $this->deleteJson("/api/v1/users/{$target->id}", [], $this->authHeaders());
+        $this->deleteJson("/api/v1/users/{$target->ulid}", [], $this->authHeaders());
 
         $response = $this->getJson('/api/v1/users', $this->authHeaders());
 
         $response->assertOk();
         $ids = collect($response->json('data'))->pluck('id')->all();
-        $this->assertNotContains($target->id, $ids);
+        $this->assertNotContains($target->ulid, $ids);
     }
 
     public function test_can_create_user_with_same_email_after_soft_delete(): void
     {
         $target = User::factory()->create(['email' => 'reuse@test.com']);
-        $this->deleteJson("/api/v1/users/{$target->id}", [], $this->authHeaders());
+        $this->deleteJson("/api/v1/users/{$target->ulid}", [], $this->authHeaders());
 
         $response = $this->postJson('/api/v1/users', [
             'name'                  => 'New User',
@@ -437,7 +437,7 @@ class UserTest extends TestCase
         $token  = $guest->createToken('test')->accessToken;
         $target = User::factory()->create();
 
-        $response = $this->deleteJson("/api/v1/users/{$target->id}", [], ['Authorization' => 'Bearer ' . $token]);
+        $response = $this->deleteJson("/api/v1/users/{$target->ulid}", [], ['Authorization' => 'Bearer ' . $token]);
 
         $response->assertForbidden();
     }

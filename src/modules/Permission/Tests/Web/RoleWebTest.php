@@ -97,7 +97,7 @@ class RoleWebTest extends TestCase
         $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
-            ->getJson("/roles/{$role->id}");
+            ->getJson("/roles/{$role->ulid}");
 
         $response->assertOk()
             ->assertJsonPath('name', 'admin');
@@ -110,7 +110,7 @@ class RoleWebTest extends TestCase
         $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
-            ->putJson("/roles/{$role->id}", ['name' => 'super-admin']);
+            ->putJson("/roles/{$role->ulid}", ['name' => 'super-admin']);
 
         $response->assertOk()
             ->assertJsonPath('name', 'super-admin');
@@ -125,7 +125,7 @@ class RoleWebTest extends TestCase
         $role = Role::create(['name' => 'editor', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
-            ->deleteJson("/roles/{$role->id}");
+            ->deleteJson("/roles/{$role->ulid}");
 
         $response->assertNoContent();
         $this->assertSoftDeleted('roles', ['id' => $role->id]);
@@ -148,7 +148,7 @@ class RoleWebTest extends TestCase
         $role = Role::create(['name' => 'admin', 'guard_name' => 'web']);
 
         $response = $this->actingAs($this->user)
-            ->get("/roles/{$role->id}");
+            ->get("/roles/{$role->ulid}");
 
         $response->assertOk()
             ->assertViewIs('permission::roles.show')
@@ -170,7 +170,7 @@ class RoleWebTest extends TestCase
         $role = Role::create(['name' => 'editor', 'guard_name' => 'web']);
 
         $response = $this->actingAs($this->user)
-            ->get("/roles/{$role->id}/edit");
+            ->get("/roles/{$role->ulid}/edit");
 
         $response->assertOk()
             ->assertViewIs('permission::roles.edit')
@@ -193,7 +193,7 @@ class RoleWebTest extends TestCase
         $role = Role::create(['name' => 'admin', 'guard_name' => 'web']);
 
         $response = $this->actingAs($this->user)
-            ->put("/roles/{$role->id}", ['name' => 'super-admin']);
+            ->put("/roles/{$role->ulid}", ['name' => 'super-admin']);
 
         $response->assertRedirect(route('roles.index'))
             ->assertSessionHas('success');
@@ -204,7 +204,7 @@ class RoleWebTest extends TestCase
         $role = Role::create(['name' => 'temp', 'guard_name' => 'web']);
 
         $response = $this->actingAs($this->user)
-            ->delete("/roles/{$role->id}");
+            ->delete("/roles/{$role->ulid}");
 
         $response->assertRedirect(route('roles.index'))
             ->assertSessionHas('success');
@@ -222,7 +222,7 @@ class RoleWebTest extends TestCase
         $role = Role::create(['name' => 'admin', 'guard_name' => 'web']);
 
         $response = $this->actingAs($this->user)
-            ->delete("/roles/{$role->id}");
+            ->delete("/roles/{$role->ulid}");
 
         $response->assertRedirect();
         $response->assertSessionHasErrors(['role']);
@@ -236,7 +236,7 @@ class RoleWebTest extends TestCase
         $role->givePermissionTo($perm);
 
         $response = $this->actingAs($this->user)
-            ->put("/roles/{$role->id}", [
+            ->put("/roles/{$role->ulid}", [
                 'name'        => 'editor',
                 'permissions' => '',
             ]);

@@ -10,41 +10,41 @@ use Tests\TestCase;
 
 class RoleAssignedEventTest extends TestCase
 {
-    public function test_role_assigned_event_can_be_dispatched()
+    public function test_role_assigned_event_can_be_dispatched(): void
     {
-        Event::fake();
+        Event::fake([RoleAssigned::class]);
 
         $user = User::factory()->create();
         $role = Role::create(['name' => 'admin', 'guard_name' => 'web']);
 
-        RoleAssigned::dispatch($user, $role);
+        RoleAssigned::dispatch($user->ulid, $user->email, $role->name);
 
         Event::assertDispatched(RoleAssigned::class);
     }
 
-    public function test_role_assigned_event_contains_user_and_role()
+    public function test_role_assigned_event_contains_user_and_role(): void
     {
-        Event::fake();
+        Event::fake([RoleAssigned::class]);
 
         $user = User::factory()->create();
         $role = Role::create(['name' => 'editor', 'guard_name' => 'web']);
 
-        RoleAssigned::dispatch($user, $role);
+        RoleAssigned::dispatch($user->ulid, $user->email, $role->name);
 
         Event::assertDispatched(RoleAssigned::class, function ($event) use ($user, $role) {
-            return $event->user->id === $user->id && $event->role->id === $role->id;
+            return $event->userUlid === $user->ulid && $event->roleName === $role->name;
         });
     }
 
-    public function test_role_assigned_event_is_dispatchable()
+    public function test_role_assigned_event_is_dispatchable(): void
     {
         $user = User::factory()->create();
         $role = Role::create(['name' => 'manager', 'guard_name' => 'web']);
 
-        // Just verify we can create and dispatch the event
-        $event = new RoleAssigned($user, $role);
+        $event = new RoleAssigned($user->ulid, $user->email, $role->name);
 
-        $this->assertEquals($user->id, $event->user->id);
-        $this->assertEquals($role->id, $event->role->id);
+        $this->assertEquals($user->ulid, $event->userUlid);
+        $this->assertEquals($user->email, $event->userEmail);
+        $this->assertEquals($role->name, $event->roleName);
     }
 }

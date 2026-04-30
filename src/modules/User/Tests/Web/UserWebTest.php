@@ -86,7 +86,7 @@ class UserWebTest extends TestCase
         $target = User::factory()->create(['name' => 'Maria Silva']);
 
         $response = $this->actingAs($this->user)
-            ->getJson("/users/{$target->id}");
+            ->getJson("/users/{$target->ulid}");
 
         $response->assertOk()
             ->assertJsonPath('name', 'Maria Silva');
@@ -99,7 +99,7 @@ class UserWebTest extends TestCase
         $target = User::factory()->create();
 
         $response = $this->actingAs($this->user)
-            ->putJson("/users/{$target->id}", [
+            ->putJson("/users/{$target->ulid}", [
                 'name'  => 'Updated Name',
                 'email' => 'updated@example.com',
             ]);
@@ -117,7 +117,7 @@ class UserWebTest extends TestCase
         $target = User::factory()->create();
 
         $response = $this->actingAs($this->user)
-            ->deleteJson("/users/{$target->id}");
+            ->deleteJson("/users/{$target->ulid}");
 
         $response->assertNoContent();
         $this->assertSoftDeleted('users', ['id' => $target->id]);
@@ -140,7 +140,7 @@ class UserWebTest extends TestCase
         $target = User::factory()->create();
 
         $response = $this->actingAs($this->user)
-            ->get("/users/{$target->id}");
+            ->get("/users/{$target->ulid}");
 
         $response->assertOk()
             ->assertViewIs('user::users.show')
@@ -162,7 +162,7 @@ class UserWebTest extends TestCase
         $target = User::factory()->create();
 
         $response = $this->actingAs($this->user)
-            ->get("/users/{$target->id}/edit");
+            ->get("/users/{$target->ulid}/edit");
 
         $response->assertOk()
             ->assertViewIs('user::users.edit')
@@ -190,7 +190,7 @@ class UserWebTest extends TestCase
         $target = User::factory()->create();
 
         $response = $this->actingAs($this->user)
-            ->put("/users/{$target->id}", [
+            ->put("/users/{$target->ulid}", [
                 'name' => 'Updated Browser',
             ]);
 
@@ -203,7 +203,7 @@ class UserWebTest extends TestCase
         $target = User::factory()->create();
 
         $response = $this->actingAs($this->user)
-            ->delete("/users/{$target->id}");
+            ->delete("/users/{$target->ulid}");
 
         $response->assertRedirect(route('users.index'))
             ->assertSessionHas('success');
@@ -225,7 +225,7 @@ class UserWebTest extends TestCase
         $target->assignRole($role);
 
         $response = $this->actingAs($this->user)
-            ->put("/users/{$target->id}", [
+            ->put("/users/{$target->ulid}", [
                 'name'  => $target->name,
                 'roles' => '',
             ]);
@@ -241,7 +241,7 @@ class UserWebTest extends TestCase
         $admin->assignRole($adminRole);
 
         $response = $this->actingAs($this->user)
-            ->put("/users/{$admin->id}", [
+            ->put("/users/{$admin->ulid}", [
                 'name'  => $admin->name,
                 'roles' => '',
             ]);
@@ -257,7 +257,7 @@ class UserWebTest extends TestCase
         $admin->assignRole($adminRole);
 
         $response = $this->actingAs($this->user)
-            ->delete("/users/{$admin->id}");
+            ->delete("/users/{$admin->ulid}");
 
         $response->assertSessionHasErrors(['user']);
         $this->assertDatabaseHas('users', ['id' => $admin->id]);

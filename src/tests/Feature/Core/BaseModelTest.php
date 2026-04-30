@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\Core\Models\BaseModel;
+use Modules\Core\Traits\HasUlid;
 use Tests\TestCase;
 
 class BaseModelTestStub extends BaseModel
@@ -21,7 +22,8 @@ class BaseModelTest extends TestCase
         parent::setUp();
 
         Schema::create('base_model_stubs', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->id();
+            $table->char('ulid', 26)->unique();
             $table->string('name');
             $table->timestamps();
             $table->softDeletes();
@@ -34,24 +36,35 @@ class BaseModelTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_model_uses_uuid_primary_key(): void
+    public function test_model_has_int_primary_key(): void
     {
         $model = BaseModelTestStub::create(['name' => 'test']);
 
-        $this->assertMatchesRegularExpression(
-            '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/',
-            $model->id,
-        );
+        $this->assertIsInt($model->id);
+        $this->assertGreaterThan(0, $model->id);
     }
 
-    public function test_primary_key_is_not_incrementing(): void
+    public function test_model_auto_generates_ulid(): void
     {
-        $this->assertFalse((new BaseModelTestStub())->getIncrementing());
+        $model = BaseModelTestStub::create(['name' => 'test']);
+
+        $this->assertNotNull($model->ulid);
+        $this->assertMatchesRegularExpression('/^[0-9A-Z]{26}$/', $model->ulid);
     }
 
-    public function test_primary_key_type_is_string(): void
+    public function test_primary_key_is_incrementing(): void
     {
-        $this->assertSame('string', (new BaseModelTestStub())->getKeyType());
+        $this->assertTrue((new BaseModelTestStub())->getIncrementing());
+    }
+
+    public function test_primary_key_type_is_int(): void
+    {
+        $this->assertSame('int', (new BaseModelTestStub())->getKeyType());
+    }
+
+    public function test_route_key_name_is_ulid(): void
+    {
+        $this->assertSame('ulid', (new BaseModelTestStub())->getRouteKeyName());
     }
 
     public function test_model_uses_soft_deletes(): void

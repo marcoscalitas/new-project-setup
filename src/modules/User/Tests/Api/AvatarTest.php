@@ -50,14 +50,14 @@ class AvatarTest extends TestCase
         $file = UploadedFile::fake()->image('avatar.jpg', 200, 200);
 
         $response = $this->postJson(
-            "/api/v1/users/{$this->user->id}/avatar",
+            "/api/v1/users/{$this->user->ulid}/avatar",
             ['avatar' => $file],
             $this->authHeaders()
         );
 
         $response->assertOk()
             ->assertJsonStructure(['data' => ['id', 'avatar_url']])
-            ->assertJsonPath('data.id', $this->user->id);
+            ->assertJsonPath('data.id', $this->user->ulid);
 
         $this->assertNotNull($response->json('data.avatar_url'));
         $this->assertCount(1, $this->user->fresh()->getMedia('avatar'));
@@ -68,8 +68,8 @@ class AvatarTest extends TestCase
         $first = UploadedFile::fake()->image('first.jpg');
         $second = UploadedFile::fake()->image('second.jpg');
 
-        $this->postJson("/api/v1/users/{$this->user->id}/avatar", ['avatar' => $first], $this->authHeaders());
-        $this->postJson("/api/v1/users/{$this->user->id}/avatar", ['avatar' => $second], $this->authHeaders());
+        $this->postJson("/api/v1/users/{$this->user->ulid}/avatar", ['avatar' => $first], $this->authHeaders());
+        $this->postJson("/api/v1/users/{$this->user->ulid}/avatar", ['avatar' => $second], $this->authHeaders());
 
         $this->assertCount(1, $this->user->fresh()->getMedia('avatar'));
     }
@@ -79,7 +79,7 @@ class AvatarTest extends TestCase
         $file = UploadedFile::fake()->create('document.pdf', 100, 'application/pdf');
 
         $response = $this->postJson(
-            "/api/v1/users/{$this->user->id}/avatar",
+            "/api/v1/users/{$this->user->ulid}/avatar",
             ['avatar' => $file],
             $this->authHeaders()
         );
@@ -93,7 +93,7 @@ class AvatarTest extends TestCase
         $file = UploadedFile::fake()->image('big.jpg')->size(5000); // 5MB > 4MB limit
 
         $response = $this->postJson(
-            "/api/v1/users/{$this->user->id}/avatar",
+            "/api/v1/users/{$this->user->ulid}/avatar",
             ['avatar' => $file],
             $this->authHeaders()
         );
@@ -107,7 +107,7 @@ class AvatarTest extends TestCase
         $file = UploadedFile::fake()->image('avatar.jpg');
 
         $response = $this->postJson(
-            "/api/v1/users/{$this->user->id}/avatar",
+            "/api/v1/users/{$this->user->ulid}/avatar",
             ['avatar' => $file]
         );
 
@@ -117,10 +117,10 @@ class AvatarTest extends TestCase
     public function test_user_can_delete_avatar(): void
     {
         $file = UploadedFile::fake()->image('avatar.jpg');
-        $this->postJson("/api/v1/users/{$this->user->id}/avatar", ['avatar' => $file], $this->authHeaders());
+        $this->postJson("/api/v1/users/{$this->user->ulid}/avatar", ['avatar' => $file], $this->authHeaders());
 
         $response = $this->deleteJson(
-            "/api/v1/users/{$this->user->id}/avatar",
+            "/api/v1/users/{$this->user->ulid}/avatar",
             [],
             $this->authHeaders()
         );
@@ -131,7 +131,7 @@ class AvatarTest extends TestCase
 
     public function test_unauthenticated_user_cannot_delete_avatar(): void
     {
-        $response = $this->deleteJson("/api/v1/users/{$this->user->id}/avatar");
+        $response = $this->deleteJson("/api/v1/users/{$this->user->ulid}/avatar");
 
         $response->assertUnauthorized();
     }
@@ -139,7 +139,7 @@ class AvatarTest extends TestCase
     public function test_upload_requires_avatar_field(): void
     {
         $response = $this->postJson(
-            "/api/v1/users/{$this->user->id}/avatar",
+            "/api/v1/users/{$this->user->ulid}/avatar",
             [],
             $this->authHeaders()
         );
@@ -157,7 +157,7 @@ class AvatarTest extends TestCase
         $file = UploadedFile::fake()->image('avatar.jpg');
 
         $response = $this->postJson(
-            "/api/v1/users/{$other->id}/avatar",
+            "/api/v1/users/{$other->ulid}/avatar",
             ['avatar' => $file],
             ['Authorization' => 'Bearer ' . $token]
         );
@@ -188,12 +188,12 @@ class AvatarTest extends TestCase
     public function test_avatar_url_appears_in_user_show_after_upload(): void
     {
         $file = UploadedFile::fake()->image('avatar.jpg');
-        $this->postJson("/api/v1/users/{$this->user->id}/avatar", ['avatar' => $file], $this->authHeaders());
+        $this->postJson("/api/v1/users/{$this->user->ulid}/avatar", ['avatar' => $file], $this->authHeaders());
 
-        $response = $this->getJson("/api/v1/users/{$this->user->id}", $this->authHeaders());
+        $response = $this->getJson("/api/v1/users/{$this->user->ulid}", $this->authHeaders());
 
         $response->assertOk()
-            ->assertJsonPath('id', $this->user->id);
+            ->assertJsonPath('id', $this->user->ulid);
 
         $this->assertNotNull($response->json('avatar_url'));
     }

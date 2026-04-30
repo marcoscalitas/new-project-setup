@@ -81,7 +81,7 @@ class PermissionWebTest extends TestCase
         $permission = Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
-            ->getJson("/permissions/{$permission->id}");
+            ->getJson("/permissions/{$permission->ulid}");
 
         $response->assertOk()
             ->assertJsonPath('name', 'user.list');
@@ -94,7 +94,7 @@ class PermissionWebTest extends TestCase
         $permission = Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
-            ->putJson("/permissions/{$permission->id}", ['name' => 'user.view']);
+            ->putJson("/permissions/{$permission->ulid}", ['name' => 'user.view']);
 
         $response->assertOk()
             ->assertJsonPath('name', 'user.view');
@@ -109,7 +109,7 @@ class PermissionWebTest extends TestCase
         $permission = Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
 
         $response = $this->actingAs($this->user)
-            ->deleteJson("/permissions/{$permission->id}");
+            ->deleteJson("/permissions/{$permission->ulid}");
 
         $response->assertNoContent();
         $this->assertSoftDeleted('permissions', ['id' => $permission->id]);
@@ -132,7 +132,7 @@ class PermissionWebTest extends TestCase
         $permission = Permission::create(['name' => 'post.create', 'guard_name' => 'web']);
 
         $response = $this->actingAs($this->user)
-            ->get("/permissions/{$permission->id}");
+            ->get("/permissions/{$permission->ulid}");
 
         $response->assertOk()
             ->assertViewIs('permission::permissions.show')
@@ -153,7 +153,7 @@ class PermissionWebTest extends TestCase
         $permission = Permission::create(['name' => 'post.create', 'guard_name' => 'web']);
 
         $response = $this->actingAs($this->user)
-            ->get("/permissions/{$permission->id}/edit");
+            ->get("/permissions/{$permission->ulid}/edit");
 
         $response->assertOk()
             ->assertViewIs('permission::permissions.edit')
@@ -176,7 +176,7 @@ class PermissionWebTest extends TestCase
         $permission = Permission::create(['name' => 'post.create', 'guard_name' => 'web']);
 
         $response = $this->actingAs($this->user)
-            ->put("/permissions/{$permission->id}", ['name' => 'post.edit']);
+            ->put("/permissions/{$permission->ulid}", ['name' => 'post.edit']);
 
         $response->assertRedirect(route('permissions.index'))
             ->assertSessionHas('success');
@@ -187,7 +187,7 @@ class PermissionWebTest extends TestCase
         $permission = Permission::create(['name' => 'temp.perm', 'guard_name' => 'web']);
 
         $response = $this->actingAs($this->user)
-            ->delete("/permissions/{$permission->id}");
+            ->delete("/permissions/{$permission->ulid}");
 
         $response->assertRedirect(route('permissions.index'))
             ->assertSessionHas('success');

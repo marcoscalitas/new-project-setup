@@ -124,7 +124,7 @@ class ExportTest extends TestCase
         ], $this->authHeaders());
 
         $response->assertAccepted();
-        $response->assertJsonStructure(['message', 'uuid', 'status']);
+        $response->assertJsonStructure(['message', 'ulid', 'status']);
         $response->assertJsonPath('status', 'pending');
 
         Queue::assertPushed(ProcessExportJob::class);
@@ -162,11 +162,11 @@ class ExportTest extends TestCase
             'expires_at' => now()->addHours(24),
         ]);
 
-        $response = $this->getJson("/api/v1/exports/{$export->uuid}/status", $this->authHeaders());
+        $response = $this->getJson("/api/v1/exports/{$export->ulid}/status", $this->authHeaders());
 
         $response->assertOk();
         $response->assertJsonPath('status', 'completed');
-        $response->assertJsonPath('uuid', $export->uuid);
+        $response->assertJsonPath('ulid', $export->ulid);
     }
 
     public function test_cannot_check_status_of_another_users_export(): void
@@ -180,7 +180,7 @@ class ExportTest extends TestCase
             'expires_at' => now()->addHours(24),
         ]);
 
-        $response = $this->getJson("/api/v1/exports/{$export->uuid}/status", $this->authHeaders());
+        $response = $this->getJson("/api/v1/exports/{$export->ulid}/status", $this->authHeaders());
 
         $response->assertNotFound();
     }
@@ -197,7 +197,7 @@ class ExportTest extends TestCase
             'expires_at' => now()->addHours(24),
         ]);
 
-        $response = $this->getJson("/api/v1/exports/{$export->uuid}/download", $this->authHeaders());
+        $response = $this->getJson("/api/v1/exports/{$export->ulid}/download", $this->authHeaders());
 
         $response->assertUnprocessable();
     }
@@ -217,7 +217,7 @@ class ExportTest extends TestCase
             'expires_at' => now()->subHour(),
         ]);
 
-        $response = $this->getJson("/api/v1/exports/{$export->uuid}/download", $this->authHeaders());
+        $response = $this->getJson("/api/v1/exports/{$export->ulid}/download", $this->authHeaders());
 
         $response->assertStatus(410);
     }
@@ -237,7 +237,7 @@ class ExportTest extends TestCase
             'expires_at' => now()->addHours(24),
         ]);
 
-        $response = $this->get("/api/v1/exports/{$export->uuid}/download", $this->authHeaders());
+        $response = $this->get("/api/v1/exports/{$export->ulid}/download", $this->authHeaders());
 
         $response->assertOk();
         $response->assertHeader('content-disposition');
@@ -411,7 +411,7 @@ class ExportTest extends TestCase
             'expires_at' => now()->addHours(24),
         ]);
 
-        $response = $this->getJson("/api/v1/exports/{$export->uuid}/download", $this->authHeaders());
+        $response = $this->getJson("/api/v1/exports/{$export->ulid}/download", $this->authHeaders());
 
         $response->assertNotFound();
     }
@@ -427,7 +427,7 @@ class ExportTest extends TestCase
             'expires_at' => now()->addHours(24),
         ]);
 
-        $response = $this->getJson("/api/v1/exports/{$export->uuid}/status", $this->authHeaders());
+        $response = $this->getJson("/api/v1/exports/{$export->ulid}/status", $this->authHeaders());
 
         $response->assertOk();
         $response->assertJsonPath('status', 'failed');
