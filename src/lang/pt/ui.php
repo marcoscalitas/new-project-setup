@@ -220,4 +220,18 @@ return [
     'profile'               => 'Perfil',
     'please_fix_errors'     => 'Por favor corrija os seguintes erros:',
 
+    // Lixeira (registos eliminados com softdelete)
+    'trashed'               => 'Lixeira',
+    'trashed_users'         => 'Utilizadores Eliminados',
+    'trashed_roles'         => 'Perfis Eliminados',
+    'trashed_permissions'   => 'Permissões Eliminadas',
+    'restore'               => 'Restaurar',
+    'deleted_at'            => 'Eliminado em',
+    'no_trashed_users'      => 'Nenhum utilizador eliminado encontrado.',
+    'no_trashed_roles'      => 'Nenhum perfil eliminado encontrado.',
+    'no_trashed_permissions' => 'Nenhuma permissão eliminada encontrada.',
+
+    // Modal de confirmação de eliminação
+    'confirm_delete_title'  => 'Tem a certeza?',
+
 ];

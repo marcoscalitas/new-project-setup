@@ -8,4 +8,6 @@ return [
     'role_updated'                => 'Role updated.',
     'role_deleted'                => 'Role deleted.',
     'cannot_delete_admin_role'    => 'The admin role cannot be deleted.',
+    'role_restored'               => 'Role restored successfully.',
+    'permission_restored'         => 'Permission restored successfully.',
 ];

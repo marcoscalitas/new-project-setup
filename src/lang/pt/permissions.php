@@ -8,4 +8,6 @@ return [
     'role_updated'                => 'Papel atualizado.',
     'role_deleted'                => 'Papel eliminado.',
     'cannot_delete_admin_role'    => 'O papel de admin não pode ser eliminado.',
+    'role_restored'               => 'Perfil restaurado com sucesso.',
+    'permission_restored'         => 'Permissão restaurada com sucesso.',
 ];

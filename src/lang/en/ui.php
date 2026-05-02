@@ -220,4 +220,18 @@ return [
     'profile'               => 'Profile',
     'please_fix_errors'     => 'Please fix the following errors:',
 
+    // Trashed (soft-deleted records)
+    'trashed'               => 'Trash',
+    'trashed_users'         => 'Deleted Users',
+    'trashed_roles'         => 'Deleted Roles',
+    'trashed_permissions'   => 'Deleted Permissions',
+    'restore'               => 'Restore',
+    'deleted_at'            => 'Deleted At',
+    'no_trashed_users'      => 'No deleted users found.',
+    'no_trashed_roles'      => 'No deleted roles found.',
+    'no_trashed_permissions' => 'No deleted permissions found.',
+
+    // Delete modal
+    'confirm_delete_title'  => 'Are you sure?',
+
 ];
