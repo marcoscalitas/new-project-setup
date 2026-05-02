@@ -29,7 +29,9 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'auth');
+        if (is_dir($views = __DIR__ . '/../Resources/views')) {
+            $this->loadViewsFrom($views, 'auth');
+        }
 
         VerifyEmail::createUrlUsing(function (User $notifiable) {
             return URL::temporarySignedRoute(
@@ -49,7 +51,9 @@ class AuthServiceProvider extends ServiceProvider
         if (file_exists($api = __DIR__ . '/../Routes/api.php')) {
             Route::prefix('api/v1')->middleware('api')->group($api);
         }
-        $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
+        if (is_dir($migrations = __DIR__ . '/../Database/Migrations')) {
+            $this->loadMigrationsFrom($migrations);
+        }
 
         Passport::tokensExpireIn(now()->addDays(15));
         Passport::refreshTokensExpireIn(now()->addDays(30));

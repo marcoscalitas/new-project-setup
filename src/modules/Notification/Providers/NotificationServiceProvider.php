@@ -55,6 +55,8 @@ class NotificationServiceProvider extends ServiceProvider
         if (file_exists($api = __DIR__ . '/../Routes/api.php')) {
             Route::prefix('api/v1')->middleware('api')->group($api);
         }
-        $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
+        if (is_dir($migrations = __DIR__ . '/../Database/Migrations')) {
+            $this->loadMigrationsFrom($migrations);
+        }
     }
 }

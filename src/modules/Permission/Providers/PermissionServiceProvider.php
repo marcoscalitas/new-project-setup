@@ -57,7 +57,11 @@ class PermissionServiceProvider extends ServiceProvider
         if (file_exists($api = __DIR__ . '/../Routes/api.php')) {
             Route::prefix('api/v1')->middleware('api')->group($api);
         }
-        $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
-        $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'permission');
+        if (is_dir($migrations = __DIR__ . '/../Database/Migrations')) {
+            $this->loadMigrationsFrom($migrations);
+        }
+        if (is_dir($views = __DIR__ . '/../Resources/views')) {
+            $this->loadViewsFrom($views, 'permission');
+        }
     }
 }
