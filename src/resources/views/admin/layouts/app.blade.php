@@ -367,6 +367,7 @@
     @stack('scripts')
     <!-- [Page Specific JS] end -->
     @include('admin.layouts.partials.theme-customizer')
+    <x-admin::delete-modal />
 </body>
 <!-- [Body] end -->
 

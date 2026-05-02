@@ -10,11 +10,11 @@
     @endcan
 @endif
 @can('delete', $model)
-    <form method="POST" action="{{ $deleteRoute }}" class="inline" onsubmit="return confirm('{{ $confirmMessage }}')">
-        @csrf
-        @method('DELETE')
-        <button type="submit" class="w-8 h-8 rounded-xl inline-flex items-center justify-center btn-link-secondary">
-            <i class="ti ti-trash text-xl leading-none"></i>
-        </button>
-    </form>
+    <button
+        type="button"
+        class="w-8 h-8 rounded-xl inline-flex items-center justify-center btn-link-secondary"
+        onclick="window.dispatchEvent(new CustomEvent('confirm-delete', { detail: { action: '{{ $deleteRoute }}', message: '{{ $confirmMessage }}' } }))"
+    >
+        <i class="ti ti-trash text-xl leading-none"></i>
+    </button>
 @endcan
