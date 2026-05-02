@@ -1,3 +1,4 @@
+<style>[x-cloak] { display: none !important; }</style>
 <!-- [Page specific CSS] start -->
 @stack('styles')
 <!-- [Page specific CSS] end -->

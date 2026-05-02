@@ -8,8 +8,8 @@
     x-transition:leave="transition ease-in duration-150"
     x-transition:leave-start="opacity-100"
     x-transition:leave-end="opacity-0"
+    x-cloak
     class="fixed inset-0 z-[1050] flex items-center justify-center"
-    style="display: none;"
 >
     <div class="absolute inset-0 bg-black/50" @click="open = false"></div>
 
