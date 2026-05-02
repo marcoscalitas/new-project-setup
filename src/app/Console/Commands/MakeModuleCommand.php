@@ -164,7 +164,7 @@ class MakeModuleCommand extends Command
     {
         $lower     = Str::lower($this->module);
         $viewsLine = ($this->isDomain() && $this->option('with-views'))
-            ? "\n        \$this->loadViewsFrom(__DIR__ . '/../Resources/views', '{$lower}');"
+            ? "\n        if (is_dir(\$views = __DIR__ . '/../Resources/views')) {\n            \$this->loadViewsFrom(\$views, '{$lower}');\n        }"
             : '';
 
         $webRouteBlock = $this->isDomain()
@@ -199,7 +199,9 @@ class MakeModuleCommand extends Command
                         ->group(\$api);
                 }
 
-                \$this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');{$viewsLine}
+                if (is_dir(\$migrations = __DIR__ . '/../Database/Migrations')) {
+                    \$this->loadMigrationsFrom(\$migrations);
+                }{$viewsLine}
 
                 Gate::policy({$this->module}::class, {$this->module}Policy::class);
 
@@ -715,7 +717,7 @@ class MakeModuleCommand extends Command
                 Schema::create('{$table}', function (Blueprint \$table) {
                     \$table->id();
                     \$table->char('ulid', 26)->unique();
-                    // TODO: add columns
+                    // \$table->string('name');
                     \$table->timestamps();
                     \$table->softDeletes();
                 });
@@ -746,7 +748,7 @@ class MakeModuleCommand extends Command
             public function definition(): array
             {
                 return [
-                    // TODO: add fields
+                    // 'name' => fake()->word(),
                 ];
             }
         }
@@ -775,17 +777,17 @@ class MakeModuleCommand extends Command
             public int \$timeout = 60;
 
             public function __construct(
-                // TODO: inject dependencies
+                //
             ) {}
 
             public function handle(): void
             {
-                // TODO: implement job logic
+                //
             }
 
             public function failed(Throwable \$e): void
             {
-                // TODO: handle failure
+                report(\$e);
             }
         }
         PHP);
