@@ -17,6 +17,10 @@ class ActivityLogServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if (is_dir($migrations = __DIR__ . '/../Database/Migrations')) {
+            $this->loadMigrationsFrom($migrations);
+        }
+
         Gate::policy(Activity::class, ActivityLogPolicy::class);
 
         if (file_exists($api = __DIR__ . '/../Routes/api.php')) {
