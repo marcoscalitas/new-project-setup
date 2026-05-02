@@ -18,72 +18,102 @@
         <use xlink:href="#custom-layer"></use>
     </svg>
 </li>
-@can('viewAny', \Modules\User\Models\User::class)
-    <li class="pc-item {{ request()->routeIs('users.index') || request()->routeIs('users.show') || request()->routeIs('users.create') || request()->routeIs('users.edit') ? 'active' : '' }}">
-        <a href="{{ route('users.index') }}" class="pc-link">
+
+@canany(['viewAny', 'delete'], \Modules\User\Models\User::class)
+    <li class="pc-item pc-hasmenu">
+        <a href="#!" class="pc-link">
             <span class="pc-micon">
                 <svg class="pc-icon">
                     <use xlink:href="#custom-user-square"></use>
                 </svg>
             </span>
             <span class="pc-mtext">{{ __('ui.users') }}</span>
-        </a>
-    </li>
-@endcan
-@can('viewTrashed', \Modules\User\Models\User::class)
-    <li class="pc-item {{ request()->routeIs('users.trashed') ? 'active' : '' }}">
-        <a href="{{ route('users.trashed') }}" class="pc-link">
-            <span class="pc-micon">
-                <i class="ti ti-trash text-lg leading-none"></i>
+            <span class="pc-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="feather feather-chevron-right">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
             </span>
-            <span class="pc-mtext">{{ __('ui.trashed_users') }}</span>
         </a>
+        <ul class="pc-submenu" style="display: none;">
+            @can('viewAny', \Modules\User\Models\User::class)
+                <li class="pc-item">
+                    <a class="pc-link" href="{{ route('users.index') }}">{{ __('ui.users') }}</a>
+                </li>
+            @endcan
+            @can('viewTrashed', \Modules\User\Models\User::class)
+                <li class="pc-item">
+                    <a class="pc-link" href="{{ route('users.trashed') }}">{{ __('ui.trashed_users') }}</a>
+                </li>
+            @endcan
+        </ul>
     </li>
-@endcan
-@can('viewAny', \Modules\Permission\Models\Role::class)
-    <li class="pc-item {{ request()->routeIs('roles.index') || request()->routeIs('roles.show') || request()->routeIs('roles.create') || request()->routeIs('roles.edit') ? 'active' : '' }}">
-        <a href="{{ route('roles.index') }}" class="pc-link">
+@endcanany
+
+@canany(['viewAny', 'delete'], \Modules\Permission\Models\Role::class)
+    <li class="pc-item pc-hasmenu">
+        <a href="#!" class="pc-link">
             <span class="pc-micon">
                 <svg class="pc-icon">
                     <use xlink:href="#custom-shield"></use>
                 </svg>
             </span>
             <span class="pc-mtext">{{ __('ui.roles') }}</span>
-        </a>
-    </li>
-@endcan
-@can('viewTrashed', \Modules\Permission\Models\Role::class)
-    <li class="pc-item {{ request()->routeIs('roles.trashed') ? 'active' : '' }}">
-        <a href="{{ route('roles.trashed') }}" class="pc-link">
-            <span class="pc-micon">
-                <i class="ti ti-trash text-lg leading-none"></i>
+            <span class="pc-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="feather feather-chevron-right">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
             </span>
-            <span class="pc-mtext">{{ __('ui.trashed_roles') }}</span>
         </a>
+        <ul class="pc-submenu" style="display: none;">
+            @can('viewAny', \Modules\Permission\Models\Role::class)
+                <li class="pc-item">
+                    <a class="pc-link" href="{{ route('roles.index') }}">{{ __('ui.roles') }}</a>
+                </li>
+            @endcan
+            @can('viewTrashed', \Modules\Permission\Models\Role::class)
+                <li class="pc-item">
+                    <a class="pc-link" href="{{ route('roles.trashed') }}">{{ __('ui.trashed_roles') }}</a>
+                </li>
+            @endcan
+        </ul>
     </li>
-@endcan
-@can('viewAny', \Modules\Permission\Models\Permission::class)
-    <li class="pc-item {{ request()->routeIs('permissions.index') || request()->routeIs('permissions.show') || request()->routeIs('permissions.create') || request()->routeIs('permissions.edit') ? 'active' : '' }}">
-        <a href="{{ route('permissions.index') }}" class="pc-link">
+@endcanany
+
+@canany(['viewAny', 'delete'], \Modules\Permission\Models\Permission::class)
+    <li class="pc-item pc-hasmenu">
+        <a href="#!" class="pc-link">
             <span class="pc-micon">
                 <svg class="pc-icon">
                     <use xlink:href="#custom-lock-outline"></use>
                 </svg>
             </span>
             <span class="pc-mtext">{{ __('ui.permissions') }}</span>
-        </a>
-    </li>
-@endcan
-@can('viewTrashed', \Modules\Permission\Models\Permission::class)
-    <li class="pc-item {{ request()->routeIs('permissions.trashed') ? 'active' : '' }}">
-        <a href="{{ route('permissions.trashed') }}" class="pc-link">
-            <span class="pc-micon">
-                <i class="ti ti-trash text-lg leading-none"></i>
+            <span class="pc-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="feather feather-chevron-right">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
             </span>
-            <span class="pc-mtext">{{ __('ui.trashed_permissions') }}</span>
         </a>
+        <ul class="pc-submenu" style="display: none;">
+            @can('viewAny', \Modules\Permission\Models\Permission::class)
+                <li class="pc-item">
+                    <a class="pc-link" href="{{ route('permissions.index') }}">{{ __('ui.permissions') }}</a>
+                </li>
+            @endcan
+            @can('viewTrashed', \Modules\Permission\Models\Permission::class)
+                <li class="pc-item">
+                    <a class="pc-link" href="{{ route('permissions.trashed') }}">{{ __('ui.trashed_permissions') }}</a>
+                </li>
+            @endcan
+        </ul>
     </li>
-@endcan
+@endcanany
 
 <li class="pc-item pc-caption">
     <label>{{ __('ui.account') }}</label>

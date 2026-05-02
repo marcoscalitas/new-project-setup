@@ -13,7 +13,10 @@
     <button
         type="button"
         class="w-8 h-8 rounded-xl inline-flex items-center justify-center btn-link-secondary"
-        onclick="window.dispatchEvent(new CustomEvent('confirm-delete', { detail: { action: '{{ $deleteRoute }}', message: '{{ $confirmMessage }}' } }))"
+        data-pc-toggle="modal"
+        data-pc-target="#delete-confirm-modal"
+        data-delete-action="{{ $deleteRoute }}"
+        data-delete-message="{{ $confirmMessage }}"
     >
         <i class="ti ti-trash text-xl leading-none"></i>
     </button>
