@@ -19,7 +19,7 @@
     </svg>
 </li>
 
-@canany(['viewAny', 'delete'], \Modules\User\Models\User::class)
+@canany(['viewAny', 'viewTrashed'], \Modules\User\Models\User::class)
     <li class="pc-item pc-hasmenu">
         <a href="#!" class="pc-link">
             <span class="pc-micon">
@@ -51,7 +51,7 @@
     </li>
 @endcanany
 
-@canany(['viewAny', 'delete'], \Modules\Permission\Models\Role::class)
+@canany(['viewAny', 'viewTrashed'], \Modules\Permission\Models\Role::class)
     <li class="pc-item pc-hasmenu">
         <a href="#!" class="pc-link">
             <span class="pc-micon">
@@ -83,7 +83,7 @@
     </li>
 @endcanany
 
-@canany(['viewAny', 'delete'], \Modules\Permission\Models\Permission::class)
+@canany(['viewAny', 'viewTrashed'], \Modules\Permission\Models\Permission::class)
     <li class="pc-item pc-hasmenu">
         <a href="#!" class="pc-link">
             <span class="pc-micon">
