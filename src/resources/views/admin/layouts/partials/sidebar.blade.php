@@ -30,7 +30,7 @@
         </a>
     </li>
 @endcan
-@can('delete', \Modules\User\Models\User::class)
+@can('viewTrashed', \Modules\User\Models\User::class)
     <li class="pc-item {{ request()->routeIs('users.trashed') ? 'active' : '' }}">
         <a href="{{ route('users.trashed') }}" class="pc-link">
             <span class="pc-micon">
@@ -52,7 +52,7 @@
         </a>
     </li>
 @endcan
-@can('delete', \Modules\Permission\Models\Role::class)
+@can('viewTrashed', \Modules\Permission\Models\Role::class)
     <li class="pc-item {{ request()->routeIs('roles.trashed') ? 'active' : '' }}">
         <a href="{{ route('roles.trashed') }}" class="pc-link">
             <span class="pc-micon">
@@ -74,7 +74,7 @@
         </a>
     </li>
 @endcan
-@can('delete', \Modules\Permission\Models\Permission::class)
+@can('viewTrashed', \Modules\Permission\Models\Permission::class)
     <li class="pc-item {{ request()->routeIs('permissions.trashed') ? 'active' : '' }}">
         <a href="{{ route('permissions.trashed') }}" class="pc-link">
             <span class="pc-micon">
