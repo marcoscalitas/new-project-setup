@@ -19,7 +19,7 @@
     </svg>
 </li>
 
-@canany(['viewAny', 'viewTrashed'], \Modules\User\Models\User::class)
+@canany(['viewAny', 'create', 'viewTrashed'], \Modules\User\Models\User::class)
     <li class="pc-item pc-hasmenu">
         <a href="#!" class="pc-link">
             <span class="pc-micon">
@@ -39,19 +39,24 @@
         <ul class="pc-submenu" style="display: none;">
             @can('viewAny', \Modules\User\Models\User::class)
                 <li class="pc-item">
-                    <a class="pc-link" href="{{ route('users.index') }}">{{ __('ui.users') }}</a>
+                    <a class="pc-link" href="{{ route('users.index') }}">{{ __('ui.list') }}</a>
+                </li>
+            @endcan
+            @can('create', \Modules\User\Models\User::class)
+                <li class="pc-item">
+                    <a class="pc-link" href="{{ route('users.create') }}">{{ __('ui.add') }}</a>
                 </li>
             @endcan
             @can('viewTrashed', \Modules\User\Models\User::class)
                 <li class="pc-item">
-                    <a class="pc-link" href="{{ route('users.trashed') }}">{{ __('ui.trashed_users') }}</a>
+                    <a class="pc-link" href="{{ route('users.trashed') }}">{{ __('ui.deleted') }}</a>
                 </li>
             @endcan
         </ul>
     </li>
 @endcanany
 
-@canany(['viewAny', 'viewTrashed'], \Modules\Permission\Models\Role::class)
+@canany(['viewAny', 'create', 'viewTrashed'], \Modules\Permission\Models\Role::class)
     <li class="pc-item pc-hasmenu">
         <a href="#!" class="pc-link">
             <span class="pc-micon">
@@ -71,19 +76,24 @@
         <ul class="pc-submenu" style="display: none;">
             @can('viewAny', \Modules\Permission\Models\Role::class)
                 <li class="pc-item">
-                    <a class="pc-link" href="{{ route('roles.index') }}">{{ __('ui.roles') }}</a>
+                    <a class="pc-link" href="{{ route('roles.index') }}">{{ __('ui.list') }}</a>
+                </li>
+            @endcan
+            @can('create', \Modules\Permission\Models\Role::class)
+                <li class="pc-item">
+                    <a class="pc-link" href="{{ route('roles.create') }}">{{ __('ui.add') }}</a>
                 </li>
             @endcan
             @can('viewTrashed', \Modules\Permission\Models\Role::class)
                 <li class="pc-item">
-                    <a class="pc-link" href="{{ route('roles.trashed') }}">{{ __('ui.trashed_roles') }}</a>
+                    <a class="pc-link" href="{{ route('roles.trashed') }}">{{ __('ui.deleted') }}</a>
                 </li>
             @endcan
         </ul>
     </li>
 @endcanany
 
-@canany(['viewAny', 'viewTrashed'], \Modules\Permission\Models\Permission::class)
+@canany(['viewAny', 'create', 'viewTrashed'], \Modules\Permission\Models\Permission::class)
     <li class="pc-item pc-hasmenu">
         <a href="#!" class="pc-link">
             <span class="pc-micon">
@@ -103,12 +113,17 @@
         <ul class="pc-submenu" style="display: none;">
             @can('viewAny', \Modules\Permission\Models\Permission::class)
                 <li class="pc-item">
-                    <a class="pc-link" href="{{ route('permissions.index') }}">{{ __('ui.permissions') }}</a>
+                    <a class="pc-link" href="{{ route('permissions.index') }}">{{ __('ui.list') }}</a>
+                </li>
+            @endcan
+            @can('create', \Modules\Permission\Models\Permission::class)
+                <li class="pc-item">
+                    <a class="pc-link" href="{{ route('permissions.create') }}">{{ __('ui.add') }}</a>
                 </li>
             @endcan
             @can('viewTrashed', \Modules\Permission\Models\Permission::class)
                 <li class="pc-item">
-                    <a class="pc-link" href="{{ route('permissions.trashed') }}">{{ __('ui.trashed_permissions') }}</a>
+                    <a class="pc-link" href="{{ route('permissions.trashed') }}">{{ __('ui.deleted') }}</a>
                 </li>
             @endcan
         </ul>

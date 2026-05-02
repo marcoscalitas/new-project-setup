@@ -11,6 +11,9 @@ return [
     'roles'        => 'Perfis',
     'permissions'  => 'Permissões',
     'notifications' => 'Notificações',
+    'list'         => 'Listar',
+    'add'          => 'Adicionar',
+    'deleted'      => 'Eliminados',
 
     // Campos comuns
     'name'         => 'Nome',

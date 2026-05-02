@@ -11,6 +11,9 @@ return [
     'roles'        => 'Roles',
     'permissions'  => 'Permissions',
     'notifications' => 'Notifications',
+    'list'         => 'List',
+    'add'          => 'Add',
+    'deleted'      => 'Deleted',
 
     // Common field labels
     'name'         => 'Name',
