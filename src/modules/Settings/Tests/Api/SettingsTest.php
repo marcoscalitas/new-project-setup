@@ -146,6 +146,12 @@ class SettingsTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_unauthenticated_user_cannot_update_setting(): void
+    {
+        Setting::updateOrCreate(['key' => 'site_name'], ['value' => 'App']);
+        $this->putJson('/api/v1/settings/site_name', ['value' => 'New'])->assertUnauthorized();
+    }
+
     // == DESTROY ==
 
     public function test_admin_can_delete_setting(): void
@@ -170,5 +176,11 @@ class SettingsTest extends TestCase
 
         $this->deleteJson('/api/v1/settings/tmp', [], $this->regularHeaders())
             ->assertForbidden();
+    }
+
+    public function test_unauthenticated_user_cannot_delete_setting(): void
+    {
+        Setting::updateOrCreate(['key' => 'tmp'], ['value' => 'bye']);
+        $this->deleteJson('/api/v1/settings/tmp', [])->assertUnauthorized();
     }
 }

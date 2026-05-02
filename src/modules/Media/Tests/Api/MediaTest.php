@@ -131,6 +131,12 @@ class MediaTest extends TestCase
         $this->getJson("/api/v1/media/{$media->id}")->assertUnauthorized();
     }
 
+    public function test_user_without_permission_cannot_view_media(): void
+    {
+        $media = $this->createMedia($this->admin);
+        $this->getJson("/api/v1/media/{$media->id}", $this->regularHeaders())->assertForbidden();
+    }
+
     // == DESTROY ==
 
     public function test_admin_can_delete_media(): void

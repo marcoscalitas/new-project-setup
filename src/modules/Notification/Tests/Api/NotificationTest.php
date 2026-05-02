@@ -74,6 +74,28 @@ class NotificationTest extends TestCase
         $response->assertUnauthorized();
     }
 
+    public function test_unauthenticated_user_cannot_list_unread_notifications(): void
+    {
+        $this->getJson('/api/v1/notifications/unread')->assertUnauthorized();
+    }
+
+    public function test_unauthenticated_user_cannot_mark_notification_as_read(): void
+    {
+        $notification = $this->createNotification();
+        $this->patchJson("/api/v1/notifications/{$notification->id}/read", [])->assertUnauthorized();
+    }
+
+    public function test_unauthenticated_user_cannot_mark_all_notifications_as_read(): void
+    {
+        $this->postJson('/api/v1/notifications/read-all', [])->assertUnauthorized();
+    }
+
+    public function test_unauthenticated_user_cannot_delete_notification(): void
+    {
+        $notification = $this->createNotification();
+        $this->deleteJson("/api/v1/notifications/{$notification->id}", [])->assertUnauthorized();
+    }
+
     public function test_user_only_sees_own_notifications(): void
     {
         $other = User::factory()->create();

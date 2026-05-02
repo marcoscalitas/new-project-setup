@@ -89,6 +89,12 @@ class ActivityLogTest extends TestCase
         $response->assertUnauthorized();
     }
 
+    public function test_unauthenticated_user_cannot_view_activity_detail(): void
+    {
+        $activity = $this->createActivity($this->admin);
+        $this->getJson("/api/v1/activity-log/{$activity->id}")->assertUnauthorized();
+    }
+
     public function test_user_without_permission_cannot_list_activity_log(): void
     {
         $response = $this->getJson('/api/v1/activity-log', $this->userHeaders());
