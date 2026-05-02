@@ -93,4 +93,24 @@ class PermissionController
 
         return redirect()->route('permissions.index')->with('success', __('permissions.permission_deleted'));
     }
+
+    public function trashed(): \Illuminate\View\View
+    {
+        Gate::authorize('viewTrashed', Permission::class);
+
+        $permissions = $this->permissionService->getTrashed();
+
+        return view('permission::permissions.trashed', compact('permissions'));
+    }
+
+    public function restore(string $ulid): \Illuminate\Http\RedirectResponse
+    {
+        $permission = Permission::withTrashed()->where('ulid', $ulid)->firstOrFail();
+
+        Gate::authorize('restore', $permission);
+
+        $this->permissionService->restore($ulid);
+
+        return redirect()->route('permissions.trashed')->with('success', __('permissions.permission_restored'));
+    }
 }

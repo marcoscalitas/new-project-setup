@@ -32,4 +32,14 @@ abstract class BasePolicy
     {
         return $user->checkPermissionTo($this->permissionPrefix() . '.delete');
     }
+
+    public function viewTrashed(User $user): bool
+    {
+        return $user->checkPermissionTo($this->permissionPrefix() . '.delete');
+    }
+
+    public function restore(User $user, mixed $model): bool
+    {
+        return $user->checkPermissionTo($this->permissionPrefix() . '.delete');
+    }
 }

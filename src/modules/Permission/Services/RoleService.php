@@ -71,4 +71,16 @@ class RoleService
 
         RoleDeleted::dispatch($roleId, $roleName);
     }
+
+    public function getTrashed()
+    {
+        return Role::onlyTrashed()->with('permissions')->get();
+    }
+
+    public function restore(string $ulid): Role
+    {
+        $role = Role::withTrashed()->where('ulid', $ulid)->firstOrFail();
+        $role->restore();
+        return $role;
+    }
 }

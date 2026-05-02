@@ -56,4 +56,16 @@ class PermissionService
 
         PermissionDeleted::dispatch($permissionId, $permissionName);
     }
+
+    public function getTrashed()
+    {
+        return Permission::onlyTrashed()->get();
+    }
+
+    public function restore(string $ulid): Permission
+    {
+        $permission = Permission::withTrashed()->where('ulid', $ulid)->firstOrFail();
+        $permission->restore();
+        return $permission;
+    }
 }

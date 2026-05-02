@@ -121,4 +121,24 @@ class UserController
 
         return response()->json(null, 204);
     }
+
+    public function trashed(): \Illuminate\View\View
+    {
+        Gate::authorize('viewTrashed', User::class);
+
+        $users = $this->userService->getTrashed();
+
+        return view('user::users.trashed', compact('users'));
+    }
+
+    public function restore(string $ulid): \Illuminate\Http\RedirectResponse
+    {
+        $user = User::withTrashed()->where('ulid', $ulid)->firstOrFail();
+
+        Gate::authorize('restore', $user);
+
+        $this->userService->restore($ulid);
+
+        return redirect()->route('users.trashed')->with('success', __('users.restored'));
+    }
 }

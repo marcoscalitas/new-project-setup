@@ -127,4 +127,16 @@ class UserService
             ]);
         }
     }
+
+    public function getTrashed()
+    {
+        return User::onlyTrashed()->with('roles')->get();
+    }
+
+    public function restore(string $ulid): User
+    {
+        $user = User::withTrashed()->where('ulid', $ulid)->firstOrFail();
+        $user->restore();
+        return $user;
+    }
 }

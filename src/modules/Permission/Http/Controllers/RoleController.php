@@ -98,4 +98,24 @@ class RoleController
 
         return redirect()->route('roles.index')->with('success', __('permissions.role_deleted'));
     }
+
+    public function trashed(): \Illuminate\View\View
+    {
+        Gate::authorize('viewTrashed', Role::class);
+
+        $roles = $this->roleService->getTrashed();
+
+        return view('permission::roles.trashed', compact('roles'));
+    }
+
+    public function restore(string $ulid): \Illuminate\Http\RedirectResponse
+    {
+        $role = Role::withTrashed()->where('ulid', $ulid)->firstOrFail();
+
+        Gate::authorize('restore', $role);
+
+        $this->roleService->restore($ulid);
+
+        return redirect()->route('roles.trashed')->with('success', __('permissions.role_restored'));
+    }
 }
