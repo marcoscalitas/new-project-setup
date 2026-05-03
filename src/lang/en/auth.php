@@ -1,6 +1,11 @@
 <?php
 
 return [
+    // Laravel built-in keys (used by Fortify / session auth)
+    'failed'                      => 'These credentials do not match our records.',
+    'password'                    => 'The provided password is incorrect.',
+    'throttle'                    => 'Too many login attempts. Please try again in :seconds seconds.',
+
     'invalid_credentials'        => 'Invalid credentials.',
     'invalid_or_expired_token'   => 'Invalid or expired token.',
     'user_not_found'             => 'User not found.',
