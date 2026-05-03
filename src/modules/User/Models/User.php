@@ -20,7 +20,6 @@ use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
@@ -86,7 +85,18 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     {
         $this->addMediaCollection('avatar')
             ->singleFile()
+            ->useDisk('public')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+    }
+
+    public function getAvatarUrl(int $size = 80): string
+    {
+        $uploaded = $this->getFirstMediaUrl('avatar');
+        if ($uploaded) {
+            return $uploaded;
+        }
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name ?: 'User')
+            . '&color=fff&background=4680ff&size=' . ($size * 2) . '&bold=true';
     }
 
     public function getEmailForVerification(): string

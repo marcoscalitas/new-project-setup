@@ -34,8 +34,8 @@
                     class="card pc-user-card mx-[15px] mb-[15px] bg-theme-sidebaruserbg dark:bg-themedark-sidebaruserbg">
                     <div class="card-body !p-5">
                         <div class="flex items-center">
-                            <img class="shrink-0 w-[45px] h-[45px] rounded-full"
-                                src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&color=fff&background=4680ff&size=90"
+                            <img class="shrink-0 w-[45px] h-[45px] rounded-full object-cover"
+                                src="{{ auth()->user()->getAvatarUrl(45) }}"
                                 alt="{{ auth()->user()->name }}" />
                             <div class="ml-4 mr-2 grow">
                                 <h6 class="mb-0">{{ auth()->user()->name }}</h6>
@@ -240,7 +240,7 @@
                         <a class="pc-head-link dropdown-toggle arrow-none me-0" data-pc-toggle="dropdown"
                             href="#" role="button" aria-haspopup="false" data-pc-auto-close="outside"
                             aria-expanded="false">
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&color=fff&background=4680ff&size=80"
+                            <img src="{{ auth()->user()->getAvatarUrl(80) }}"
                                 alt="{{ auth()->user()->name }}" class="user-avtar w-10 h-10 rounded-full" />
                         </a>
                         <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown p-2">
@@ -252,7 +252,7 @@
                                 <div class="dropdown-body py-4 px-5">
                                     <div class="flex mb-1 items-center">
                                         <div class="shrink-0">
-                                            <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&color=fff&background=4680ff&size=80"
+                                            <img src="{{ auth()->user()->getAvatarUrl(80) }}"
                                                 alt="{{ auth()->user()->name }}" class="w-10 rounded-full" />
                                         </div>
                                         <div class="grow ms-3">

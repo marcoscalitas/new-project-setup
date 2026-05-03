@@ -24,4 +24,5 @@ Route::prefix('profile')
         Route::get('/',                [ProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/',                [ProfileController::class, 'update'])->name('profile.update');
         Route::put('/password',        [ProfileController::class, 'updatePassword'])->name('profile.password');
+        Route::post('/avatar',         [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
     });

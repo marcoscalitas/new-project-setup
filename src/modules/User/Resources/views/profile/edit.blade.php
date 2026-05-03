@@ -10,7 +10,7 @@
 
 @section('content')
 @php
-    $avatarUrl = 'https://ui-avatars.com/api/?name=' . urlencode($user->name ?: __('ui.no_name')) . '&color=fff&background=4680ff&size=200&bold=true';
+    $avatarUrl = $user->getAvatarUrl(90);
     $activeTab  = session('profile_tab', 'profile-1');
     // Keep active tab after redirect (redirect with tab info)
     if ($errors->has('name') || $errors->has('email')) { $activeTab = 'profile-2'; }
@@ -207,13 +207,31 @@
                             </div>
                             <div class="card-body">
 
-                                {{-- Avatar display --}}
+                                {{-- Avatar upload --}}
                                 <div class="text-center mb-6">
-                                    <div class="inline-flex">
-                                        <img class="rounded-full w-[80px] h-[80px] object-cover ring-4 ring-primary-500/20"
+                                    <div class="inline-flex relative group mb-2">
+                                        <img id="avatar-preview"
+                                             class="rounded-full w-[90px] h-[90px] object-cover ring-4 ring-primary-500/20"
                                              src="{{ $avatarUrl }}" alt="{{ $user->name }}" />
                                     </div>
-                                    <p class="text-muted text-xs mt-2">{{ $user->name }}</p>
+                                    <form method="POST" action="{{ route('profile.avatar') }}"
+                                          enctype="multipart/form-data" id="avatar-form">
+                                        @csrf
+                                        <label for="avatar-input"
+                                               class="btn btn-outline-secondary btn-sm cursor-pointer mt-1">
+                                            <i class="ti ti-camera me-1"></i>{{ __('ui.change_avatar') }}
+                                        </label>
+                                        <input type="file" id="avatar-input" name="avatar"
+                                               accept="image/jpeg,image/png,image/webp,image/gif"
+                                               class="hidden" />
+                                        <button type="submit" id="avatar-save"
+                                                class="btn btn-primary btn-sm mt-1 hidden">
+                                            <i class="ti ti-device-floppy me-1"></i>{{ __('ui.save') }}
+                                        </button>
+                                        @error('avatar')
+                                            <div class="text-danger-500 text-xs mt-1">{{ $message }}</div>
+                                        @enderror
+                                    </form>
                                 </div>
 
                                 @if ($errors->has('name') || $errors->has('email'))
@@ -359,6 +377,23 @@
 
 @push('scripts')
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+    var input   = document.getElementById('avatar-input');
+    var preview = document.getElementById('avatar-preview');
+    var saveBtn = document.getElementById('avatar-save');
+    if (!input) return;
+    input.addEventListener('change', function () {
+        var file = this.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            saveBtn.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    });
+});
+
 function switchTab(tabId) {
     // Use AblePro's tab API if available, otherwise toggle manually
     const tabs   = document.querySelectorAll('#profileTabs .group');
