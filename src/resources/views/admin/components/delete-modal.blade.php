@@ -10,24 +10,19 @@
                 </button>
             </div>
             <div class="modal-body">
-                <div class="flex items-start gap-4">
-                    <div class="w-12 h-12 shrink-0 rounded-full bg-danger-500/10 flex items-center justify-center">
-                        <i class="ti ti-trash text-danger-500 text-2xl leading-none"></i>
-                    </div>
-                    <p class="text-muted mb-0 pt-2" id="delete-confirm-message"></p>
-                </div>
+                <p class="text-muted mb-0" id="delete-confirm-message"></p>
             </div>
             <div class="modal-footer">
                 <button type="button"
                     data-pc-modal-dismiss="#delete-confirm-modal"
-                    class="btn btn-outline-secondary">
+                    class="btn btn-secondary">
                     {{ __('ui.cancel') }}
                 </button>
-                <form id="delete-confirm-form" method="POST" class="inline">
+                <form id="delete-confirm-form" method="POST" class="inline ml-2">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger">
-                        <i class="ti ti-trash mr-1"></i> {{ __('ui.delete') }}
+                        {{ __('ui.delete') }}
                     </button>
                 </form>
             </div>
