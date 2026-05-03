@@ -15,6 +15,11 @@ class SetLocaleFromHeader
     {
         if ($request->hasSession() && $request->session()->has('locale')) {
             $locale = $request->session()->get('locale');
+        } elseif ($request->hasCookie('locale') && in_array($request->cookie('locale'), self::SUPPORTED)) {
+            $locale = $request->cookie('locale');
+            if ($request->hasSession()) {
+                $request->session()->put('locale', $locale);
+            }
         } else {
             $header = $request->header('Accept-Language');
             $locale = $header
