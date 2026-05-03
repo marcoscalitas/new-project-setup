@@ -17,11 +17,16 @@ class UserController
 {
     public function __construct(private UserService $userService) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         Gate::authorize('viewAny', User::class);
 
-        $users = $this->userService->getAll(null);
+        $users = $this->userService->getAll(
+            perPage:   15,
+            search:    $request->query('search'),
+            sort:      $request->query('sort', 'name'),
+            direction: $request->query('direction', 'asc'),
+        );
 
         return view('user::users.index', compact('users'));
     }

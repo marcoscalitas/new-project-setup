@@ -22,6 +22,7 @@ return [
     'created_at'   => 'Created At',
     'updated_at'   => 'Updated At',
     'action'       => 'Action',
+    'search'       => 'Search',
     'status'       => 'Status',
     'message'      => 'Message',
     'type'         => 'Type',

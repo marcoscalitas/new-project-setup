@@ -22,6 +22,7 @@ return [
     'created_at'   => 'Criado em',
     'updated_at'   => 'Atualizado em',
     'action'       => 'Ação',
+    'search'       => 'Pesquisar',
     'status'       => 'Estado',
     'message'      => 'Mensagem',
     'type'         => 'Tipo',

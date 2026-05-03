@@ -3,6 +3,7 @@
 namespace Modules\Permission\Http\Controllers\Web;
 
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Modules\Permission\Http\Requests\StorePermissionRequest;
@@ -14,11 +15,16 @@ class PermissionController
 {
     public function __construct(private PermissionService $permissionService) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         Gate::authorize('viewAny', Permission::class);
 
-        $permissions = $this->permissionService->getAll(null);
+        $permissions = $this->permissionService->getAll(
+            perPage:   15,
+            search:    $request->query('search'),
+            sort:      $request->query('sort', 'name'),
+            direction: $request->query('direction', 'asc'),
+        );
 
         return view('permission::permissions.index', compact('permissions'));
     }

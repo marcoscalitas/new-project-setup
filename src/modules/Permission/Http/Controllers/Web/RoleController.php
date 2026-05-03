@@ -3,6 +3,7 @@
 namespace Modules\Permission\Http\Controllers\Web;
 
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -16,11 +17,16 @@ class RoleController
 {
     public function __construct(private RoleService $roleService) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         Gate::authorize('viewAny', Role::class);
 
-        $roles = $this->roleService->getAll(null);
+        $roles = $this->roleService->getAll(
+            perPage:   15,
+            search:    $request->query('search'),
+            sort:      $request->query('sort', 'name'),
+            direction: $request->query('direction', 'asc'),
+        );
 
         return view('permission::roles.index', compact('roles'));
     }

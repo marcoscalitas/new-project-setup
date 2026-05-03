@@ -8,6 +8,11 @@
     <li class="breadcrumb-item" aria-current="page">{{ __('ui.permissions') }}</li>
 @endsection
 
+@php
+    $sort = request('sort', 'name');
+    $dir  = request('direction', 'asc');
+@endphp
+
 @section('content')
     <div class="grid grid-cols-12 gap-x-6">
         <div class="col-span-12">
@@ -23,21 +28,39 @@
                     </div>
                 </div>
                 <div class="card-body pt-3">
+                    <form method="GET" action="{{ route('permissions.index') }}" class="flex items-center gap-2 mb-4">
+                        @if($sort !== 'name') <input type="hidden" name="sort" value="{{ $sort }}"> @endif
+                        @if($dir  !== 'asc')  <input type="hidden" name="direction" value="{{ $dir }}"> @endif
+                        <div class="input-group">
+                            <input type="text" name="search" value="{{ request('search') }}"
+                                   class="form-control" placeholder="{{ __('ui.search') }}...">
+                            <button type="submit" class="btn btn-outline-secondary">
+                                <i class="ti ti-search"></i>
+                            </button>
+                        </div>
+                        @if(request('search'))
+                            <a href="{{ route('permissions.index', array_filter(['sort' => $sort !== 'name' ? $sort : null, 'direction' => $dir !== 'asc' ? $dir : null])) }}"
+                               class="btn btn-outline-danger btn-sm">
+                                <i class="ti ti-x"></i>
+                            </a>
+                        @endif
+                    </form>
+
                     <div class="table-responsive">
-                        <table class="table table-hover" id="pc-dt-simple">
+                        <table class="table table-hover">
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>{{ __('ui.name') }}</th>
-                                    <th>{{ __('ui.guard') }}</th>
-                                    <th>{{ __('ui.created_at') }}</th>
+                                    <x-admin::sort-th column="name"       :label="__('ui.name')"       :currentSort="$sort" :currentDirection="$dir" />
+                                    <x-admin::sort-th column="guard_name" :label="__('ui.guard')"      :currentSort="$sort" :currentDirection="$dir" />
+                                    <x-admin::sort-th column="created_at" :label="__('ui.created_at')" :currentSort="$sort" :currentDirection="$dir" />
                                     <th>{{ __('ui.action') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($permissions as $permission)
                                     <tr>
-                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $permissions->firstItem() + $loop->index }}</td>
                                         <td>
                                             <div class="flex items-center">
                                                 <div class="shrink-0">
@@ -68,10 +91,14 @@
                             </tbody>
                         </table>
                     </div>
+
+                    @if($permissions->hasPages())
+                        <div class="mt-4">
+                            {{ $permissions->appends(request()->query())->links() }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 @endsection
-
-@include('admin.layouts.partials.datatable-scripts')

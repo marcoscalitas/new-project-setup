@@ -14,9 +14,16 @@ class PermissionService
         return auth('api')->check() ? 'api' : 'web';
     }
 
-    public function getAll(?int $perPage = 15)
+    public function getAll(?int $perPage = 15, ?string $search = null, string $sort = 'name', string $direction = 'asc')
     {
-        $query = Permission::query();
+        $allowed   = ['name', 'guard_name', 'created_at'];
+        $sort      = in_array($sort, $allowed) ? $sort : 'name';
+        $direction = $direction === 'desc' ? 'desc' : 'asc';
+
+        $query = Permission::query()
+            ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
+            ->orderBy($sort, $direction);
+
         return $perPage === null ? $query->get() : $query->paginate($perPage);
     }
 
