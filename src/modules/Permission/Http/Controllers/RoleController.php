@@ -5,6 +5,7 @@ namespace Modules\Permission\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Modules\Permission\Http\Requests\StoreRoleRequest;
 use Modules\Permission\Http\Requests\UpdateRoleRequest;
 use Modules\Permission\Http\Resources\RoleResource;
@@ -90,7 +91,14 @@ class RoleController
     {
         Gate::authorize('delete', $role);
 
-        $this->roleService->delete($role->id);
+        try {
+            $this->roleService->delete($role->id);
+        } catch (ValidationException $e) {
+            if (request()->expectsJson()) {
+                throw $e;
+            }
+            return redirect()->back()->with('error', collect($e->errors())->flatten()->first());
+        }
 
         if (request()->expectsJson()) {
             return response()->json(null, 204);

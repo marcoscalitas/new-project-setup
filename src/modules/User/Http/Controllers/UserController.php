@@ -5,6 +5,7 @@ namespace Modules\User\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Modules\Core\Contracts\FileUploadInterface;
 use Modules\User\Http\Requests\StoreUserRequest;
 use Modules\User\Http\Requests\UpdateUserRequest;
@@ -82,7 +83,14 @@ class UserController
     {
         Gate::authorize('update', $user);
 
-        $user = $this->userService->update($user->id, $request->validated());
+        try {
+            $user = $this->userService->update($user->id, $request->validated());
+        } catch (ValidationException $e) {
+            if (request()->expectsJson()) {
+                throw $e;
+            }
+            return redirect()->back()->with('error', collect($e->errors())->flatten()->first());
+        }
 
         if (request()->expectsJson()) {
             return response()->json(new UserResource($user));
@@ -95,7 +103,14 @@ class UserController
     {
         Gate::authorize('delete', $user);
 
-        $this->userService->delete($user->id);
+        try {
+            $this->userService->delete($user->id);
+        } catch (ValidationException $e) {
+            if (request()->expectsJson()) {
+                throw $e;
+            }
+            return redirect()->back()->with('error', collect($e->errors())->flatten()->first());
+        }
 
         if (request()->expectsJson()) {
             return response()->json(null, 204);
