@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Permission\Http\Controllers\RoleController;
-use Modules\Permission\Http\Controllers\PermissionController;
+use Modules\Permission\Http\Controllers\Web\RoleController;
+use Modules\Permission\Http\Controllers\Web\PermissionController;
 
 Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
     Route::prefix('roles')->group(function () {

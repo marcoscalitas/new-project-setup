@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Media\Http\Controllers;
+namespace Modules\Media\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

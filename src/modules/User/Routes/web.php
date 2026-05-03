@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\User\Http\Controllers\UserController;
-use Modules\User\Http\Controllers\ProfileController;
+use Modules\User\Http\Controllers\Web\UserController;
+use Modules\User\Http\Controllers\Web\ProfileController;
 
 Route::prefix('users')
     ->middleware(['auth', 'verified', 'throttle:60,1'])

@@ -107,7 +107,7 @@ class MakeModuleCommand extends Command
             'Database/Migrations',
             'Database/Seeders',
             'Events',
-            'Http/Controllers',
+            'Http/Controllers/Api',
             'Http/Requests',
             'Http/Resources',
             'Jobs',
@@ -126,7 +126,7 @@ class MakeModuleCommand extends Command
             'Database/Migrations',
             'Database/Seeders',
             'Events',
-            'Http/Controllers',
+            'Http/Controllers/Api',
             'Http/Requests',
             'Http/Resources',
             'Jobs',
@@ -138,8 +138,10 @@ class MakeModuleCommand extends Command
             'Tests/Api',
         ];
 
-        // Domain modules also have web tests
+        // Domain modules also have web controllers and web tests
         if ($this->isDomain()) {
+            $dirs[]          = 'Http/Controllers/Web';
+            $fileWillExist[] = 'Http/Controllers/Web';
             $dirs[]          = 'Tests/Web';
             $fileWillExist[] = 'Tests/Web';
         }
@@ -243,17 +245,12 @@ class MakeModuleCommand extends Command
 
     private function createController(): void
     {
-        if ($this->isDomain() && $this->option('with-views')) {
-            $this->createDualController();
-            return;
-        }
-
         $lower = Str::camel($this->module);
 
-        $this->write("Http/Controllers/{$this->module}Controller.php", <<<PHP
+        $this->write("Http/Controllers/Api/{$this->module}Controller.php", <<<PHP
         <?php
 
-        namespace Modules\\{$this->module}\Http\Controllers;
+        namespace Modules\\{$this->module}\Http\Controllers\Api;
 
         use Illuminate\Http\JsonResponse;
         use Illuminate\Http\Request;
@@ -317,27 +314,28 @@ class MakeModuleCommand extends Command
             }
         }
         PHP);
+
+        if ($this->isDomain() && $this->option('with-views')) {
+            $this->createWebController();
+        }
     }
 
-    private function createDualController(): void
+    private function createWebController(): void
     {
         $lower     = Str::camel($this->module);
         $slug      = Str::kebab(Str::plural($this->module));
         $namespace = Str::lower($this->module);
 
-        $this->write("Http/Controllers/{$this->module}Controller.php", <<<PHP
+        $this->write("Http/Controllers/Web/{$this->module}Controller.php", <<<PHP
         <?php
 
-        namespace Modules\\{$this->module}\Http\Controllers;
+        namespace Modules\\{$this->module}\Http\Controllers\Web;
 
-        use Illuminate\Http\JsonResponse;
         use Illuminate\Http\RedirectResponse;
-        use Illuminate\Http\Request;
         use Illuminate\Support\Facades\Gate;
         use Illuminate\View\View;
         use Modules\\{$this->module}\Http\Requests\Store{$this->module}Request;
         use Modules\\{$this->module}\Http\Requests\Update{$this->module}Request;
-        use Modules\\{$this->module}\Http\Resources\\{$this->module}Resource;
         use Modules\\{$this->module}\Models\\{$this->module};
         use Modules\\{$this->module}\Services\\{$this->module}Service;
 
@@ -347,16 +345,11 @@ class MakeModuleCommand extends Command
             {
             }
 
-            public function index(Request \$request): JsonResponse|View
+            public function index(): View
             {
                 Gate::authorize('viewAny', {$this->module}::class);
 
-                \$perPage = min((int) \$request->query('per_page', 15), 100);
-                \$items = \$this->{$lower}Service->getAll(\$perPage);
-
-                if (\$request->expectsJson()) {
-                    return {$this->module}Resource::collection(\$items)->response();
-                }
+                \$items = \$this->{$lower}Service->getAll(null);
 
                 return view('{$namespace}::{$slug}.index', compact('items'));
             }
@@ -368,28 +361,20 @@ class MakeModuleCommand extends Command
                 return view('{$namespace}::{$slug}.create');
             }
 
-            public function store(Store{$this->module}Request \$request): JsonResponse|RedirectResponse
+            public function store(Store{$this->module}Request \$request): RedirectResponse
             {
                 Gate::authorize('create', {$this->module}::class);
 
-                \$item = \$this->{$lower}Service->create(\$request->validated());
-
-                if (request()->expectsJson()) {
-                    return response()->json(new {$this->module}Resource(\$item), 201);
-                }
+                \$this->{$lower}Service->create(\$request->validated());
 
                 return redirect()->route('{$slug}.index')->with('success', '{$this->module} created successfully.');
             }
 
-            public function show(int \$id): JsonResponse|View
+            public function show(int \$id): View
             {
                 \$item = \$this->{$lower}Service->findById(\$id);
 
                 Gate::authorize('view', \$item);
-
-                if (request()->expectsJson()) {
-                    return response()->json(new {$this->module}Resource(\$item));
-                }
 
                 return view('{$namespace}::{$slug}.show', compact('item'));
             }
@@ -403,28 +388,20 @@ class MakeModuleCommand extends Command
                 return view('{$namespace}::{$slug}.edit', compact('item'));
             }
 
-            public function update(Update{$this->module}Request \$request, int \$id): JsonResponse|RedirectResponse
+            public function update(Update{$this->module}Request \$request, int \$id): RedirectResponse
             {
                 Gate::authorize('update', {$this->module}::findOrFail(\$id));
 
-                \$item = \$this->{$lower}Service->update(\$id, \$request->validated());
+                \$this->{$lower}Service->update(\$id, \$request->validated());
 
-                if (request()->expectsJson()) {
-                    return response()->json(new {$this->module}Resource(\$item));
-                }
-
-                return redirect()->route('{$slug}.show', \$item->id)->with('success', '{$this->module} updated successfully.');
+                return redirect()->route('{$slug}.show', \$id)->with('success', '{$this->module} updated successfully.');
             }
 
-            public function destroy(int \$id): JsonResponse|RedirectResponse
+            public function destroy(int \$id): RedirectResponse
             {
                 Gate::authorize('delete', {$this->module}::findOrFail(\$id));
 
                 \$this->{$lower}Service->delete(\$id);
-
-                if (request()->expectsJson()) {
-                    return response()->json(null, 204);
-                }
 
                 return redirect()->route('{$slug}.index')->with('success', '{$this->module} deleted successfully.');
             }
@@ -662,7 +639,7 @@ class MakeModuleCommand extends Command
         <?php
 
         use Illuminate\Support\Facades\Route;
-        use Modules\\{$this->module}\Http\Controllers\\{$this->module}Controller;
+        use Modules\\{$this->module}\Http\Controllers\Api\\{$this->module}Controller;
 
         Route::middleware(['auth:api', 'throttle:60,1'])->group(function () {
             Route::apiResource('{$slug}', {$this->module}Controller::class);
@@ -684,7 +661,7 @@ class MakeModuleCommand extends Command
         <?php
 
         use Illuminate\Support\Facades\Route;
-        use Modules\\{$this->module}\Http\Controllers\\{$this->module}Controller;
+        use Modules\\{$this->module}\Http\Controllers\Web\\{$this->module}Controller;
 
         Route::prefix('{$slug}')
             ->middleware(['auth', 'throttle:60,1'])
@@ -704,7 +681,7 @@ class MakeModuleCommand extends Command
         <?php
 
         use Illuminate\Support\Facades\Route;
-        use Modules\\{$this->module}\Http\Controllers\\{$this->module}Controller;
+        use Modules\\{$this->module}\Http\Controllers\Web\\{$this->module}Controller;
 
         Route::prefix('{$slug}')
             ->middleware(['auth', 'throttle:60,1'])

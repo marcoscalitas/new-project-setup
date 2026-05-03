@@ -25,7 +25,7 @@ class ResetPasswordTest extends TestCase
         ]);
 
         $response->assertOk()
-            ->assertJson(['message' => 'Senha redefinida com sucesso.']);
+            ->assertJson(['message' => 'Palavra-passe redefinida com sucesso.']);
 
         $this->assertTrue(Hash::check('NewSecurePass1!', $user->fresh()->password));
     }

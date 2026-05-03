@@ -1,38 +1,31 @@
 <?php
 
-namespace Modules\Permission\Http\Controllers;
+namespace Modules\Permission\Http\Controllers\Web;
 
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 use Modules\Permission\Http\Requests\StoreRoleRequest;
 use Modules\Permission\Http\Requests\UpdateRoleRequest;
-use Modules\Permission\Http\Resources\RoleResource;
+use Modules\Permission\Models\Permission;
 use Modules\Permission\Models\Role;
 use Modules\Permission\Services\RoleService;
-use Modules\Permission\Models\Permission;
 
 class RoleController
 {
     public function __construct(private RoleService $roleService) {}
 
-    public function index(Request $request): JsonResponse|\Illuminate\View\View
+    public function index(): View
     {
         Gate::authorize('viewAny', Role::class);
 
-        $perPage = min((int) $request->query('per_page', 15), 100);
-
-        if ($request->expectsJson()) {
-            $roles = $this->roleService->getAll($perPage);
-            return RoleResource::collection($roles)->response();
-        }
-
         $roles = $this->roleService->getAll(null);
+
         return view('permission::roles.index', compact('roles'));
     }
 
-    public function create(): \Illuminate\View\View
+    public function create(): View
     {
         Gate::authorize('create', Role::class);
 
@@ -41,31 +34,23 @@ class RoleController
         return view('permission::roles.create', compact('permissions'));
     }
 
-    public function store(StoreRoleRequest $request): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function store(StoreRoleRequest $request): RedirectResponse
     {
         Gate::authorize('create', Role::class);
 
-        $role = $this->roleService->create($request->validated());
-
-        if (request()->expectsJson()) {
-            return response()->json(new RoleResource($role), 201);
-        }
+        $this->roleService->create($request->validated());
 
         return redirect()->route('roles.index')->with('success', __('permissions.role_created'));
     }
 
-    public function show(Role $role): JsonResponse|\Illuminate\View\View
+    public function show(Role $role): View
     {
         Gate::authorize('view', $role);
-
-        if (request()->expectsJson()) {
-            return response()->json(new RoleResource($role));
-        }
 
         return view('permission::roles.show', compact('role'));
     }
 
-    public function edit(Role $role): \Illuminate\View\View
+    public function edit(Role $role): View
     {
         Gate::authorize('update', $role);
 
@@ -74,40 +59,29 @@ class RoleController
         return view('permission::roles.edit', compact('role', 'permissions'));
     }
 
-    public function update(UpdateRoleRequest $request, Role $role): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function update(UpdateRoleRequest $request, Role $role): RedirectResponse
     {
         Gate::authorize('update', $role);
 
-        $role = $this->roleService->update($role->id, $request->validated());
-
-        if (request()->expectsJson()) {
-            return response()->json(new RoleResource($role));
-        }
+        $this->roleService->update($role->id, $request->validated());
 
         return redirect()->route('roles.index')->with('success', __('permissions.role_updated'));
     }
 
-    public function destroy(Role $role): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function destroy(Role $role): RedirectResponse
     {
         Gate::authorize('delete', $role);
 
         try {
             $this->roleService->delete($role->id);
         } catch (ValidationException $e) {
-            if (request()->expectsJson()) {
-                throw $e;
-            }
             return redirect()->back()->with('error', collect($e->errors())->flatten()->first());
-        }
-
-        if (request()->expectsJson()) {
-            return response()->json(null, 204);
         }
 
         return redirect()->route('roles.index')->with('success', __('permissions.role_deleted'));
     }
 
-    public function trashed(): \Illuminate\View\View
+    public function trashed(): View
     {
         Gate::authorize('viewTrashed', Role::class);
 
@@ -116,7 +90,7 @@ class RoleController
         return view('permission::roles.trashed', compact('roles'));
     }
 
-    public function restore(string $ulid): \Illuminate\Http\RedirectResponse
+    public function restore(string $ulid): RedirectResponse
     {
         $role = Role::withTrashed()->where('ulid', $ulid)->firstOrFail();
 

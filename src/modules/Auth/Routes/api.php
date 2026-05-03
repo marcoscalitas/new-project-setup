@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Auth\Http\Controllers\AuthController;
+use Modules\Auth\Http\Controllers\Api\AuthController;
 
 // Auth routes — with rate limiting to prevent brute force
 Route::prefix('auth')->group(function () {

@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Settings\Http\Controllers\SettingsController;
+use Modules\Settings\Http\Controllers\Api\SettingsController;
 
 Route::middleware(['auth:api', 'verified', 'throttle:60,1'])->group(function () {
     Route::get('settings',        [SettingsController::class, 'index'])->name('api.settings.index');

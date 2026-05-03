@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Auth\Http\Controllers;
+namespace Modules\Auth\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -70,7 +70,7 @@ class AuthController
     {
         $this->authService->forgotPassword($request->input('email'));
 
-        // Sempre retorna 200 para evitar enumeração de e-mails (OWASP)
+        // Always returns 200 to prevent email enumeration (OWASP)
         return response()->json(['message' => __('auth.password_reset_link_sent')]);
     }
 

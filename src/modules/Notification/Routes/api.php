@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Notification\Http\Controllers\NotificationController;
+use Modules\Notification\Http\Controllers\Api\NotificationController;
 
 // Rate limiting: 60 requests/minute for authenticated users
 Route::middleware(['auth:api', 'verified', 'throttle:60,1'])->prefix('notifications')->group(function () {

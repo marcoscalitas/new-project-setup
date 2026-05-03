@@ -1,22 +1,25 @@
 <?php
 
-namespace Modules\User\Http\Controllers;
+namespace Modules\User\Http\Controllers\Web;
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Modules\User\Http\Requests\UploadAvatarRequest;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
+use Modules\User\Http\Requests\UploadAvatarRequest;
+use Illuminate\View\View;
 
 class ProfileController
 {
-    public function edit(Request $request): \Illuminate\View\View
+    public function edit(Request $request): View
     {
         $user = $request->user();
+
         return view('user::profile.edit', compact('user'));
     }
 
-    public function update(Request $request): \Illuminate\Http\RedirectResponse
+    public function update(Request $request): RedirectResponse
     {
         $user = $request->user();
 
@@ -30,7 +33,7 @@ class ProfileController
         return redirect()->route('profile.edit')->with('success', __('ui.profile_updated'));
     }
 
-    public function updateAvatar(UploadAvatarRequest $request): \Illuminate\Http\RedirectResponse
+    public function updateAvatar(UploadAvatarRequest $request): RedirectResponse
     {
         $request->user()
             ->addMediaFromRequest('avatar')
@@ -39,7 +42,7 @@ class ProfileController
         return redirect()->route('profile.edit')->with('success', __('ui.avatar_updated'));
     }
 
-    public function updatePassword(Request $request): \Illuminate\Http\RedirectResponse
+    public function updatePassword(Request $request): RedirectResponse
     {
         $request->validate([
             'current_password' => ['required', 'string'],
