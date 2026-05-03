@@ -56,15 +56,15 @@
                                         </td>
                                         <td>{{ $role->deleted_at->format('d/m/Y H:i') }}</td>
                                         <td>
-                                            <form method="POST" action="{{ route('roles.restore', $role->ulid) }}" class="inline">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit"
-                                                    class="w-8 h-8 rounded-xl inline-flex items-center justify-center btn-link-secondary"
-                                                    title="{{ __('ui.restore') }}">
-                                                    <i class="ti ti-rotate text-xl leading-none"></i>
-                                                </button>
-                                            </form>
+                                            <button type="button"
+                                                class="w-8 h-8 rounded-xl inline-flex items-center justify-center btn-link-secondary btn-pc-default"
+                                                data-pc-toggle="modal"
+                                                data-pc-target="#restore-confirm-modal"
+                                                data-restore-action="{{ route('roles.restore', $role->ulid) }}"
+                                                data-restore-message="{{ __('ui.confirm_restore_role') }}"
+                                                title="{{ __('ui.restore') }}">
+                                                <i class="ti ti-rotate text-lg leading-none"></i>
+                                            </button>
                                         </td>
                                     </tr>
                                 @empty

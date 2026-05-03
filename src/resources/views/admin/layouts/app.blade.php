@@ -368,6 +368,7 @@
     <!-- [Page Specific JS] end -->
     @include('admin.layouts.partials.theme-customizer')
     <x-admin::delete-modal />
+    <x-admin::restore-modal />
 </body>
 <!-- [Body] end -->
 

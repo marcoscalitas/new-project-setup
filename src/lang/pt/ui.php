@@ -39,7 +39,7 @@ return [
 
     // Auth - Login
     'login'                    => 'Entrar',
-    'login_with_email'         => 'Faça login com o seu email',
+    'login_with_email'         => 'Faz login com o teu email',
     'sign_in_with_facebook'    => 'Entrar com Facebook',
     'sign_in_with_twitter'     => 'Entrar com Twitter',
     'sign_in_with_google'      => 'Entrar com Google',
@@ -79,7 +79,7 @@ return [
     'resend_verification'           => 'Reenviar Email de Verificação',
     'resend_verification_title'     => 'Reenviar Email de Verificação',
     'resend_verification_subtitle'  => 'Introduz o teu endereço de email e receberás um novo link de ativação.',
-    'did_not_receive_email'         => 'Não recebeu o email? Reenviar',
+    'did_not_receive_email'         => 'Não recebeste o email? Reenviar',
 
     // Layout - guest / personalizador
     'theme_mode'               => 'Modo do Tema',
@@ -233,5 +233,11 @@ return [
 
     // Modal de confirmação de eliminação
     'confirm_delete_title'  => 'Tem a certeza?',
+
+    // Modal de confirmação de restauro
+    'confirm_restore_title'      => 'Restaurar registo?',
+    'confirm_restore_user'       => 'Tem a certeza que pretende restaurar este utilizador?',
+    'confirm_restore_role'       => 'Tem a certeza que pretende restaurar este perfil?',
+    'confirm_restore_permission' => 'Tem a certeza que pretende restaurar esta permissão?',
 
 ];

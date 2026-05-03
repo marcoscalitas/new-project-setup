@@ -234,4 +234,10 @@ return [
     // Delete modal
     'confirm_delete_title'  => 'Are you sure?',
 
+    // Restore modal
+    'confirm_restore_title'      => 'Restore record?',
+    'confirm_restore_user'       => 'Are you sure you want to restore this user?',
+    'confirm_restore_role'       => 'Are you sure you want to restore this role?',
+    'confirm_restore_permission' => 'Are you sure you want to restore this permission?',
+
 ];
