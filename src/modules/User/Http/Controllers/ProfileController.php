@@ -4,6 +4,7 @@ namespace Modules\User\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Modules\User\Http\Requests\UploadAvatarRequest;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
@@ -29,12 +30,8 @@ class ProfileController
         return redirect()->route('profile.edit')->with('success', __('ui.profile_updated'));
     }
 
-    public function updateAvatar(Request $request): \Illuminate\Http\RedirectResponse
+    public function updateAvatar(UploadAvatarRequest $request): \Illuminate\Http\RedirectResponse
     {
-        $request->validate([
-            'avatar' => ['required', 'image', 'max:2048', 'mimes:jpeg,png,webp,gif'],
-        ]);
-
         $request->user()
             ->addMediaFromRequest('avatar')
             ->toMediaCollection('avatar');
