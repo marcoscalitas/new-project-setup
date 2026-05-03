@@ -13,6 +13,7 @@
     $avatarUrl = $user->getAvatarUrl(90);
     $activeTab  = session('profile_tab', 'profile-1');
     // Keep active tab after redirect (redirect with tab info)
+    if ($errors->has('avatar')) { $activeTab = 'profile-2'; }
     if ($errors->has('name') || $errors->has('email')) { $activeTab = 'profile-2'; }
     if ($errors->has('current_password') || $errors->has('password')) { $activeTab = 'profile-3'; }
 @endphp
