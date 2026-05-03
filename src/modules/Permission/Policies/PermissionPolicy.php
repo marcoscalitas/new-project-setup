@@ -2,12 +2,42 @@
 
 namespace Modules\Permission\Policies;
 
-use Modules\Core\Policies\BasePolicy;
+use Modules\User\Models\User;
 
-class PermissionPolicy extends BasePolicy
+class PermissionPolicy
 {
-    protected function permissionPrefix(): string
+    public function viewAny(User $user): bool
     {
-        return 'permission';
+        return $user->checkPermissionTo('permission.list');
+    }
+
+    public function view(User $user, mixed $model): bool
+    {
+        return $user->checkPermissionTo('permission.view');
+    }
+
+    public function create(User $user): bool
+    {
+        return $user->checkPermissionTo('permission.create');
+    }
+
+    public function update(User $user, mixed $model): bool
+    {
+        return $user->checkPermissionTo('permission.update');
+    }
+
+    public function delete(User $user, mixed $model): bool
+    {
+        return $user->checkPermissionTo('permission.delete');
+    }
+
+    public function viewTrashed(User $user): bool
+    {
+        return $user->checkPermissionTo('permission.delete');
+    }
+
+    public function restore(User $user, mixed $model): bool
+    {
+        return $user->checkPermissionTo('permission.delete');
     }
 }

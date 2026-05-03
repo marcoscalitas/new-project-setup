@@ -3,14 +3,14 @@
 namespace Modules\ActivityLog\Http\Resources;
 
 use Illuminate\Http\Request;
-use Modules\Core\Http\Resources\BaseResource;
+use Illuminate\Http\Resources\Json\JsonResource;
 
-class ActivityLogResource extends BaseResource
+class ActivityLogResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        return array_merge($this->base(), [
-            'id'          => $this->id,  // Spatie Activity has no ulid — expose int PK
+        return [
+            'id'          => $this->id,
             'log_name'    => $this->log_name,
             'description' => $this->description,
             'subject'     => $this->when($this->subject_type, [
@@ -22,6 +22,8 @@ class ActivityLogResource extends BaseResource
                 'type' => $this->causer_type,
             ]),
             'properties'  => $this->properties,
-        ]);
+            'created_at'  => $this->created_at?->toISOString(),
+            'updated_at'  => $this->updated_at?->toISOString(),
+        ];
     }
 }

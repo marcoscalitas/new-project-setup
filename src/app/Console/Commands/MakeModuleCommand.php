@@ -220,11 +220,15 @@ class MakeModuleCommand extends Command
         namespace Modules\\{$this->module}\Models;
 
         use Illuminate\Database\Eloquent\Factories\Factory;
-        use Modules\Core\Models\BaseModel;
+        use Illuminate\Database\Eloquent\Model;
+        use Illuminate\Database\Eloquent\SoftDeletes;
+        use Modules\Core\Traits\HasUlid;
         use Modules\\{$this->module}\Database\Factories\\{$this->module}Factory;
 
-        class {$this->module} extends BaseModel
+        class {$this->module} extends Model
         {
+            use HasUlid, SoftDeletes;
+
             protected \$fillable = [
                 //
             ];
@@ -436,19 +440,13 @@ class MakeModuleCommand extends Command
         namespace Modules\\{$this->module}\Services;
 
         use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-        use Modules\Core\Services\BaseService;
         use Modules\\{$this->module}\Events\\{$this->module}Created;
         use Modules\\{$this->module}\Events\\{$this->module}Deleted;
         use Modules\\{$this->module}\Events\\{$this->module}Updated;
         use Modules\\{$this->module}\Models\\{$this->module};
 
-        class {$this->module}Service extends BaseService
+        class {$this->module}Service
         {
-            protected function model(): string
-            {
-                return {$this->module}::class;
-            }
-
             public function getAll(int \$perPage = 15): LengthAwarePaginator
             {
                 return {$this->module}::paginate(\$perPage);
@@ -599,13 +597,17 @@ class MakeModuleCommand extends Command
         namespace Modules\\{$this->module}\Http\Resources;
 
         use Illuminate\Http\Request;
-        use Modules\Core\Http\Resources\BaseResource;
+        use Illuminate\Http\Resources\Json\JsonResource;
 
-        class {$this->module}Resource extends BaseResource
+        class {$this->module}Resource extends JsonResource
         {
             public function toArray(Request \$request): array
             {
-                return \$this->base();
+                return [
+                    'id'         => \$this->ulid,
+                    'created_at' => \$this->created_at?->toISOString(),
+                    'updated_at' => \$this->updated_at?->toISOString(),
+                ];
             }
         }
         PHP);
@@ -620,13 +622,33 @@ class MakeModuleCommand extends Command
 
         namespace Modules\\{$this->module}\Policies;
 
-        use Modules\Core\Policies\BasePolicy;
+        use Modules\User\Models\User;
 
-        class {$this->module}Policy extends BasePolicy
+        class {$this->module}Policy
         {
-            protected function permissionPrefix(): string
+            public function viewAny(User \$user): bool
             {
-                return '{$lower}';
+                return \$user->checkPermissionTo('{$lower}.list');
+            }
+
+            public function view(User \$user, mixed \$model): bool
+            {
+                return \$user->checkPermissionTo('{$lower}.view');
+            }
+
+            public function create(User \$user): bool
+            {
+                return \$user->checkPermissionTo('{$lower}.create');
+            }
+
+            public function update(User \$user, mixed \$model): bool
+            {
+                return \$user->checkPermissionTo('{$lower}.update');
+            }
+
+            public function delete(User \$user, mixed \$model): bool
+            {
+                return \$user->checkPermissionTo('{$lower}.delete');
             }
         }
         PHP);

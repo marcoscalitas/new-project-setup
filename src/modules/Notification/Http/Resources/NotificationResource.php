@@ -3,17 +3,19 @@
 namespace Modules\Notification\Http\Resources;
 
 use Illuminate\Http\Request;
-use Modules\Core\Http\Resources\BaseResource;
+use Illuminate\Http\Resources\Json\JsonResource;
 
-class NotificationResource extends BaseResource
+class NotificationResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        return array_merge($this->base(), [
-            'id'      => $this->id,  // DatabaseNotification uses UUID string PK, no ulid field
-            'type'    => $this->type,
-            'data'    => $this->data,
-            'read_at' => $this->read_at,
-        ]);
+        return [
+            'id'         => $this->id,
+            'type'       => $this->type,
+            'data'       => $this->data,
+            'read_at'    => $this->read_at,
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
+        ];
     }
 }
