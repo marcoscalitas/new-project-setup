@@ -197,4 +197,16 @@ class AvatarTest extends TestCase
 
         $this->assertNotNull($response->json('avatar_url'));
     }
+
+    public function test_user_without_avatar_uses_default_avatar_url(): void
+    {
+        $response = $this->getJson("/api/v1/users/{$this->user->ulid}", $this->authHeaders());
+
+        $response->assertOk();
+
+        $this->assertStringEndsWith(
+            '/admin/custom/img/user-avatar.jpg',
+            $response->json('avatar_url')
+        );
+    }
 }

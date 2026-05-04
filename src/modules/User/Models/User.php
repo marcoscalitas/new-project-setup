@@ -95,8 +95,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         if ($uploaded) {
             return $uploaded;
         }
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name ?: 'User')
-            . '&color=fff&background=4680ff&size=' . ($size * 2) . '&bold=true';
+
+        return asset('admin/custom/img/user-avatar.jpg');
     }
 
     public function getEmailForVerification(): string

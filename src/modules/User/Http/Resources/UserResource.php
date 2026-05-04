@@ -14,7 +14,7 @@ class UserResource extends JsonResource
             'id'         => $this->ulid,
             'name'       => $this->name,
             'email'      => $this->email,
-            'avatar_url' => $this->getFirstMediaUrl('avatar') ?: null,
+            'avatar_url' => $this->getAvatarUrl(),
             'roles'      => RoleResource::collection($this->whenLoaded('roles')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
