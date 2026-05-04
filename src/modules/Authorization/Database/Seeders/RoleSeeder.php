@@ -38,8 +38,6 @@ class RoleSeeder extends Seeder
                         'user.view',
                         'log.list',
                         'log.view',
-                        'media.list',
-                        'media.view',
                         'setting.list',
                         'setting.view',
                     ])
