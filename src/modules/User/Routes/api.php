@@ -5,6 +5,9 @@ use Modules\User\Http\Controllers\Api\UserController;
 
 // Rate limiting: 60 requests/minute for authenticated users
 Route::middleware(['auth:api', 'verified', 'throttle:60,1'])->group(function () {
+    Route::get('users/trashed', [UserController::class, 'trashed'])->name('api.users.trashed');
+    Route::patch('users/{ulid}/restore', [UserController::class, 'restore'])->name('api.users.restore');
+
     Route::apiResource('users', UserController::class)->names('api.users');
 
     Route::post('users/{user}/avatar', [UserController::class, 'uploadAvatar'])->name('api.users.avatar.upload');
