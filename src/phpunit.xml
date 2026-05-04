@@ -41,14 +41,12 @@
         <testsuite name="Settings-Api">
             <directory>modules/Settings/Tests/Api</directory>
         </testsuite>
-        <testsuite name="Media-Api">
-            <directory>modules/Media/Tests/Api</directory>
-        </testsuite>
     </testsuites>
     <source>
         <include>
             <directory>app</directory>
             <directory>modules</directory>
+            <directory>Shared</directory>
         </include>
     </source>
     <php>

@@ -5,19 +5,21 @@ namespace Modules\User\Http\Controllers\Api;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Shared\Contracts\FileUploadInterface;
 use Modules\User\Http\Requests\StoreUserRequest;
 use Modules\User\Http\Requests\UpdateUserRequest;
 use Modules\User\Http\Requests\UploadAvatarRequest;
 use Modules\User\Http\Resources\UserResource;
 use Modules\User\Models\User;
 use Modules\User\Services\UserService;
+use Shared\Media\Contracts\MediaRemover;
+use Shared\Media\Contracts\MediaUploader;
 
 class UserController
 {
     public function __construct(
         private UserService $userService,
-        private FileUploadInterface $media,
+        private MediaUploader $mediaUploader,
+        private MediaRemover $mediaRemover,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -94,7 +96,8 @@ class UserController
     {
         Gate::authorize('update', $user);
 
-        $this->media->upload($request->file('avatar'), 'avatar', $user);
+        $this->mediaRemover->remove($user, 'avatar');
+        $this->mediaUploader->upload($user, $request->file('avatar'), 'avatar');
 
         return (new UserResource($user->fresh()))->response();
     }
@@ -103,7 +106,7 @@ class UserController
     {
         Gate::authorize('update', $user);
 
-        $this->media->delete($user, 'avatar');
+        $this->mediaRemover->remove($user, 'avatar');
 
         return response()->json(null, 204);
     }
