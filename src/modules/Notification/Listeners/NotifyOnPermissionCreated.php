@@ -20,7 +20,7 @@ class NotifyOnPermissionCreated implements ShouldQueue
             $admin->notify(new ActivityNotification(
                 type: 'permission_created',
                 message: "New permission created: {$event->permission->name}",
-                data: ['permission_id' => $event->permission->id, 'permission_name' => $event->permission->name],
+                data: ['permission_id' => $event->permission->id, 'permission_name' => $event->permission->name, 'url' => route('permissions.show', $event->permission->ulid)],
             ));
         }
     }

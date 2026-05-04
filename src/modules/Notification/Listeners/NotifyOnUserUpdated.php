@@ -22,7 +22,7 @@ class NotifyOnUserUpdated implements ShouldQueue
             $admin->notify(new ActivityNotification(
                 type: 'user_updated',
                 message: "User updated: {$event->userEmail}",
-                data: ['user_ulid' => $event->userUlid, 'email' => $event->userEmail],
+                data: ['user_ulid' => $event->userUlid, 'email' => $event->userEmail, 'url' => route('users.show', $event->userUlid)],
             ));
         }
     }

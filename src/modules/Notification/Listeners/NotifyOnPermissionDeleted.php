@@ -20,7 +20,7 @@ class NotifyOnPermissionDeleted implements ShouldQueue
             $admin->notify(new ActivityNotification(
                 type: 'permission_deleted',
                 message: "Permission deleted: {$event->permissionName}",
-                data: ['permission_id' => $event->permissionId, 'permission_name' => $event->permissionName],
+                data: ['permission_id' => $event->permissionId, 'permission_name' => $event->permissionName, 'url' => route('permissions.trashed')],
             ));
         }
     }

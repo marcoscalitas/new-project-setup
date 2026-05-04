@@ -20,7 +20,7 @@ class NotifyOnRoleDeleted implements ShouldQueue
             $admin->notify(new ActivityNotification(
                 type: 'role_deleted',
                 message: "Role deleted: {$event->roleName}",
-                data: ['role_id' => $event->roleId, 'role_name' => $event->roleName],
+                data: ['role_id' => $event->roleId, 'role_name' => $event->roleName, 'url' => route('roles.trashed')],
             ));
         }
     }

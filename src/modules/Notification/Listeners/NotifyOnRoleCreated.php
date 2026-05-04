@@ -20,7 +20,7 @@ class NotifyOnRoleCreated implements ShouldQueue
             $admin->notify(new ActivityNotification(
                 type: 'role_created',
                 message: "New role created: {$event->roleName}",
-                data: ['role_ulid' => $event->roleUlid, 'role_name' => $event->roleName],
+                data: ['role_ulid' => $event->roleUlid, 'role_name' => $event->roleName, 'url' => route('roles.show', $event->roleUlid)],
             ));
         }
     }
