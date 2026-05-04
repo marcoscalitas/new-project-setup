@@ -68,7 +68,7 @@ class MakeModuleCommandTest extends TestCase
         $expectedFiles = [
             'Providers/DummyServiceProvider.php',
             'Models/Dummy.php',
-            'Http/Controllers/DummyController.php',
+            'Http/Controllers/Api/DummyController.php',
             'Http/Requests/StoreDummyRequest.php',
             'Http/Requests/UpdateDummyRequest.php',
             'Http/Resources/DummyResource.php',
@@ -161,7 +161,7 @@ class MakeModuleCommandTest extends TestCase
 
         $this->assertFileContains('namespace Modules\Dummy\Providers;', 'Providers/DummyServiceProvider.php');
         $this->assertFileContains('namespace Modules\Dummy\Models;', 'Models/Dummy.php');
-        $this->assertFileContains('namespace Modules\Dummy\Http\Controllers;', 'Http/Controllers/DummyController.php');
+        $this->assertFileContains('namespace Modules\Dummy\Http\Controllers\Api;', 'Http/Controllers/Api/DummyController.php');
         $this->assertFileContains('namespace Modules\Dummy\Services;', 'Services/DummyService.php');
         $this->assertFileContains('namespace Modules\Dummy\Policies;', 'Policies/DummyPolicy.php');
         $this->assertFileContains('namespace Modules\Dummy\Http\Requests;', 'Http/Requests/StoreDummyRequest.php');
@@ -198,7 +198,7 @@ class MakeModuleCommandTest extends TestCase
         $phpFiles = [
             'Providers/DummyServiceProvider.php',
             'Models/Dummy.php',
-            'Http/Controllers/DummyController.php',
+            'Http/Controllers/Api/DummyController.php',
             'Http/Requests/StoreDummyRequest.php',
             'Http/Requests/UpdateDummyRequest.php',
             'Http/Resources/DummyResource.php',
@@ -217,7 +217,7 @@ class MakeModuleCommandTest extends TestCase
     {
         $this->artisan('make:module', ['name' => 'Dummy']);
 
-        $content = file_get_contents("{$this->modulePath}/Http/Controllers/DummyController.php");
+        $content = file_get_contents("{$this->modulePath}/Http/Controllers/Api/DummyController.php");
 
         $this->assertStringContainsString('use Modules\Dummy\Services\DummyService;', $content);
         $this->assertStringContainsString('use Modules\Dummy\Http\Resources\DummyResource;', $content);
@@ -244,9 +244,12 @@ class MakeModuleCommandTest extends TestCase
 
         $content = file_get_contents("{$this->modulePath}/Policies/DummyPolicy.php");
 
-        // Policy extends BasePolicy; only the prefix is declared here
-        $this->assertStringContainsString('extends BasePolicy', $content);
-        $this->assertStringContainsString("return 'dummy'", $content);
+        $this->assertStringContainsString('class DummyPolicy', $content);
+        $this->assertStringContainsString("checkPermissionTo('dummy.list')", $content);
+        $this->assertStringContainsString("checkPermissionTo('dummy.view')", $content);
+        $this->assertStringContainsString("checkPermissionTo('dummy.create')", $content);
+        $this->assertStringContainsString("checkPermissionTo('dummy.update')", $content);
+        $this->assertStringContainsString("checkPermissionTo('dummy.delete')", $content);
     }
 
     public function test_routes_use_plural_kebab_slug(): void
@@ -278,9 +281,8 @@ class MakeModuleCommandTest extends TestCase
 
         $content = file_get_contents(base_path('modules/DummyTwo/Policies/DummyTwoPolicy.php'));
 
-        // Policy extends BasePolicy; prefix uses snake_case of module name
-        $this->assertStringContainsString('extends BasePolicy', $content);
-        $this->assertStringContainsString("return 'dummy_two'", $content);
+        $this->assertStringContainsString('class DummyTwoPolicy', $content);
+        $this->assertStringContainsString("checkPermissionTo('dummy_two.list')", $content);
     }
 
     public function test_irregular_plural_in_routes(): void
@@ -352,7 +354,7 @@ class MakeModuleCommandTest extends TestCase
     {
         $this->artisan('make:module', ['name' => 'Dummy']);
 
-        $content = file_get_contents("{$this->modulePath}/Http/Controllers/DummyController.php");
+        $content = file_get_contents("{$this->modulePath}/Http/Controllers/Api/DummyController.php");
 
         $this->assertStringContainsString('public function index(Request $request)', $content);
         $this->assertStringContainsString('public function store(StoreDummyRequest $request)', $content);
@@ -397,14 +399,16 @@ class MakeModuleCommandTest extends TestCase
         $this->assertStringContainsString("'throttle:60,1'", $web);
     }
 
-    public function test_model_has_correct_base_class_and_traits(): void
+    public function test_model_has_correct_eloquent_base_class_and_traits(): void
     {
         $this->artisan('make:module', ['name' => 'Dummy']);
 
         $content = file_get_contents("{$this->modulePath}/Models/Dummy.php");
 
-        $this->assertStringContainsString('extends BaseModel', $content);
-        $this->assertStringContainsString('use Modules\\Core\\Models\\BaseModel;', $content);
+        $this->assertStringContainsString('extends Model', $content);
+        $this->assertStringContainsString('use Illuminate\\Database\\Eloquent\\Model;', $content);
+        $this->assertStringContainsString('use Modules\\Core\\Traits\\HasUlid;', $content);
+        $this->assertStringContainsString('use HasUlid, SoftDeletes;', $content);
         $this->assertStringContainsString('protected $fillable', $content);
     }
 
@@ -477,11 +481,11 @@ class MakeModuleCommandTest extends TestCase
 
         $content = file_get_contents("{$this->modulePath}/Http/Resources/DummyResource.php");
 
-        // Resource extends BaseResource (which itself extends JsonResource)
-        $this->assertStringContainsString('extends BaseResource', $content);
+        $this->assertStringContainsString('extends JsonResource', $content);
         $this->assertStringContainsString('public function toArray(Request $request): array', $content);
-        // BaseResource::base() provides id + timestamps; toArray calls $this->base()
-        $this->assertStringContainsString('$this->base()', $content);
+        $this->assertStringContainsString("'id'         => \$this->ulid", $content);
+        $this->assertStringContainsString("'created_at' => \$this->created_at?->toISOString()", $content);
+        $this->assertStringContainsString("'updated_at' => \$this->updated_at?->toISOString()", $content);
     }
 
     // == JOB ==
@@ -579,14 +583,13 @@ class MakeModuleCommandTest extends TestCase
         $this->assertStringContainsString("'dummy'", $content);
     }
 
-    public function test_with_views_controller_has_dual_response(): void
+    public function test_with_views_controller_has_web_responses(): void
     {
         $this->artisan('make:module', ['name' => 'Dummy', '--with-views' => true])
             ->assertSuccessful();
 
-        $content = file_get_contents("{$this->modulePath}/Http/Controllers/DummyController.php");
+        $content = file_get_contents("{$this->modulePath}/Http/Controllers/Web/DummyController.php");
 
-        $this->assertStringContainsString('request()->expectsJson()', $content);
         $this->assertStringContainsString('public function create()', $content);
         $this->assertStringContainsString('public function edit(int $id)', $content);
         $this->assertStringContainsString("view('dummy::dummies.", $content);
@@ -631,7 +634,7 @@ class MakeModuleCommandTest extends TestCase
         $this->artisan('make:module', ['name' => 'Dummy'])
             ->assertSuccessful();
 
-        $content = file_get_contents("{$this->modulePath}/Http/Controllers/DummyController.php");
+        $content = file_get_contents("{$this->modulePath}/Http/Controllers/Api/DummyController.php");
 
         $this->assertStringNotContainsString('expectsJson', $content);
         $this->assertStringNotContainsString('public function create()', $content);
@@ -669,8 +672,7 @@ class MakeModuleCommandTest extends TestCase
         $this->assertDirectoryExists("{$modulePath}/Resources/views/dummy-twos");
         $this->assertFileExists("{$modulePath}/Resources/views/dummy-twos/index.blade.php");
 
-        $content = file_get_contents("{$modulePath}/Http/Controllers/DummyTwoController.php");
-        $this->assertStringContainsString('request()->expectsJson()', $content);
+        $content = file_get_contents("{$modulePath}/Http/Controllers/Web/DummyTwoController.php");
         $this->assertStringContainsString("view('dummytwo::dummy-twos.", $content);
     }
 

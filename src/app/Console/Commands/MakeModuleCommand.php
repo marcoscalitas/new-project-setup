@@ -661,7 +661,7 @@ class MakeModuleCommand extends Command
         <?php
 
         use Illuminate\Support\Facades\Route;
-        use Modules\\{$this->module}\Http\Controllers\Web\\{$this->module}Controller;
+        use Modules\\{$this->module}\Http\Controllers\Api\\{$this->module}Controller;
 
         Route::prefix('{$slug}')
             ->middleware(['auth', 'throttle:60,1'])
