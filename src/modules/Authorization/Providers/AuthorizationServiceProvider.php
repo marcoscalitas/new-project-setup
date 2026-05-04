@@ -20,6 +20,10 @@ use Modules\Authorization\Listeners\LogRoleChange;
 use Modules\Authorization\Listeners\LogRoleCreation;
 use Modules\Authorization\Listeners\LogRoleDeletion;
 use Modules\Authorization\Listeners\LogRoleUpdate;
+use Modules\Authorization\Listeners\NotifyOnPermissionCreated;
+use Modules\Authorization\Listeners\NotifyOnPermissionDeleted;
+use Modules\Authorization\Listeners\NotifyOnRoleCreated;
+use Modules\Authorization\Listeners\NotifyOnRoleDeleted;
 use Modules\Authorization\Models\Permission;
 use Modules\Authorization\Models\Role;
 use Modules\Authorization\Policies\PermissionPolicy;
@@ -50,6 +54,10 @@ class AuthorizationServiceProvider extends ServiceProvider
         Event::listen(PermissionCreated::class, [LogPermissionCreation::class, 'handle']);
         Event::listen(PermissionUpdated::class, [LogPermissionUpdate::class, 'handle']);
         Event::listen(PermissionDeleted::class, [LogPermissionDeletion::class, 'handle']);
+        Event::listen(RoleCreated::class, [NotifyOnRoleCreated::class, 'handle']);
+        Event::listen(RoleDeleted::class, [NotifyOnRoleDeleted::class, 'handle']);
+        Event::listen(PermissionCreated::class, [NotifyOnPermissionCreated::class, 'handle']);
+        Event::listen(PermissionDeleted::class, [NotifyOnPermissionDeleted::class, 'handle']);
 
         if (file_exists($web = __DIR__ . '/../Routes/web.php')) {
             Route::middleware('web')->group($web);

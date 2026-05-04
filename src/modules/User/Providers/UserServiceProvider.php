@@ -6,10 +6,14 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\User\Events\UserCreated;
 use Modules\User\Events\UserDeleted;
 use Modules\User\Events\UserUpdated;
 use Modules\User\Listeners\LogUserDeletion;
 use Modules\User\Listeners\LogUserUpdate;
+use Modules\User\Listeners\NotifyOnUserCreated;
+use Modules\User\Listeners\NotifyOnUserDeleted;
+use Modules\User\Listeners\NotifyOnUserUpdated;
 use Modules\User\Models\User;
 use Modules\User\Policies\UserPolicy;
 
@@ -32,6 +36,9 @@ class UserServiceProvider extends ServiceProvider
 
         Event::listen(UserUpdated::class, [LogUserUpdate::class, 'handle']);
         Event::listen(UserDeleted::class, [LogUserDeletion::class, 'handle']);
+        Event::listen(UserCreated::class, [NotifyOnUserCreated::class, 'handle']);
+        Event::listen(UserUpdated::class, [NotifyOnUserUpdated::class, 'handle']);
+        Event::listen(UserDeleted::class, [NotifyOnUserDeleted::class, 'handle']);
 
         if (file_exists($web = __DIR__ . '/../Routes/web.php')) {
             Route::middleware('web')->group($web);
@@ -47,4 +54,3 @@ class UserServiceProvider extends ServiceProvider
         }
     }
 }
-
