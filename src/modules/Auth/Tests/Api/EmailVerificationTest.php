@@ -39,7 +39,7 @@ class EmailVerificationTest extends TestCase
     private function verificationUrlFor(User $user): string
     {
         return URL::temporarySignedRoute(
-            'verification.verify',
+            'verification.activate',
             now()->addMinutes(60),
             ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())]
         );
@@ -124,7 +124,7 @@ class EmailVerificationTest extends TestCase
         $user = User::factory()->unverified()->create();
 
         $url = URL::temporarySignedRoute(
-            'verification.verify',
+            'verification.activate',
             now()->addMinutes(60),
             ['id' => $user->id, 'hash' => 'wronghash']
         );
@@ -139,7 +139,7 @@ class EmailVerificationTest extends TestCase
         $user = User::factory()->unverified()->create();
 
         $url = URL::temporarySignedRoute(
-            'verification.verify',
+            'verification.activate',
             now()->subMinute(),
             ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())]
         );

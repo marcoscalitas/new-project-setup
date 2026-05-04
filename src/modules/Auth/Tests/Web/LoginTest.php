@@ -139,6 +139,18 @@ class LoginTest extends TestCase
         Notification::assertSentToTimes($user, VerifyEmail::class, 1);
     }
 
+    public function test_verification_notice_logs_out_unverified_web_session(): void
+    {
+        $user = User::factory()->unverified()->create();
+
+        $this->actingAs($user)
+            ->get(route('verification.notice'))
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors(['activation']);
+
+        $this->assertGuest();
+    }
+
     // == Public verification link (no auth needed) ==
 
     public function test_verification_activate_link_verifies_email_without_being_logged_in(): void
