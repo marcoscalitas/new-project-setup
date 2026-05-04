@@ -14,12 +14,13 @@ class ActivityNotification extends Notification implements ShouldQueue
         private string $type,
         private string $message,
         private array $data = [],
+        private array $channels = ['database'],
     ) {
     }
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return $this->channels;
     }
 
     public function toArray(object $notifiable): array

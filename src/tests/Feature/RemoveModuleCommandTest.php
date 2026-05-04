@@ -59,7 +59,7 @@ class RemoveModuleCommandTest extends TestCase
             ->assertFailed();
     }
 
-    public function test_fails_for_protected_core_modules(): void
+    public function test_fails_for_protected_modules(): void
     {
         $protected = ['Identity', 'User', 'Authorization', 'Notification'];
 

@@ -407,7 +407,7 @@ class MakeModuleCommandTest extends TestCase
 
         $this->assertStringContainsString('extends Model', $content);
         $this->assertStringContainsString('use Illuminate\\Database\\Eloquent\\Model;', $content);
-        $this->assertStringContainsString('use Modules\\Core\\Traits\\HasUlid;', $content);
+        $this->assertStringContainsString('use Shared\\Traits\\HasUlid;', $content);
         $this->assertStringContainsString('use HasUlid, SoftDeletes;', $content);
         $this->assertStringContainsString('protected $fillable', $content);
     }

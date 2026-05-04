@@ -3,7 +3,7 @@
 namespace Modules\Authorization\Models;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Core\Traits\HasUlid;
+use Shared\Traits\HasUlid;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Permission\Models\Role as SpatieRole;

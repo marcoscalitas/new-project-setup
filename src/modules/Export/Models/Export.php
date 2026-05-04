@@ -5,7 +5,7 @@ namespace Modules\Export\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Modules\Core\Traits\HasUlid;
+use Shared\Traits\HasUlid;
 use Modules\User\Models\User;
 
 class Export extends Model

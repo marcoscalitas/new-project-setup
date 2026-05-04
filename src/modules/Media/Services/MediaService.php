@@ -3,7 +3,7 @@
 namespace Modules\Media\Services;
 
 use Illuminate\Database\Eloquent\Model;
-use Modules\Core\Contracts\FileUploadInterface;
+use Shared\Contracts\FileUploadInterface;
 
 class MediaService implements FileUploadInterface
 {

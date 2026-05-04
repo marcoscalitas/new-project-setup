@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Core\Contracts;
+namespace Shared\Contracts;
 
 use Illuminate\Database\Eloquent\Model;
 

@@ -5,19 +5,19 @@ namespace Modules\User\Models;
 use App\Contracts\MailSenderInterface;
 use App\Mail\MailMessage;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Passport\HasApiTokens;
-use Modules\Core\Traits\HasUlid;
-use Modules\Notification\Models\Notification;
 use Modules\User\Database\Factories\UserFactory;
-use Spatie\Activitylog\Support\LogOptions;
+use Shared\Traits\HasUlid;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Permission\Traits\HasRoles;
@@ -78,7 +78,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     public function notifications(): MorphMany
     {
-        return $this->morphMany(Notification::class, 'notifiable')->latest();
+        return $this->morphMany(config('notifications.database_model', DatabaseNotification::class), 'notifiable')->latest();
     }
 
     public function registerMediaCollections(): void

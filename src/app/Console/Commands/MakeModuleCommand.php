@@ -224,7 +224,7 @@ class MakeModuleCommand extends Command
         use Illuminate\Database\Eloquent\Factories\Factory;
         use Illuminate\Database\Eloquent\Model;
         use Illuminate\Database\Eloquent\SoftDeletes;
-        use Modules\Core\Traits\HasUlid;
+        use Shared\Traits\HasUlid;
         use Modules\\{$this->module}\Database\Factories\\{$this->module}Factory;
 
         class {$this->module} extends Model

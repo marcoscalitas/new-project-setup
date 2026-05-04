@@ -3,7 +3,7 @@
 namespace Tests\Unit\Media;
 
 use Illuminate\Database\Eloquent\Model;
-use Modules\Core\Contracts\FileUploadInterface;
+use Shared\Contracts\FileUploadInterface;
 use Modules\Media\Services\MediaService;
 use PHPUnit\Framework\TestCase;
 use Spatie\MediaLibrary\MediaCollections\FileAdder;

@@ -5,26 +5,13 @@ namespace Modules\Notification\Providers;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
-use Modules\Core\Contracts\NotificationSenderInterface;
-use Modules\Notification\Services\NotificationDispatcher;
-use Modules\User\Events\UserCreated;
 use Modules\Notification\Events\NotificationDeleted;
 use Modules\Notification\Events\NotificationRead;
 use Modules\Notification\Listeners\LogNotificationDeletion;
 use Modules\Notification\Listeners\LogNotificationRead;
-use Modules\Notification\Listeners\NotifyOnPermissionCreated;
-use Modules\Notification\Listeners\NotifyOnPermissionDeleted;
-use Modules\Notification\Listeners\NotifyOnRoleCreated;
-use Modules\Notification\Listeners\NotifyOnRoleDeleted;
-use Modules\Notification\Listeners\NotifyOnUserCreated;
-use Modules\Notification\Listeners\NotifyOnUserDeleted;
-use Modules\Notification\Listeners\NotifyOnUserUpdated;
-use Modules\Authorization\Events\PermissionCreated;
-use Modules\Authorization\Events\PermissionDeleted;
-use Modules\Authorization\Events\RoleCreated;
-use Modules\Authorization\Events\RoleDeleted;
-use Modules\User\Events\UserDeleted;
-use Modules\User\Events\UserUpdated;
+use Modules\Notification\Models\Notification;
+use Modules\Notification\Services\LaravelNotifier;
+use Shared\Contracts\Notification\Notifier;
 
 class NotificationServiceProvider extends ServiceProvider
 {
@@ -33,7 +20,9 @@ class NotificationServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(NotificationSenderInterface::class, NotificationDispatcher::class);
+        $this->app['config']->set('notifications.database_model', Notification::class);
+
+        $this->app->bind(Notifier::class, LaravelNotifier::class);
     }
 
     /**
@@ -43,14 +32,6 @@ class NotificationServiceProvider extends ServiceProvider
     {
         Event::listen(NotificationRead::class, [LogNotificationRead::class, 'handle']);
         Event::listen(NotificationDeleted::class, [LogNotificationDeletion::class, 'handle']);
-
-        Event::listen(UserCreated::class, [NotifyOnUserCreated::class, 'handle']);
-        Event::listen(UserUpdated::class, [NotifyOnUserUpdated::class, 'handle']);
-        Event::listen(UserDeleted::class, [NotifyOnUserDeleted::class, 'handle']);
-        Event::listen(RoleCreated::class, [NotifyOnRoleCreated::class, 'handle']);
-        Event::listen(RoleDeleted::class, [NotifyOnRoleDeleted::class, 'handle']);
-        Event::listen(PermissionCreated::class, [NotifyOnPermissionCreated::class, 'handle']);
-        Event::listen(PermissionDeleted::class, [NotifyOnPermissionDeleted::class, 'handle']);
 
         if (file_exists($api = __DIR__ . '/../Routes/api.php')) {
             Route::prefix('api/v1')->middleware('api')->group($api);

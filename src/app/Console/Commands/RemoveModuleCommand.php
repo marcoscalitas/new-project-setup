@@ -26,7 +26,7 @@ class RemoveModuleCommand extends Command
 
         $protected = ['Identity', 'User', 'Authorization', 'Notification'];
         if (in_array($this->module, $protected)) {
-            $this->error("Module [{$this->module}] is a core module and cannot be removed.");
+            $this->error("Module [{$this->module}] is protected and cannot be removed.");
             return self::FAILURE;
         }
 

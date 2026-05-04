@@ -5,7 +5,7 @@ namespace Modules\Media\Providers;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
-use Modules\Core\Contracts\FileUploadInterface;
+use Shared\Contracts\FileUploadInterface;
 use Modules\Media\Policies\MediaPolicy;
 use Modules\Media\Services\MediaService;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;

@@ -5,7 +5,7 @@ namespace Modules\User\Http\Controllers\Api;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Modules\Core\Contracts\FileUploadInterface;
+use Shared\Contracts\FileUploadInterface;
 use Modules\User\Http\Requests\StoreUserRequest;
 use Modules\User\Http\Requests\UpdateUserRequest;
 use Modules\User\Http\Requests\UploadAvatarRequest;
