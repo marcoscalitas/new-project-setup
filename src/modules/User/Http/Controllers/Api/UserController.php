@@ -5,7 +5,6 @@ namespace Modules\User\Http\Controllers\Api;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\ValidationException;
 use Modules\Core\Contracts\FileUploadInterface;
 use Modules\User\Http\Requests\StoreUserRequest;
 use Modules\User\Http\Requests\UpdateUserRequest;
@@ -26,7 +25,12 @@ class UserController
         Gate::authorize('viewAny', User::class);
 
         $perPage = min((int) $request->query('per_page', 15), 100);
-        $users   = $this->userService->getAll($perPage);
+        $users   = $this->userService->getAll(
+            perPage:   $perPage,
+            search:    $request->query('search'),
+            sort:      $request->query('sort', 'name'),
+            direction: $request->query('direction', 'asc'),
+        );
 
         return UserResource::collection($users)->response();
     }
@@ -63,6 +67,27 @@ class UserController
         $this->userService->delete($user->id);
 
         return response()->json(null, 204);
+    }
+
+    public function trashed(Request $request): JsonResponse
+    {
+        Gate::authorize('viewTrashed', User::class);
+
+        $perPage = min((int) $request->query('per_page', 15), 100);
+        $users   = User::onlyTrashed()->with('roles')->paginate($perPage);
+
+        return UserResource::collection($users)->response();
+    }
+
+    public function restore(string $ulid): JsonResponse
+    {
+        $user = User::onlyTrashed()->where('ulid', $ulid)->firstOrFail();
+
+        Gate::authorize('restore', $user);
+
+        $this->userService->restore($ulid);
+
+        return response()->json(new UserResource($user->fresh()));
     }
 
     public function uploadAvatar(UploadAvatarRequest $request, User $user): JsonResponse

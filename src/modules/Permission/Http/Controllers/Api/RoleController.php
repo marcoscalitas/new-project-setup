@@ -21,7 +21,12 @@ class RoleController
         Gate::authorize('viewAny', Role::class);
 
         $perPage = min((int) $request->query('per_page', 15), 100);
-        $roles   = $this->roleService->getAll($perPage);
+        $roles   = $this->roleService->getAll(
+            perPage:   $perPage,
+            search:    $request->query('search'),
+            sort:      $request->query('sort', 'name'),
+            direction: $request->query('direction', 'asc'),
+        );
 
         return RoleResource::collection($roles)->response();
     }
@@ -62,5 +67,26 @@ class RoleController
         }
 
         return response()->json(null, 204);
+    }
+
+    public function trashed(Request $request): JsonResponse
+    {
+        Gate::authorize('viewTrashed', Role::class);
+
+        $perPage = min((int) $request->query('per_page', 15), 100);
+        $roles   = Role::onlyTrashed()->with('permissions')->paginate($perPage);
+
+        return RoleResource::collection($roles)->response();
+    }
+
+    public function restore(string $ulid): JsonResponse
+    {
+        $role = Role::onlyTrashed()->where('ulid', $ulid)->firstOrFail();
+
+        Gate::authorize('restore', $role);
+
+        $this->roleService->restore($ulid);
+
+        return response()->json(new RoleResource($role->fresh()));
     }
 }

@@ -20,7 +20,12 @@ class PermissionController
         Gate::authorize('viewAny', Permission::class);
 
         $perPage     = min((int) $request->query('per_page', 15), 100);
-        $permissions = $this->permissionService->getAll($perPage);
+        $permissions = $this->permissionService->getAll(
+            perPage:   $perPage,
+            search:    $request->query('search'),
+            sort:      $request->query('sort', 'name'),
+            direction: $request->query('direction', 'asc'),
+        );
 
         return PermissionResource::collection($permissions)->response();
     }
@@ -57,5 +62,26 @@ class PermissionController
         $this->permissionService->delete($permission->id);
 
         return response()->json(null, 204);
+    }
+
+    public function trashed(Request $request): JsonResponse
+    {
+        Gate::authorize('viewTrashed', Permission::class);
+
+        $perPage     = min((int) $request->query('per_page', 15), 100);
+        $permissions = Permission::onlyTrashed()->paginate($perPage);
+
+        return PermissionResource::collection($permissions)->response();
+    }
+
+    public function restore(string $ulid): JsonResponse
+    {
+        $permission = Permission::onlyTrashed()->where('ulid', $ulid)->firstOrFail();
+
+        Gate::authorize('restore', $permission);
+
+        $this->permissionService->restore($ulid);
+
+        return response()->json(new PermissionResource($permission->fresh()));
     }
 }
