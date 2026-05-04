@@ -4,6 +4,7 @@ namespace Modules\User\Tests\Web;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Permission\Models\Permission;
+use Modules\Permission\Models\Role;
 use Modules\User\Models\User;
 use Tests\TestCase;
 
@@ -31,99 +32,7 @@ class UserWebTest extends TestCase
         $this->user->givePermissionTo($perms);
     }
 
-    // == LIST ==
-
-    public function test_authenticated_user_can_list_users(): void
-    {
-        User::factory()->count(3)->create();
-
-        $response = $this->actingAs($this->user)
-            ->getJson('/users');
-
-        $response->assertOk()
-            ->assertJsonCount(4, 'data');
-    }
-
-    public function test_unauthenticated_user_cannot_list_users(): void
-    {
-        $response = $this->getJson('/users');
-
-        $response->assertUnauthorized();
-    }
-
-    // == STORE ==
-
-    public function test_user_can_create_user(): void
-    {
-        $response = $this->actingAs($this->user)
-            ->postJson('/users', [
-                'name'                  => 'John Doe',
-                'email'                 => 'john@example.com',
-                'password'              => 'SecurePass1!',
-                'password_confirmation' => 'SecurePass1!',
-            ]);
-
-        $response->assertCreated()
-            ->assertJsonPath('name', 'John Doe')
-            ->assertJsonPath('email', 'john@example.com');
-
-        $this->assertDatabaseHas('users', ['email' => 'john@example.com']);
-    }
-
-    public function test_create_user_validates_required_fields(): void
-    {
-        $response = $this->actingAs($this->user)
-            ->postJson('/users', []);
-
-        $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['name', 'email', 'password']);
-    }
-
-    // == SHOW ==
-
-    public function test_user_can_view_user(): void
-    {
-        $target = User::factory()->create(['name' => 'Maria Silva']);
-
-        $response = $this->actingAs($this->user)
-            ->getJson("/users/{$target->ulid}");
-
-        $response->assertOk()
-            ->assertJsonPath('name', 'Maria Silva');
-    }
-
-    // == UPDATE ==
-
-    public function test_user_can_update_user(): void
-    {
-        $target = User::factory()->create();
-
-        $response = $this->actingAs($this->user)
-            ->putJson("/users/{$target->ulid}", [
-                'name'  => 'Updated Name',
-                'email' => 'updated@example.com',
-            ]);
-
-        $response->assertOk()
-            ->assertJsonPath('name', 'Updated Name');
-
-        $this->assertDatabaseHas('users', ['email' => 'updated@example.com']);
-    }
-
-    // == DESTROY ==
-
-    public function test_user_can_delete_user(): void
-    {
-        $target = User::factory()->create();
-
-        $response = $this->actingAs($this->user)
-            ->deleteJson("/users/{$target->ulid}");
-
-        $response->assertNoContent();
-        $this->assertSoftDeleted('users', ['id' => $target->id]);
-    }
-
-    // == BLADE VIEWS ==
+    // == VIEWS ==
 
     public function test_index_returns_blade_view_for_browser(): void
     {
@@ -169,6 +78,8 @@ class UserWebTest extends TestCase
             ->assertViewHas(['user', 'roles']);
     }
 
+    // == MUTATIONS ==
+
     public function test_store_redirects_for_browser(): void
     {
         $response = $this->actingAs($this->user)
@@ -211,6 +122,8 @@ class UserWebTest extends TestCase
         $this->assertSoftDeleted('users', ['id' => $target->id]);
     }
 
+    // == AUTH ==
+
     public function test_unauthenticated_browser_is_redirected_to_login(): void
     {
         $response = $this->get('/users');
@@ -218,9 +131,11 @@ class UserWebTest extends TestCase
         $response->assertRedirect('/auth/login');
     }
 
+    // == BUSINESS RULES ==
+
     public function test_update_with_empty_roles_removes_all(): void
     {
-        $role = \Modules\Permission\Models\Role::create(['name' => 'editor', 'guard_name' => 'web']);
+        $role   = Role::create(['name' => 'editor', 'guard_name' => 'web']);
         $target = User::factory()->create();
         $target->assignRole($role);
 
@@ -236,8 +151,8 @@ class UserWebTest extends TestCase
 
     public function test_cannot_remove_admin_role_from_last_admin_via_browser(): void
     {
-        $adminRole = \Modules\Permission\Models\Role::create(['name' => 'admin', 'guard_name' => 'web']);
-        $admin = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'web']);
+        $admin     = User::factory()->create();
         $admin->assignRole($adminRole);
 
         $response = $this->actingAs($this->user)
@@ -246,20 +161,24 @@ class UserWebTest extends TestCase
                 'roles' => '',
             ]);
 
-        $response->assertSessionHasErrors(['roles']);
+        $response->assertRedirect()
+            ->assertSessionHas('error');
+
         $this->assertTrue($admin->fresh()->hasRole('admin'));
     }
 
     public function test_cannot_delete_last_admin_via_browser(): void
     {
-        $adminRole = \Modules\Permission\Models\Role::create(['name' => 'admin', 'guard_name' => 'web']);
-        $admin = User::factory()->create();
+        $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'web']);
+        $admin     = User::factory()->create();
         $admin->assignRole($adminRole);
 
         $response = $this->actingAs($this->user)
             ->delete("/users/{$admin->ulid}");
 
-        $response->assertSessionHasErrors(['user']);
-        $this->assertDatabaseHas('users', ['id' => $admin->id]);
+        $response->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('users', ['id' => $admin->id, 'deleted_at' => null]);
     }
 }

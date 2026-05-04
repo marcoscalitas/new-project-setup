@@ -31,91 +31,7 @@ class PermissionWebTest extends TestCase
         $this->user->givePermissionTo($perms);
     }
 
-    // == LIST ==
-
-    public function test_authenticated_user_can_list_permissions(): void
-    {
-        Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
-        Permission::create(['name' => 'user.view', 'guard_name' => 'api']);
-
-        $response = $this->actingAs($this->user)
-            ->getJson('/permissions');
-
-        $response->assertOk()
-            ->assertJsonCount(7, 'data');
-    }
-
-    public function test_unauthenticated_user_cannot_list_permissions(): void
-    {
-        $response = $this->getJson('/permissions');
-
-        $response->assertUnauthorized();
-    }
-
-    // == STORE ==
-
-    public function test_user_can_create_permission(): void
-    {
-        $response = $this->actingAs($this->user)
-            ->postJson('/permissions', ['name' => 'user.list']);
-
-        $response->assertCreated()
-            ->assertJsonPath('name', 'user.list');
-
-        $this->assertDatabaseHas('permissions', ['name' => 'user.list']);
-    }
-
-    public function test_create_permission_validates_required_fields(): void
-    {
-        $response = $this->actingAs($this->user)
-            ->postJson('/permissions', []);
-
-        $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['name']);
-    }
-
-    // == SHOW ==
-
-    public function test_user_can_view_permission(): void
-    {
-        $permission = Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
-
-        $response = $this->actingAs($this->user)
-            ->getJson("/permissions/{$permission->ulid}");
-
-        $response->assertOk()
-            ->assertJsonPath('name', 'user.list');
-    }
-
-    // == UPDATE ==
-
-    public function test_user_can_update_permission(): void
-    {
-        $permission = Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
-
-        $response = $this->actingAs($this->user)
-            ->putJson("/permissions/{$permission->ulid}", ['name' => 'user.view']);
-
-        $response->assertOk()
-            ->assertJsonPath('name', 'user.view');
-
-        $this->assertDatabaseHas('permissions', ['name' => 'user.view']);
-    }
-
-    // == DESTROY ==
-
-    public function test_user_can_delete_permission(): void
-    {
-        $permission = Permission::create(['name' => 'user.list', 'guard_name' => 'api']);
-
-        $response = $this->actingAs($this->user)
-            ->deleteJson("/permissions/{$permission->ulid}");
-
-        $response->assertNoContent();
-        $this->assertSoftDeleted('permissions', ['id' => $permission->id]);
-    }
-
-    // == BLADE VIEWS ==
+    // == VIEWS ==
 
     public function test_index_returns_blade_view_for_browser(): void
     {
@@ -160,6 +76,8 @@ class PermissionWebTest extends TestCase
             ->assertViewHas('permission');
     }
 
+    // == MUTATIONS ==
+
     public function test_store_redirects_for_browser(): void
     {
         $response = $this->actingAs($this->user)
@@ -191,12 +109,25 @@ class PermissionWebTest extends TestCase
 
         $response->assertRedirect(route('permissions.index'))
             ->assertSessionHas('success');
+
+        $this->assertSoftDeleted('permissions', ['id' => $permission->id]);
     }
+
+    // == AUTH ==
 
     public function test_unauthenticated_browser_is_redirected_to_login(): void
     {
         $response = $this->get('/permissions');
 
         $response->assertRedirect('/auth/login');
+    }
+
+    public function test_user_without_permission_cannot_access_index(): void
+    {
+        $guest = User::factory()->create();
+
+        $this->actingAs($guest)->get('/permissions')
+            ->assertRedirect('/')
+            ->assertSessionHas('error');
     }
 }

@@ -32,106 +32,7 @@ class RoleWebTest extends TestCase
         $this->user->givePermissionTo($perms);
     }
 
-    // == LIST ==
-
-    public function test_authenticated_user_can_list_roles(): void
-    {
-        Role::create(['name' => 'admin', 'guard_name' => 'api']);
-        Role::create(['name' => 'editor', 'guard_name' => 'api']);
-
-        $response = $this->actingAs($this->user)
-            ->getJson('/roles');
-
-        $response->assertOk()
-            ->assertJsonCount(2, 'data');
-    }
-
-    public function test_unauthenticated_user_cannot_list_roles(): void
-    {
-        $response = $this->getJson('/roles');
-
-        $response->assertUnauthorized();
-    }
-
-    // == STORE ==
-
-    public function test_user_can_create_role(): void
-    {
-        $response = $this->actingAs($this->user)
-            ->postJson('/roles', ['name' => 'admin']);
-
-        $response->assertCreated()
-            ->assertJsonPath('name', 'admin');
-
-        $this->assertDatabaseHas('roles', ['name' => 'admin']);
-    }
-
-    public function test_create_role_with_permissions(): void
-    {
-        $p1 = Permission::firstOrCreate(['name' => 'user.list', 'guard_name' => 'web']);
-        $p2 = Permission::firstOrCreate(['name' => 'user.view', 'guard_name' => 'web']);
-
-        $response = $this->actingAs($this->user)
-            ->postJson('/roles', [
-                'name'        => 'admin',
-                'permissions' => [$p1->name, $p2->name],
-            ]);
-
-        $response->assertCreated()
-            ->assertJsonCount(2, 'permissions');
-    }
-
-    public function test_create_role_validates_required_fields(): void
-    {
-        $response = $this->actingAs($this->user)
-            ->postJson('/roles', []);
-
-        $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['name']);
-    }
-
-    // == SHOW ==
-
-    public function test_user_can_view_role(): void
-    {
-        $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
-
-        $response = $this->actingAs($this->user)
-            ->getJson("/roles/{$role->ulid}");
-
-        $response->assertOk()
-            ->assertJsonPath('name', 'admin');
-    }
-
-    // == UPDATE ==
-
-    public function test_user_can_update_role(): void
-    {
-        $role = Role::create(['name' => 'admin', 'guard_name' => 'api']);
-
-        $response = $this->actingAs($this->user)
-            ->putJson("/roles/{$role->ulid}", ['name' => 'super-admin']);
-
-        $response->assertOk()
-            ->assertJsonPath('name', 'super-admin');
-
-        $this->assertDatabaseHas('roles', ['name' => 'super-admin']);
-    }
-
-    // == DESTROY ==
-
-    public function test_user_can_delete_role(): void
-    {
-        $role = Role::create(['name' => 'editor', 'guard_name' => 'api']);
-
-        $response = $this->actingAs($this->user)
-            ->deleteJson("/roles/{$role->ulid}");
-
-        $response->assertNoContent();
-        $this->assertSoftDeleted('roles', ['id' => $role->id]);
-    }
-
-    // == BLADE VIEWS ==
+    // == VIEWS ==
 
     public function test_index_returns_blade_view_for_browser(): void
     {
@@ -177,6 +78,8 @@ class RoleWebTest extends TestCase
             ->assertViewHas(['role', 'permissions']);
     }
 
+    // == MUTATIONS ==
+
     public function test_store_redirects_for_browser(): void
     {
         $response = $this->actingAs($this->user)
@@ -210,12 +113,16 @@ class RoleWebTest extends TestCase
             ->assertSessionHas('success');
     }
 
+    // == AUTH ==
+
     public function test_unauthenticated_browser_is_redirected_to_login(): void
     {
         $response = $this->get('/roles');
 
         $response->assertRedirect('/auth/login');
     }
+
+    // == BUSINESS RULES ==
 
     public function test_cannot_delete_admin_role_via_browser(): void
     {
@@ -224,9 +131,10 @@ class RoleWebTest extends TestCase
         $response = $this->actingAs($this->user)
             ->delete("/roles/{$role->ulid}");
 
-        $response->assertRedirect();
-        $response->assertSessionHasErrors(['role']);
-        $this->assertDatabaseHas('roles', ['id' => $role->id]);
+        $response->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('roles', ['id' => $role->id, 'deleted_at' => null]);
     }
 
     public function test_update_with_empty_permissions_removes_all(): void
