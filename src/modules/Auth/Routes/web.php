@@ -9,6 +9,20 @@ use Modules\User\Models\User;
 
 // Web auth routes are handled by Fortify (prefix 'auth' set in config/fortify.php)
 
+// Strict verification notice: no unverified account should keep a web session.
+Route::get('/auth/email/verify', function (Request $request) {
+    $email = $request->user()?->email;
+
+    Auth::guard('web')->logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect()
+        ->route('login')
+        ->withErrors(['activation' => __('auth.email_activation_sent')])
+        ->withInput(['email' => $email]);
+})->middleware('auth:web')->name('verification.notice');
+
 // Public email verification route — does not require authentication.
 // After verifying, the user is automatically logged in via web session.
 Route::get('/auth/email/activate/{id}/{hash}', function (string $id, string $hash) {

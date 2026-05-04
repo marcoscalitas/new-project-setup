@@ -52,7 +52,6 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::registerView(fn () => view('auth::register'));
         Fortify::requestPasswordResetLinkView(fn () => view('auth::forgot-password'));
         Fortify::resetPasswordView(fn ($request) => view('auth::reset-password', ['token' => $request->route('token'), 'email' => $request->email]));
-        Fortify::verifyEmailView(fn () => view('auth::verify-email'));
 
         Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
@@ -76,9 +75,5 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
         });
 
-        RateLimiter::for('verification.send', function (Request $request) {
-            $throttleSeconds = config('auth.verification.throttle', 60);
-            return Limit::perMinutes((int) ceil($throttleSeconds / 60), 1)->by($request->user()?->id ?: $request->ip());
-        });
     }
 }
