@@ -18,19 +18,17 @@
                         </div>
 
                         @if (session('status') === 'verification-link-sent')
-                            <div
-                                class="mb-4 p-3 rounded bg-success-500/10 border border-success-500/20 text-sm text-success-500">
+                            <x-admin::alert type="success" class="mb-4">
                                 {{ __('ui.verification_link_sent') }}
-                            </div>
+                            </x-admin::alert>
                         @endif
 
                         @if ($errors->any())
-                            <div
-                                class="mb-4 p-3 rounded bg-danger-500/10 border border-danger-500/20 text-sm text-danger-500">
+                            <x-admin::alert type="danger" class="mb-4">
                                 @foreach ($errors->all() as $error)
                                     <div>{{ $error }}</div>
                                 @endforeach
-                            </div>
+                            </x-admin::alert>
                         @endif
 
                         <form method="POST" action="{{ route('web.auth.email.resend.send') }}">

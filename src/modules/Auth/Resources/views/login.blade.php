@@ -15,15 +15,13 @@
                         <h3 class="font-semibold mb-5">{{ __('ui.login_with_email') }}</h3>
 
                         @if (session('status') === 'verification-link-sent')
-                            <div
-                                class="mb-4 p-3 rounded bg-success-500/10 border border-success-500/20 text-sm text-success-500">
+                            <x-admin::alert type="success" class="mb-4">
                                 {{ __('ui.verification_link_sent') }}
-                            </div>
+                            </x-admin::alert>
                         @endif
 
                         @if ($errors->has('activation'))
-                            <div
-                                class="mb-4 p-3 rounded bg-primary-500/10 border border-primary-500/20 text-sm text-primary-500">
+                            <x-admin::alert type="warning" class="mb-4">
                                 {{ $errors->first('activation') }}
                                 <div class="mt-2">
                                     <a href="{{ route('web.auth.email.resend') }}?email={{ urlencode(old('email', '')) }}"
@@ -31,14 +29,13 @@
                                         {{ __('ui.did_not_receive_email') }}
                                     </a>
                                 </div>
-                            </div>
+                            </x-admin::alert>
                         @elseif ($errors->any())
-                            <div
-                                class="mb-4 p-3 rounded bg-danger-500/10 border border-danger-500/20 text-sm text-danger-500">
+                            <x-admin::alert type="danger" class="mb-4">
                                 @foreach ($errors->all() as $error)
                                     <div>{{ $error }}</div>
                                 @endforeach
-                            </div>
+                            </x-admin::alert>
                         @endif
 
                         <form method="POST" action="{{ route('login') }}">

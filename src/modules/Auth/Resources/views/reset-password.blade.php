@@ -18,12 +18,11 @@
                         </div>
 
                         @if ($errors->any())
-                            <div
-                                class="mb-4 p-3 rounded bg-danger-500/10 border border-danger-500/20 text-sm text-danger-500">
+                            <x-admin::alert type="danger" class="mb-4">
                                 @foreach ($errors->all() as $error)
                                     <div>{{ $error }}</div>
                                 @endforeach
-                            </div>
+                            </x-admin::alert>
                         @endif
 
                         <form method="POST" action="{{ route('password.update') }}">
