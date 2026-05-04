@@ -136,9 +136,9 @@ class UserService
         }
     }
 
-    public function getTrashed()
+    public function getTrashed(int $perPage = 15)
     {
-        return User::onlyTrashed()->with('roles')->get();
+        return User::onlyTrashed()->with('roles')->paginate($perPage);
     }
 
     public function restore(string $ulid): User

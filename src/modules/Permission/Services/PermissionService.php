@@ -64,9 +64,9 @@ class PermissionService
         PermissionDeleted::dispatch($permissionId, $permissionName);
     }
 
-    public function getTrashed()
+    public function getTrashed(int $perPage = 15)
     {
-        return Permission::onlyTrashed()->get();
+        return Permission::onlyTrashed()->paginate($perPage);
     }
 
     public function restore(string $ulid): Permission

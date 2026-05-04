@@ -91,11 +91,11 @@ class UserController
         return redirect()->route('users.index')->with('success', __('users.deleted'));
     }
 
-    public function trashed(): View
+    public function trashed(Request $request): View
     {
         Gate::authorize('viewTrashed', User::class);
 
-        $users = $this->userService->getTrashed();
+        $users = $this->userService->getTrashed(perPage: 15);
 
         return view('user::users.trashed', compact('users'));
     }

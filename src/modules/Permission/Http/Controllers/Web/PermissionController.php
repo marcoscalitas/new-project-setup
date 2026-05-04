@@ -77,11 +77,11 @@ class PermissionController
         return redirect()->route('permissions.index')->with('success', __('permissions.permission_deleted'));
     }
 
-    public function trashed(): View
+    public function trashed(Request $request): View
     {
         Gate::authorize('viewTrashed', Permission::class);
 
-        $permissions = $this->permissionService->getTrashed();
+        $permissions = $this->permissionService->getTrashed(perPage: 15);
 
         return view('permission::permissions.trashed', compact('permissions'));
     }

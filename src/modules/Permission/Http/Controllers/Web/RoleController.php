@@ -87,11 +87,11 @@ class RoleController
         return redirect()->route('roles.index')->with('success', __('permissions.role_deleted'));
     }
 
-    public function trashed(): View
+    public function trashed(Request $request): View
     {
         Gate::authorize('viewTrashed', Role::class);
 
-        $roles = $this->roleService->getTrashed();
+        $roles = $this->roleService->getTrashed(perPage: 15);
 
         return view('permission::roles.trashed', compact('roles'));
     }

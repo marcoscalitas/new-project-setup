@@ -21,7 +21,7 @@
                         </a>
                     </div>
                 </div>
-                <div class="card-body pt-3">
+                <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover" id="pc-dt-simple">
                             <thead>
@@ -37,7 +37,7 @@
                             <tbody>
                                 @forelse($roles as $role)
                                     <tr>
-                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $roles->firstItem() + $loop->index }}</td>
                                         <td>
                                             <div class="flex items-center">
                                                 <div class="shrink-0">
@@ -73,10 +73,12 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <div class="px-4 pb-4">
+                        <x-admin::pagination :paginator="$roles" />
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 @endsection
-
-@include('admin.layouts.partials.datatable-scripts')
