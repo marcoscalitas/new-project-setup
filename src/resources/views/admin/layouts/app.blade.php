@@ -213,7 +213,8 @@
                             <div class="dropdown-body header-notification-scroll relative py-4 px-5"
                                 style="max-height: calc(100vh - 215px)">
                                 @forelse($unreadNotifications as $notification)
-                                    <div class="card mb-2">
+                                    <a href="{{ route('notifications.redirect', $notification->id) }}"
+                                       class="card mb-2 text-body text-decoration-none hover:shadow-sm transition-shadow">
                                         <div class="card-body">
                                             <div class="flex gap-4">
                                                 <div class="shrink-0">
@@ -222,16 +223,18 @@
                                                     </svg>
                                                 </div>
                                                 <div class="grow">
-                                                    <span
-                                                        class="float-end text-sm text-muted">{{ $notification->created_at->diffForHumans() }}</span>
+                                                    <span class="float-end text-sm text-muted">
+                                                        {{ $notification->created_at->diffForHumans() }}
+                                                    </span>
                                                     <p class="mb-0">
-                                                        {{ $notification->data['message'] ?? 'New notification' }}</p>
+                                                        {{ $notification->data['message'] ?? 'New notification' }}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    </a>
                                 @empty
-                                    <p class="text-center text-muted py-4 mb-0">No new notifications</p>
+                                    <p class="text-center text-muted py-4 mb-0">{{ __('ui.no_notifications') }}</p>
                                 @endforelse
                             </div>
                         </div>
