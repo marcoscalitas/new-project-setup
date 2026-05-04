@@ -29,7 +29,7 @@
                     <span class="text-xl font-bold text-primary-500">{{ config('app.name') }}</span>
                 </a>
             </div>
-            <div class="navbar-content h-[calc(100vh_-_74px)] py-2.5">
+            <div class="navbar-content relative h-[calc(100vh_-_74px)] py-2.5">
                 <div
                     class="card pc-user-card mx-[15px] mb-[15px] bg-theme-sidebaruserbg dark:bg-themedark-sidebaruserbg">
                     <div class="card-body !p-5">
@@ -65,9 +65,27 @@
                         </div>
                     </div>
                 </div>
-                <ul class="pc-navbar">
+                <ul class="pc-navbar pb-20">
                     @include('admin.layouts.partials.sidebar')
                 </ul>
+                <div
+                    class="absolute bottom-0 left-0 right-0 border-t border-theme-border bg-theme-sidebarbg/95 backdrop-blur dark:border-themedark-border dark:bg-themedark-sidebarbg/95">
+                    <ul class="pc-navbar !py-2">
+                        <li class="pc-item">
+                            <a href="{{ route('admin.logout') }}" class="pc-link"
+                                onclick="event.preventDefault(); document.getElementById('side-barlogout-form').submit();">
+                                <span class="pc-micon">
+                                    <svg class="pc-icon">
+                                        <use xlink:href="#custom-logout"></use>
+                                    </svg>
+                                </span>
+                                <span class="pc-mtext" data-i18n="Sair">Sair</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <form id="side-barlogout-form" action="{{ route('admin.logout') }}" method="POST"
+                        class="hidden">@csrf</form>
+                </div>
             </div>
         </div>
     </nav>

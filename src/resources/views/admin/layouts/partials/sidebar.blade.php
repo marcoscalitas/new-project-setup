@@ -129,20 +129,3 @@
         </ul>
     </li>
 @endcanany
-
-<li class="pc-item pc-caption">
-    <label>{{ __('ui.account') }}</label>
-    <svg class="pc-icon">
-        <use xlink:href="#custom-layer"></use>
-    </svg>
-</li>
-<li class="pc-item {{ request()->routeIs('profile.*') ? 'active' : '' }}">
-    <a href="{{ route('profile.edit') }}" class="pc-link">
-        <span class="pc-micon">
-            <svg class="pc-icon">
-                <use xlink:href="#custom-profile-circle"></use>
-            </svg>
-        </span>
-        <span class="pc-mtext">{{ __('ui.profile') }}</span>
-    </a>
-</li>

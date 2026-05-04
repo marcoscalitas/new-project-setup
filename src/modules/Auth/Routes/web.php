@@ -9,6 +9,14 @@ use Modules\User\Models\User;
 
 // Web auth routes are handled by Fortify (prefix 'auth' set in config/fortify.php)
 
+Route::post('/admin/logout', function (Request $request) {
+    Auth::guard('web')->logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect()->route('login');
+})->middleware('auth:web')->name('admin.logout');
+
 // Strict verification notice: no unverified account should keep a web session.
 Route::get('/auth/email/verify', function (Request $request) {
     $email = $request->user()?->email;
