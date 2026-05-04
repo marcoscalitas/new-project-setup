@@ -241,7 +241,7 @@
                             href="#" role="button" aria-haspopup="false" data-pc-auto-close="outside"
                             aria-expanded="false">
                             <img src="{{ auth()->user()->getAvatarUrl(80) }}"
-                                alt="{{ auth()->user()->name }}" class="user-avtar w-10 h-10 rounded-full" />
+                                alt="{{ auth()->user()->name }}" class="user-avtar w-10 h-10 rounded-full object-cover shrink-0" />
                         </a>
                         <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown p-2">
                             <div class="dropdown-header flex items-center justify-between py-4 px-5">
@@ -253,7 +253,7 @@
                                     <div class="flex mb-1 items-center">
                                         <div class="shrink-0">
                                             <img src="{{ auth()->user()->getAvatarUrl(80) }}"
-                                                alt="{{ auth()->user()->name }}" class="w-10 rounded-full" />
+                                                alt="{{ auth()->user()->name }}" class="w-10 h-10 rounded-full object-cover shrink-0" />
                                         </div>
                                         <div class="grow ms-3">
                                             <h6 class="mb-1">{{ auth()->user()->name }}</h6>
