@@ -27,8 +27,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-body pt-3">
-                    <form method="GET" action="{{ route('permissions.index') }}" class="flex items-center gap-2 mb-4">
+                <div class="card-body p-0">
+                    <div class="px-4 pt-4 pb-4">
+                    <form method="GET" action="{{ route('permissions.index') }}" class="flex items-center gap-2">
                         @if($sort !== 'name') <input type="hidden" name="sort" value="{{ $sort }}"> @endif
                         @if($dir  !== 'asc')  <input type="hidden" name="direction" value="{{ $dir }}"> @endif
                         <div class="input-group">
@@ -45,6 +46,7 @@
                             </a>
                         @endif
                     </form>
+                    </div>
 
                     <div class="table-responsive">
                         <table class="table table-hover">
@@ -92,11 +94,9 @@
                         </table>
                     </div>
 
-                    @if($permissions->hasPages())
-                        <div class="mt-4">
-                            {{ $permissions->appends(request()->query())->links() }}
-                        </div>
-                    @endif
+                    <div class="px-4 pb-4">
+                        <x-admin::pagination :paginator="$permissions" />
+                    </div>
                 </div>
             </div>
         </div>
