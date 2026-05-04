@@ -53,7 +53,7 @@ O projeto usa uma arquitetura **module-first**, cada módulo é autocontido:
 ```
 src/
 ├── modules/
-│   ├── Auth/              # Autenticação — "quem és tu?" (Login, Register, 2FA, tokens OAuth, Fortify)
+│   ├── Identity/          # Identidade — autenticação, credenciais, 2FA, tokens OAuth e Fortify
 │   ├── User/              # Gestão de utilizadores — "como giro os utilizadores?" (CRUD, perfil, avatar, export)
 │   ├── Permission/        # RBAC (Roles & Permissions → Spatie)
 │   ├── Notification/      # Notificações + hub cross-module (Events/Listeners)
@@ -83,7 +83,7 @@ src/
 - `Resources/views/` — Blade templates (quando aplicável)
 - `Tests/Web/` — Testes de endpoints Web (Session + Blade views)
 
-> **Nota:** `Actions/` existe apenas no módulo Auth (requisito Fortify). Os demais módulos colocam a lógica de negócio em `Services/`.
+> **Nota:** `Actions/` existe apenas no módulo Identity (requisito Fortify). Os demais módulos colocam a lógica de negócio em `Services/`.
 
 ## 🛠️ Setup Rápido
 
@@ -363,12 +363,12 @@ O projecto usa uma **arquitetura event-driven**. Cada módulo despacha domain ev
 
 | Módulo | Events (classes) |
 |--------|--------|
-| **Auth** | `UserCreated` |
-| **User** | `UserUpdated`, `UserDeleted` |
+| **Identity** | eventos de autenticação/credenciais, quando existirem |
+| **User** | `UserCreated`, `UserUpdated`, `UserDeleted` |
 | **Permission** | `PermissionCreated`, `PermissionUpdated`, `PermissionDeleted`, `RoleCreated`, `RoleUpdated`, `RoleDeleted`, `RoleAssigned` |
 | **Notification** | `NotificationRead`, `NotificationDeleted` |
 
-> **Nota:** `UserService` despacha `UserCreated` (que vive em `Auth/Events/`) e `RoleAssigned` (que vive em `Permission/Events/`). A tabela mostra onde cada event class é definida.
+> **Nota:** `UserService` despacha `UserCreated` (que vive em `User/Events/`) e `RoleAssigned` (que vive em `Permission/Events/`). A tabela mostra onde cada event class é definida.
 
 ### Fluxo
 
@@ -379,7 +379,7 @@ Service → dispatch(Event) → Listeners no mesmo módulo (log)
 
 **Exemplo concreto:**
 1. `UserService::create()` → `UserCreated::dispatch($user)`
-2. `LogUserCreation` (User module) → registra no log
+2. `LogUserCreation` (Identity module) → registra no log
 3. `NotifyOnUserCreated` (Notification module) → cria `ActivityNotification` para todos os admins
 
 ### Onde os Events são Registados
@@ -387,7 +387,7 @@ Service → dispatch(Event) → Listeners no mesmo módulo (log)
 Cada módulo regista os seus eventos no próprio **ServiceProvider** via `Event::listen()` — não existe um `EventServiceProvider` centralizado.
 
 ```php
-// Ex: Modules\User\Providers\UserServiceProvider::boot()
+// Ex: Modules\Identity\Providers\IdentityServiceProvider::boot()
 Event::listen(UserCreated::class, LogUserCreation::class);
 ```
 
@@ -409,7 +409,7 @@ As notificações são guardadas via `notify()` do Laravel (tabela `notification
 
 ## �📡 API Endpoints
 
-### Auth
+### Auth (Identity)
 
 | Método | Rota | Autenticação | Descrição |
 |--------|------|--------------|-----------|
@@ -523,7 +523,7 @@ As notificações são guardadas via `notify()` do Laravel (tabela `notification
 
 Todas as rotas web retornam Blade views para browsers (session auth via Fortify):
 
-### Auth (Fortify)
+### Auth (Identity/Fortify)
 
 | Método | Rota | View |
 |--------|------|------|
@@ -603,8 +603,8 @@ docker compose exec app php artisan test --coverage
 **Suites:**
 - `Unit` — Testes unitários (tests/Unit/)
 - `Feature` — Testes de feature (tests/Feature/)
-- `Auth-Web` — Auth via web/session
-- `Auth-Api` — Auth via API/Passport
+- `Identity-Web` — Auth via web/session
+- `Identity-Api` — Auth via API/Passport
 - `User-Web` — CRUD usuários (web)
 - `User-Api` — CRUD usuários (API)
 - `Permission-Web` — CRUD roles/permissions (web)
@@ -745,7 +745,7 @@ make artisan CMD="make:seeder YourSeeder"
     ├── config/
     ├── database/
     ├── modules/                 # **Módulos de negócio**
-    │   ├── Auth/
+    │   ├── Identity/
     │   ├── User/
     │   ├── Permission/
     │   ├── Notification/
@@ -1086,4 +1086,3 @@ private const EXPORTERS = [
 - [dedoc/scramble Docs](https://scramble.dedoc.co)
 - [Vite Documentation](https://vitejs.dev)
 - [MinIO Documentation](https://min.io/docs/minio/container/index.html)
-

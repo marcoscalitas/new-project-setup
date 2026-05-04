@@ -61,7 +61,7 @@ class RemoveModuleCommandTest extends TestCase
 
     public function test_fails_for_protected_core_modules(): void
     {
-        $protected = ['Auth', 'User', 'Permission', 'Notification'];
+        $protected = ['Identity', 'User', 'Permission', 'Notification'];
 
         foreach ($protected as $module) {
             $this->artisan('remove:module', ['name' => $module, '--force' => true])
@@ -117,7 +117,7 @@ class RemoveModuleCommandTest extends TestCase
 
         $providers = file_get_contents(base_path('bootstrap/providers.php'));
 
-        $this->assertStringContainsString('Modules\Auth\Providers\AuthServiceProvider::class', $providers);
+        $this->assertStringContainsString('Modules\Identity\Providers\IdentityServiceProvider::class', $providers);
         $this->assertStringContainsString('Modules\User\Providers\UserServiceProvider::class', $providers);
         $this->assertStringContainsString('Modules\Permission\Providers\PermissionServiceProvider::class', $providers);
         $this->assertStringContainsString('Modules\Notification\Providers\NotificationServiceProvider::class', $providers);
@@ -127,7 +127,9 @@ class RemoveModuleCommandTest extends TestCase
     {
         // Add extra nested content to simulate a developed module
         $nested = base_path('modules/Dummy/Http/Controllers/Api');
-        mkdir($nested, 0755, true);
+        if (!is_dir($nested)) {
+            mkdir($nested, 0755, true);
+        }
         file_put_contents("{$nested}/DummyApiController.php", '<?php // stub');
 
         $this->artisan('remove:module', ['name' => 'Dummy', '--force' => true])
@@ -149,7 +151,7 @@ class RemoveModuleCommandTest extends TestCase
 
     public function test_protection_works_with_lowercase_input(): void
     {
-        $this->artisan('remove:module', ['name' => 'auth', '--force' => true])
+        $this->artisan('remove:module', ['name' => 'identity', '--force' => true])
             ->assertFailed();
 
         $this->artisan('remove:module', ['name' => 'user', '--force' => true])
@@ -203,7 +205,7 @@ class RemoveModuleCommandTest extends TestCase
         $phpunit = file_get_contents(base_path('phpunit.xml'));
 
         $this->assertStringContainsString('name="Feature"', $phpunit);
-        $this->assertStringContainsString('name="Auth-Web"', $phpunit);
+        $this->assertStringContainsString('name="Identity-Web"', $phpunit);
         $this->assertStringContainsString('name="User-Api"', $phpunit);
         $this->assertStringContainsString('name="User-Web"', $phpunit);
         $this->assertStringContainsString('name="Permission-Api"', $phpunit);

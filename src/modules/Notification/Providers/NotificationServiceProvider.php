@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Modules\Core\Contracts\NotificationSenderInterface;
 use Modules\Notification\Services\NotificationDispatcher;
-use Modules\Auth\Events\UserCreated;
+use Modules\User\Events\UserCreated;
 use Modules\Notification\Events\NotificationDeleted;
 use Modules\Notification\Events\NotificationRead;
 use Modules\Notification\Listeners\LogNotificationDeletion;

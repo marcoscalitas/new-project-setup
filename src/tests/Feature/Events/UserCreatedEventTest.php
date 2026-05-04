@@ -3,7 +3,7 @@
 namespace Tests\Feature\Events;
 
 use Illuminate\Support\Facades\Event;
-use Modules\Auth\Events\UserCreated;
+use Modules\User\Events\UserCreated;
 use Modules\User\Models\User;
 use Tests\TestCase;
 

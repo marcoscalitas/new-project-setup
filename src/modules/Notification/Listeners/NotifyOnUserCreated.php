@@ -4,7 +4,7 @@ namespace Modules\Notification\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
-use Modules\Auth\Events\UserCreated;
+use Modules\User\Events\UserCreated;
 use Modules\Notification\Notifications\ActivityNotification;
 use Modules\User\Models\User;
 

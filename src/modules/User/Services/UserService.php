@@ -4,7 +4,7 @@ namespace Modules\User\Services;
 
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use Modules\Auth\Events\UserCreated;
+use Modules\User\Events\UserCreated;
 use Modules\Permission\Events\RoleAssigned;
 use Modules\User\Events\UserDeleted;
 use Modules\User\Events\UserUpdated;
