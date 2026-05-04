@@ -5,7 +5,7 @@ namespace Modules\Notification\Listeners;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Modules\Notification\Notifications\ActivityNotification;
-use Modules\Permission\Events\RoleCreated;
+use Modules\Authorization\Events\RoleCreated;
 use Modules\User\Models\User;
 
 class NotifyOnRoleCreated implements ShouldQueue

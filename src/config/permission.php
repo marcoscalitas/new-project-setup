@@ -13,7 +13,7 @@ return [
          * `Spatie\Permission\Contracts\Permission` contract.
          */
 
-        'permission' => Modules\Permission\Models\Permission::class,
+        'permission' => Modules\Authorization\Models\Permission::class,
 
         /*
          * When using the "HasRoles" trait from this package, we need to know which
@@ -24,7 +24,7 @@ return [
          * `Spatie\Permission\Contracts\Role` contract.
          */
 
-        'role' => Modules\Permission\Models\Role::class,
+        'role' => Modules\Authorization\Models\Role::class,
 
     ],
 

@@ -19,10 +19,10 @@ use Modules\Notification\Listeners\NotifyOnRoleDeleted;
 use Modules\Notification\Listeners\NotifyOnUserCreated;
 use Modules\Notification\Listeners\NotifyOnUserDeleted;
 use Modules\Notification\Listeners\NotifyOnUserUpdated;
-use Modules\Permission\Events\PermissionCreated;
-use Modules\Permission\Events\PermissionDeleted;
-use Modules\Permission\Events\RoleCreated;
-use Modules\Permission\Events\RoleDeleted;
+use Modules\Authorization\Events\PermissionCreated;
+use Modules\Authorization\Events\PermissionDeleted;
+use Modules\Authorization\Events\RoleCreated;
+use Modules\Authorization\Events\RoleDeleted;
 use Modules\User\Events\UserDeleted;
 use Modules\User\Events\UserUpdated;
 

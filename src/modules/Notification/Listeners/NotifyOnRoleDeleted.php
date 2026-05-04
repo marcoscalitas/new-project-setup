@@ -5,7 +5,7 @@ namespace Modules\Notification\Listeners;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Modules\Notification\Notifications\ActivityNotification;
-use Modules\Permission\Events\RoleDeleted;
+use Modules\Authorization\Events\RoleDeleted;
 use Modules\User\Models\User;
 
 class NotifyOnRoleDeleted implements ShouldQueue

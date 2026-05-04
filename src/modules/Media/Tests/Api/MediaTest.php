@@ -5,7 +5,7 @@ namespace Modules\Media\Tests\Api;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Passport\Client;
-use Modules\Permission\Models\Permission;
+use Modules\Authorization\Models\Permission;
 use Modules\User\Models\User;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\TestCase;

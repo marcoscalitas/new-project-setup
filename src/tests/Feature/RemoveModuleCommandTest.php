@@ -61,7 +61,7 @@ class RemoveModuleCommandTest extends TestCase
 
     public function test_fails_for_protected_core_modules(): void
     {
-        $protected = ['Identity', 'User', 'Permission', 'Notification'];
+        $protected = ['Identity', 'User', 'Authorization', 'Notification'];
 
         foreach ($protected as $module) {
             $this->artisan('remove:module', ['name' => $module, '--force' => true])
@@ -119,7 +119,7 @@ class RemoveModuleCommandTest extends TestCase
 
         $this->assertStringContainsString('Modules\Identity\Providers\IdentityServiceProvider::class', $providers);
         $this->assertStringContainsString('Modules\User\Providers\UserServiceProvider::class', $providers);
-        $this->assertStringContainsString('Modules\Permission\Providers\PermissionServiceProvider::class', $providers);
+        $this->assertStringContainsString('Modules\Authorization\Providers\AuthorizationServiceProvider::class', $providers);
         $this->assertStringContainsString('Modules\Notification\Providers\NotificationServiceProvider::class', $providers);
     }
 
@@ -155,6 +155,9 @@ class RemoveModuleCommandTest extends TestCase
             ->assertFailed();
 
         $this->artisan('remove:module', ['name' => 'user', '--force' => true])
+            ->assertFailed();
+
+        $this->artisan('remove:module', ['name' => 'authorization', '--force' => true])
             ->assertFailed();
     }
 
@@ -208,8 +211,8 @@ class RemoveModuleCommandTest extends TestCase
         $this->assertStringContainsString('name="Identity-Web"', $phpunit);
         $this->assertStringContainsString('name="User-Api"', $phpunit);
         $this->assertStringContainsString('name="User-Web"', $phpunit);
-        $this->assertStringContainsString('name="Permission-Api"', $phpunit);
-        $this->assertStringContainsString('name="Permission-Web"', $phpunit);
+        $this->assertStringContainsString('name="Authorization-Api"', $phpunit);
+        $this->assertStringContainsString('name="Authorization-Web"', $phpunit);
         $this->assertStringContainsString('name="Notification-Api"', $phpunit);
         // Notification is an infrastructure module — no Web test suite
     }

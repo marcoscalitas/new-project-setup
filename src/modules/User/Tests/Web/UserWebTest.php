@@ -3,8 +3,8 @@
 namespace Modules\User\Tests\Web;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Modules\Permission\Models\Permission;
-use Modules\Permission\Models\Role;
+use Modules\Authorization\Models\Permission;
+use Modules\Authorization\Models\Role;
 use Modules\User\Models\User;
 use Tests\TestCase;
 

@@ -23,11 +23,11 @@
         <testsuite name="User-Web">
             <directory>modules/User/Tests/Web</directory>
         </testsuite>
-        <testsuite name="Permission-Api">
-            <directory>modules/Permission/Tests/Api</directory>
+        <testsuite name="Authorization-Api">
+            <directory>modules/Authorization/Tests/Api</directory>
         </testsuite>
-        <testsuite name="Permission-Web">
-            <directory>modules/Permission/Tests/Web</directory>
+        <testsuite name="Authorization-Web">
+            <directory>modules/Authorization/Tests/Web</directory>
         </testsuite>
         <testsuite name="Notification-Api">
             <directory>modules/Notification/Tests/Api</directory>

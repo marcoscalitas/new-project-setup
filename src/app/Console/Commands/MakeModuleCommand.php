@@ -493,7 +493,7 @@ class MakeModuleCommand extends Command
         namespace Modules\\{$this->module}\Database\Seeders;
 
         use Illuminate\Database\Seeder;
-        use Modules\Permission\Models\Permission;
+        use Modules\Authorization\Models\Permission;
 
         class {$this->module}Seeder extends Seeder
         {
@@ -801,7 +801,7 @@ class MakeModuleCommand extends Command
 
         use Illuminate\Foundation\Testing\RefreshDatabase;
         use Laravel\Passport\Client;
-        use Modules\Permission\Models\Permission;
+        use Modules\Authorization\Models\Permission;
         use Modules\User\Models\User;
         use Tests\TestCase;
 

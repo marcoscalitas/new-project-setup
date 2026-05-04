@@ -55,7 +55,7 @@ src/
 ├── modules/
 │   ├── Identity/          # Identidade — autenticação, credenciais, 2FA, tokens OAuth e Fortify
 │   ├── User/              # Gestão de utilizadores — "como giro os utilizadores?" (CRUD, perfil, avatar, export)
-│   ├── Permission/        # RBAC (Roles & Permissions → Spatie)
+│   ├── Authorization/     # Autorização — RBAC (Roles & Permissions → Spatie)
 │   ├── Notification/      # Notificações + hub cross-module (Events/Listeners)
 │   ├── ActivityLog/       # Auditoria de acções (activity log)
 │   └── Export/            # Exportação CSV, XLSX e PDF (sync/async híbrido)
@@ -365,10 +365,10 @@ O projecto usa uma **arquitetura event-driven**. Cada módulo despacha domain ev
 |--------|--------|
 | **Identity** | eventos de autenticação/credenciais, quando existirem |
 | **User** | `UserCreated`, `UserUpdated`, `UserDeleted` |
-| **Permission** | `PermissionCreated`, `PermissionUpdated`, `PermissionDeleted`, `RoleCreated`, `RoleUpdated`, `RoleDeleted`, `RoleAssigned` |
+| **Authorization** | `PermissionCreated`, `PermissionUpdated`, `PermissionDeleted`, `RoleCreated`, `RoleUpdated`, `RoleDeleted`, `RoleAssigned` |
 | **Notification** | `NotificationRead`, `NotificationDeleted` |
 
-> **Nota:** `UserService` despacha `UserCreated` (que vive em `User/Events/`) e `RoleAssigned` (que vive em `Permission/Events/`). A tabela mostra onde cada event class é definida.
+> **Nota:** `UserService` despacha `UserCreated` (que vive em `User/Events/`) e `RoleAssigned` (que vive em `Authorization/Events/`). A tabela mostra onde cada event class é definida.
 
 ### Fluxo
 
@@ -607,8 +607,8 @@ docker compose exec app php artisan test --coverage
 - `Identity-Api` — Auth via API/Passport
 - `User-Web` — CRUD usuários (web)
 - `User-Api` — CRUD usuários (API)
-- `Permission-Web` — CRUD roles/permissions (web)
-- `Permission-Api` — CRUD roles/permissions (API)
+- `Authorization-Web` — CRUD roles/permissions (web)
+- `Authorization-Api` — CRUD roles/permissions (API)
 - `Notification-Web` — Notificações (web)
 - `Notification-Api` — Notificações (API)
 - `ActivityLog-Api` — Activity log (API)
@@ -618,7 +618,7 @@ docker compose exec app php artisan test --coverage
 Rodar suite específica:
 ```bash
 make artisan CMD="test --testsuite=User-Api"
-make artisan CMD="test --testsuite=Permission-Web"
+make artisan CMD="test --testsuite=Authorization-Web"
 ```
 
 ## 📦 Makefile (Atalhos)
@@ -747,7 +747,7 @@ make artisan CMD="make:seeder YourSeeder"
     ├── modules/                 # **Módulos de negócio**
     │   ├── Identity/
     │   ├── User/
-    │   ├── Permission/
+    │   ├── Authorization/
     │   ├── Notification/
     │   ├── ActivityLog/
     │   └── Export/

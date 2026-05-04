@@ -10,7 +10,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Modules\Export\Jobs\ProcessExportJob;
 use Modules\Export\Models\Export;
 use Modules\Export\Services\ExportService;
-use Modules\Permission\Models\Permission;
+use Modules\Authorization\Models\Permission;
 use Modules\User\Models\User;
 use Tests\TestCase;
 

@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Modules\Permission\Models\Role;
+use Modules\Authorization\Models\Role;
 use Modules\User\Models\User;
 use Tests\TestCase;
 

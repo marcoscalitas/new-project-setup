@@ -5,7 +5,7 @@ namespace Modules\User\Tests\Api;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Passport\Client;
-use Modules\Permission\Models\Permission;
+use Modules\Authorization\Models\Permission;
 use Modules\User\Models\User;
 use Tests\TestCase;
 

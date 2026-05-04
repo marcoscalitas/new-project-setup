@@ -56,7 +56,7 @@
     </li>
 @endcanany
 
-@canany(['viewAny', 'create', 'viewTrashed'], \Modules\Permission\Models\Role::class)
+@canany(['viewAny', 'create', 'viewTrashed'], \Modules\Authorization\Models\Role::class)
     <li class="pc-item pc-hasmenu">
         <a href="#!" class="pc-link">
             <span class="pc-micon">
@@ -74,17 +74,17 @@
             </span>
         </a>
         <ul class="pc-submenu" style="display: none;">
-            @can('viewAny', \Modules\Permission\Models\Role::class)
+            @can('viewAny', \Modules\Authorization\Models\Role::class)
                 <li class="pc-item">
                     <a class="pc-link" href="{{ route('roles.index') }}">{{ __('ui.list') }}</a>
                 </li>
             @endcan
-            @can('create', \Modules\Permission\Models\Role::class)
+            @can('create', \Modules\Authorization\Models\Role::class)
                 <li class="pc-item">
                     <a class="pc-link" href="{{ route('roles.create') }}">{{ __('ui.add') }}</a>
                 </li>
             @endcan
-            @can('viewTrashed', \Modules\Permission\Models\Role::class)
+            @can('viewTrashed', \Modules\Authorization\Models\Role::class)
                 <li class="pc-item">
                     <a class="pc-link" href="{{ route('roles.trashed') }}">{{ __('ui.deleted') }}</a>
                 </li>
@@ -93,7 +93,7 @@
     </li>
 @endcanany
 
-@canany(['viewAny', 'create', 'viewTrashed'], \Modules\Permission\Models\Permission::class)
+@canany(['viewAny', 'create', 'viewTrashed'], \Modules\Authorization\Models\Permission::class)
     <li class="pc-item pc-hasmenu">
         <a href="#!" class="pc-link">
             <span class="pc-micon">
@@ -111,17 +111,17 @@
             </span>
         </a>
         <ul class="pc-submenu" style="display: none;">
-            @can('viewAny', \Modules\Permission\Models\Permission::class)
+            @can('viewAny', \Modules\Authorization\Models\Permission::class)
                 <li class="pc-item">
                     <a class="pc-link" href="{{ route('permissions.index') }}">{{ __('ui.list') }}</a>
                 </li>
             @endcan
-            @can('create', \Modules\Permission\Models\Permission::class)
+            @can('create', \Modules\Authorization\Models\Permission::class)
                 <li class="pc-item">
                     <a class="pc-link" href="{{ route('permissions.create') }}">{{ __('ui.add') }}</a>
                 </li>
             @endcan
-            @can('viewTrashed', \Modules\Permission\Models\Permission::class)
+            @can('viewTrashed', \Modules\Authorization\Models\Permission::class)
                 <li class="pc-item">
                     <a class="pc-link" href="{{ route('permissions.trashed') }}">{{ __('ui.deleted') }}</a>
                 </li>

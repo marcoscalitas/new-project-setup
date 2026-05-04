@@ -4,7 +4,7 @@ namespace Modules\Settings\Tests\Api;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Passport\Client;
-use Modules\Permission\Models\Permission;
+use Modules\Authorization\Models\Permission;
 use Modules\Settings\Models\Setting;
 use Modules\User\Models\User;
 use Tests\TestCase;

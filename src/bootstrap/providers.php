@@ -10,7 +10,7 @@ return [
     Modules\Identity\Providers\IdentityServiceProvider::class,
     Modules\Identity\Providers\FortifyServiceProvider::class,
     Modules\Notification\Providers\NotificationServiceProvider::class,
-    Modules\Permission\Providers\PermissionServiceProvider::class,
+    Modules\Authorization\Providers\AuthorizationServiceProvider::class,
     Modules\User\Providers\UserServiceProvider::class,
     Modules\Export\Providers\ExportServiceProvider::class,
 ];

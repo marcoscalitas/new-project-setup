@@ -11,7 +11,7 @@ use Modules\User\Http\Requests\StoreUserRequest;
 use Modules\User\Http\Requests\UpdateUserRequest;
 use Modules\User\Models\User;
 use Modules\User\Services\UserService;
-use Modules\Permission\Models\Role;
+use Modules\Authorization\Models\Role;
 
 class UserController
 {

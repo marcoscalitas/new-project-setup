@@ -5,11 +5,11 @@ namespace Modules\User\Services;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Modules\User\Events\UserCreated;
-use Modules\Permission\Events\RoleAssigned;
+use Modules\Authorization\Events\RoleAssigned;
 use Modules\User\Events\UserDeleted;
 use Modules\User\Events\UserUpdated;
 use Modules\User\Models\User;
-use Modules\Permission\Models\Role;
+use Modules\Authorization\Models\Role;
 
 class UserService
 {

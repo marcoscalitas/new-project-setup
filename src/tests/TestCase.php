@@ -4,7 +4,7 @@ namespace Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
-use Modules\Permission\Models\Permission;
+use Modules\Authorization\Models\Permission;
 
 abstract class TestCase extends BaseTestCase
 {
