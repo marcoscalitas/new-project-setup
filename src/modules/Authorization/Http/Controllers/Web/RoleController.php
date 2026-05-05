@@ -22,9 +22,9 @@ class RoleController
         Gate::authorize('viewAny', Role::class);
 
         $roles = $this->roleService->getAll(
-            perPage:   15,
-            search:    $request->query('search'),
-            sort:      $request->query('sort', 'name'),
+            perPage: $this->resolvePerPage($request),
+            search: $request->query('search'),
+            sort: $request->query('sort', 'name'),
             direction: $request->query('direction', 'asc'),
         );
 
@@ -91,7 +91,7 @@ class RoleController
     {
         Gate::authorize('viewTrashed', Role::class);
 
-        $roles = $this->roleService->getTrashed(perPage: 15);
+        $roles = $this->roleService->getTrashed(perPage: $this->resolvePerPage($request));
 
         return view('authorization::roles.trashed', compact('roles'));
     }
@@ -105,5 +105,12 @@ class RoleController
         $this->roleService->restore($ulid);
 
         return redirect()->route('roles.trashed')->with('success', __('permissions.role_restored'));
+    }
+
+    private function resolvePerPage(Request $request): int
+    {
+        $perPage = (int) $request->query('per_page', 15);
+
+        return in_array($perPage, [5, 10, 15, 25, 50, 100], true) ? $perPage : 15;
     }
 }

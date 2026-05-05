@@ -7,11 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Modules\Authorization\Models\Role;
 use Modules\User\Http\Requests\StoreUserRequest;
 use Modules\User\Http\Requests\UpdateUserRequest;
 use Modules\User\Models\User;
 use Modules\User\Services\UserService;
-use Modules\Authorization\Models\Role;
 
 class UserController
 {
@@ -22,9 +22,9 @@ class UserController
         Gate::authorize('viewAny', User::class);
 
         $users = $this->userService->getAll(
-            perPage:   15,
-            search:    $request->query('search'),
-            sort:      $request->query('sort', 'name'),
+            perPage: $this->resolvePerPage($request),
+            search: $request->query('search'),
+            sort: $request->query('sort', 'name'),
             direction: $request->query('direction', 'asc'),
         );
 
@@ -95,7 +95,7 @@ class UserController
     {
         Gate::authorize('viewTrashed', User::class);
 
-        $users = $this->userService->getTrashed(perPage: 15);
+        $users = $this->userService->getTrashed(perPage: $this->resolvePerPage($request));
 
         return view('user::users.trashed', compact('users'));
     }
@@ -109,5 +109,12 @@ class UserController
         $this->userService->restore($ulid);
 
         return redirect()->route('users.trashed')->with('success', __('users.restored'));
+    }
+
+    private function resolvePerPage(Request $request): int
+    {
+        $perPage = (int) $request->query('per_page', 15);
+
+        return in_array($perPage, [5, 10, 15, 25, 50, 100], true) ? $perPage : 15;
     }
 }

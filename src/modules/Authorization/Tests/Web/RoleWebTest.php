@@ -44,6 +44,21 @@ class RoleWebTest extends TestCase
             ->assertViewHas('roles');
     }
 
+    public function test_index_respects_page_length_for_browser(): void
+    {
+        foreach (range(1, 12) as $number) {
+            Role::create(['name' => "role-{$number}", 'guard_name' => 'web']);
+        }
+
+        $response = $this->actingAs($this->user)
+            ->get('/roles?per_page=5');
+
+        $response->assertOk()
+            ->assertSee(__('ui.rows_per_page'));
+
+        $this->assertSame(5, $response->viewData('roles')->perPage());
+    }
+
     public function test_show_returns_blade_view_for_browser(): void
     {
         $role = Role::create(['name' => 'admin', 'guard_name' => 'web']);
@@ -145,7 +160,7 @@ class RoleWebTest extends TestCase
 
         $response = $this->actingAs($this->user)
             ->put("/roles/{$role->ulid}", [
-                'name'        => 'editor',
+                'name' => 'editor',
                 'permissions' => '',
             ]);
 

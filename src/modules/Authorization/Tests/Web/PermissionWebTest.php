@@ -43,6 +43,21 @@ class PermissionWebTest extends TestCase
             ->assertViewHas('permissions');
     }
 
+    public function test_index_respects_page_length_for_browser(): void
+    {
+        foreach (range(1, 12) as $number) {
+            Permission::create(['name' => "post.permission.{$number}", 'guard_name' => 'web']);
+        }
+
+        $response = $this->actingAs($this->user)
+            ->get('/permissions?per_page=5');
+
+        $response->assertOk()
+            ->assertSee(__('ui.rows_per_page'));
+
+        $this->assertSame(5, $response->viewData('permissions')->perPage());
+    }
+
     public function test_show_returns_blade_view_for_browser(): void
     {
         $permission = Permission::create(['name' => 'post.create', 'guard_name' => 'web']);

@@ -44,6 +44,31 @@ class UserWebTest extends TestCase
             ->assertViewHas('users');
     }
 
+    public function test_index_respects_page_length_for_browser(): void
+    {
+        User::factory()->count(12)->create();
+
+        $response = $this->actingAs($this->user)
+            ->get('/users?per_page=5');
+
+        $response->assertOk()
+            ->assertSee(__('ui.rows_per_page'));
+
+        $this->assertSame(5, $response->viewData('users')->perPage());
+    }
+
+    public function test_index_falls_back_to_default_page_length_for_browser(): void
+    {
+        User::factory()->count(20)->create();
+
+        $response = $this->actingAs($this->user)
+            ->get('/users?per_page=999');
+
+        $response->assertOk();
+
+        $this->assertSame(15, $response->viewData('users')->perPage());
+    }
+
     public function test_show_returns_blade_view_for_browser(): void
     {
         $target = User::factory()->create();
@@ -84,9 +109,9 @@ class UserWebTest extends TestCase
     {
         $response = $this->actingAs($this->user)
             ->post('/users', [
-                'name'                  => 'Browser User',
-                'email'                 => 'browser@example.com',
-                'password'              => 'SecurePass1!',
+                'name' => 'Browser User',
+                'email' => 'browser@example.com',
+                'password' => 'SecurePass1!',
                 'password_confirmation' => 'SecurePass1!',
             ]);
 
@@ -135,13 +160,13 @@ class UserWebTest extends TestCase
 
     public function test_update_with_empty_roles_removes_all(): void
     {
-        $role   = Role::create(['name' => 'editor', 'guard_name' => 'web']);
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'web']);
         $target = User::factory()->create();
         $target->assignRole($role);
 
         $response = $this->actingAs($this->user)
             ->put("/users/{$target->ulid}", [
-                'name'  => $target->name,
+                'name' => $target->name,
                 'roles' => '',
             ]);
 
@@ -152,12 +177,12 @@ class UserWebTest extends TestCase
     public function test_cannot_remove_admin_role_from_last_admin_via_browser(): void
     {
         $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'web']);
-        $admin     = User::factory()->create();
+        $admin = User::factory()->create();
         $admin->assignRole($adminRole);
 
         $response = $this->actingAs($this->user)
             ->put("/users/{$admin->ulid}", [
-                'name'  => $admin->name,
+                'name' => $admin->name,
                 'roles' => '',
             ]);
 
@@ -170,7 +195,7 @@ class UserWebTest extends TestCase
     public function test_cannot_delete_last_admin_via_browser(): void
     {
         $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'web']);
-        $admin     = User::factory()->create();
+        $admin = User::factory()->create();
         $admin->assignRole($adminRole);
 
         $response = $this->actingAs($this->user)

@@ -7,6 +7,9 @@
 
 <form method="GET" action="{{ $action }}" class="flex items-center gap-2">
     {{ $slot }}
+    @if(request()->filled('per_page'))
+        <input type="hidden" name="per_page" value="{{ request('per_page') }}">
+    @endif
     <div class="form-search relative flex-1">
         <i class="search-icon absolute top-[14px] left-[15px]">
             <svg class="pc-icon w-4 h-4">

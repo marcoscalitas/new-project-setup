@@ -20,9 +20,9 @@ class PermissionController
         Gate::authorize('viewAny', Permission::class);
 
         $permissions = $this->permissionService->getAll(
-            perPage:   15,
-            search:    $request->query('search'),
-            sort:      $request->query('sort', 'name'),
+            perPage: $this->resolvePerPage($request),
+            search: $request->query('search'),
+            sort: $request->query('sort', 'name'),
             direction: $request->query('direction', 'asc'),
         );
 
@@ -81,7 +81,7 @@ class PermissionController
     {
         Gate::authorize('viewTrashed', Permission::class);
 
-        $permissions = $this->permissionService->getTrashed(perPage: 15);
+        $permissions = $this->permissionService->getTrashed(perPage: $this->resolvePerPage($request));
 
         return view('authorization::permissions.trashed', compact('permissions'));
     }
@@ -95,5 +95,12 @@ class PermissionController
         $this->permissionService->restore($ulid);
 
         return redirect()->route('permissions.trashed')->with('success', __('permissions.permission_restored'));
+    }
+
+    private function resolvePerPage(Request $request): int
+    {
+        $perPage = (int) $request->query('per_page', 15);
+
+        return in_array($perPage, [5, 10, 15, 25, 50, 100], true) ? $perPage : 15;
     }
 }

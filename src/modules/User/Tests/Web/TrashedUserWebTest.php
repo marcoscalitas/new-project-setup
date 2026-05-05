@@ -41,9 +41,21 @@ class TrashedUserWebTest extends TestCase
             ->assertViewHas('users');
     }
 
+    public function test_trashed_respects_page_length_for_browser(): void
+    {
+        User::factory()->count(12)->create()->each->delete();
+
+        $response = $this->actingAs($this->user)->get('/users/trashed?per_page=5');
+
+        $response->assertOk()
+            ->assertSee(__('ui.rows_per_page'));
+
+        $this->assertSame(5, $response->viewData('users')->perPage());
+    }
+
     public function test_trashed_view_lists_only_deleted_users(): void
     {
-        $active  = User::factory()->create(['name' => 'Active User']);
+        $active = User::factory()->create(['name' => 'Active User']);
         $deleted = User::factory()->create(['name' => 'Deleted User']);
         $deleted->delete();
 
@@ -74,7 +86,7 @@ class TrashedUserWebTest extends TestCase
     public function test_restore_redirects_to_trashed_with_success(): void
     {
         $target = User::factory()->create();
-        $ulid   = $target->ulid;
+        $ulid = $target->ulid;
         $target->delete();
 
         $response = $this->actingAs($this->user)
@@ -89,7 +101,7 @@ class TrashedUserWebTest extends TestCase
     public function test_restored_user_no_longer_in_trashed_view(): void
     {
         $target = User::factory()->create(['name' => 'Comeback User']);
-        $ulid   = $target->ulid;
+        $ulid = $target->ulid;
         $target->delete();
 
         $this->actingAs($this->user)->patch("/users/{$ulid}/restore");
@@ -103,7 +115,7 @@ class TrashedUserWebTest extends TestCase
     public function test_restored_user_appears_in_index(): void
     {
         $target = User::factory()->create(['name' => 'Comeback User']);
-        $ulid   = $target->ulid;
+        $ulid = $target->ulid;
         $target->delete();
 
         $this->actingAs($this->user)->patch("/users/{$ulid}/restore");
