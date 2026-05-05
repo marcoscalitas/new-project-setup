@@ -18,16 +18,16 @@ class AuditLogPolicy
 
     public function create(User $user): bool
     {
-        return $user->checkPermissionTo('log.create');
+        return false;
     }
 
     public function update(User $user, mixed $model): bool
     {
-        return $user->checkPermissionTo('log.update');
+        return false;
     }
 
     public function delete(User $user, mixed $model): bool
     {
-        return $user->checkPermissionTo('log.delete');
+        return false;
     }
 }
