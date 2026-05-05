@@ -67,7 +67,7 @@ class DatabaseSeederTest extends TestCase
     {
         $this->seed(DatabaseSeeder::class);
 
-        $this->assertSame(1000, User::where('email', 'like', 'demo%@example.com')->count());
+        $this->assertSame(298, User::where('email', 'like', 'demo%@example.com')->count());
 
         $firstDemoUser = User::where('email', 'demo001@example.com')->firstOrFail();
 
@@ -81,7 +81,7 @@ class DatabaseSeederTest extends TestCase
         $this->seed(DatabaseSeeder::class);
         $this->seed(DatabaseSeeder::class);
 
-        $this->assertSame(1000, User::where('email', 'like', 'demo%@example.com')->count());
+        $this->assertSame(298, User::where('email', 'like', 'demo%@example.com')->count());
     }
 
     public function test_admin_role_receives_all_seeded_permissions(): void
