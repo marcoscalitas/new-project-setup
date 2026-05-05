@@ -63,6 +63,27 @@ class DatabaseSeederTest extends TestCase
         $this->assertTrue($user->hasRole('user'));
     }
 
+    public function test_database_seeder_creates_demo_users_from_factory_in_testing(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $this->assertSame(1000, User::where('email', 'like', 'demo%@example.com')->count());
+
+        $firstDemoUser = User::where('email', 'demo001@example.com')->firstOrFail();
+
+        $this->assertSame('Demo User 001', $firstDemoUser->name);
+        $this->assertTrue($firstDemoUser->hasRole('user'));
+        $this->assertNotNull($firstDemoUser->email_verified_at);
+    }
+
+    public function test_database_seeder_does_not_duplicate_demo_users(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $this->seed(DatabaseSeeder::class);
+
+        $this->assertSame(1000, User::where('email', 'like', 'demo%@example.com')->count());
+    }
+
     public function test_admin_role_receives_all_seeded_permissions(): void
     {
         $this->seed(DatabaseSeeder::class);
