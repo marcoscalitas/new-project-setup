@@ -39,6 +39,9 @@ class NotificationServiceProvider extends ServiceProvider
         if (file_exists($web = __DIR__ . '/../Routes/web.php')) {
             Route::middleware('web')->group($web);
         }
+        if (is_dir($views = __DIR__ . '/../Resources/views')) {
+            $this->loadViewsFrom($views, 'notification');
+        }
         if (is_dir($migrations = __DIR__ . '/../Database/Migrations')) {
             $this->loadMigrationsFrom($migrations);
         }

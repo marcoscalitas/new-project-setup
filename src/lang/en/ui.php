@@ -25,6 +25,7 @@ return [
     'search' => 'Search',
     'rows_per_page' => 'Rows per page',
     'entries_per_page' => 'entries per page',
+    'all' => 'All',
     'status' => 'Status',
     'message' => 'Message',
     'type' => 'Type',
@@ -103,6 +104,7 @@ return [
     'view_all_notifications' => 'View all notifications',
     'whats_new_announcement' => "What's new?",
     'today' => 'Today',
+    'yesterday' => 'Yesterday',
 
     // Users
     'user_list' => 'User list',
@@ -164,6 +166,7 @@ return [
     'new_notification' => 'New notification',
     'no_notifications' => 'No notifications found.',
     'confirm_delete_notification' => 'Are you sure you want to delete this notification?',
+    'earlier' => 'Earlier',
 
     // Audit Log
     'audit_log' => 'Audit Log',

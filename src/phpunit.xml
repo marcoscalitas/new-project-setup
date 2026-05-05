@@ -32,6 +32,9 @@
         <testsuite name="Notification-Api">
             <directory>modules/Notification/Tests/Api</directory>
         </testsuite>
+        <testsuite name="Notification-Web">
+            <directory>modules/Notification/Tests/Web</directory>
+        </testsuite>
         <testsuite name="AuditLog-Api">
             <directory>modules/AuditLog/Tests/Api</directory>
         </testsuite>

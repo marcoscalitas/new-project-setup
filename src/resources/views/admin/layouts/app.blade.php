@@ -214,6 +214,7 @@
                     @php
                         $recentNotifications = auth()->user()->notifications()->latest()->take(8)->get();
                         $unreadCount = auth()->user()->unreadNotifications()->count();
+                        $previousNotificationGroup = null;
                     @endphp
                     <li class="dropdown pc-h-item">
                         <a class="pc-head-link dropdown-toggle me-0" data-pc-toggle="dropdown" href="#"
@@ -228,31 +229,74 @@
                             @endif
                         </a>
                         <div class="dropdown-menu dropdown-notification dropdown-menu-end pc-h-dropdown p-2">
-                            <div class="dropdown-header flex items-center justify-between py-4 px-5">
-                                <h5 class="m-0">{{ __('ui.notifications') }}</h5>
-                                @if ($unreadCount > 0)
-                                    <form method="POST" action="{{ route('notifications.mark-all-read') }}">
-                                        @csrf
-                                        <button type="submit" class="btn btn-link btn-sm">{{ __('ui.mark_all_read') }}</button>
-                                    </form>
-                                @endif
+                            <div class="dropdown-header py-4 px-5">
+                                <div class="mb-3 flex items-center justify-between">
+                                    <h5 class="m-0">{{ __('ui.notifications') }}</h5>
+                                    @if ($unreadCount > 0)
+                                        <form method="POST" action="{{ route('notifications.mark-all-read') }}">
+                                            @csrf
+                                            <button type="submit" class="btn btn-link btn-sm">{{ __('ui.mark_all_read') }}</button>
+                                        </form>
+                                    @endif
+                                </div>
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="badge rounded-full bg-primary-500 text-white">{{ __('ui.all') }}</span>
+                                        <span class="badge rounded-full bg-secondary-500/10 text-secondary-500">
+                                            {{ __('ui.unread') }}: {{ $unreadCount }}
+                                        </span>
+                                    </div>
+                                    <a href="{{ route('notifications.index') }}" class="btn btn-link btn-sm">{{ __('ui.view_all_notifications') }}</a>
+                                </div>
                             </div>
                             <div class="dropdown-body header-notification-scroll relative py-4 px-5"
                                 style="max-height: calc(100vh - 215px)">
                                 @forelse($recentNotifications as $notification)
-                                    <a href="{{ route('notifications.redirect', $notification->id) }}" class="card mb-2 {{ $notification->read_at ? '' : 'border-primary-500' }}">
+                                    @php
+                                        $payload = $notification->data ?? [];
+                                        $type = data_get($payload, 'type', 'notification');
+                                        $message = data_get($payload, 'message', __('ui.new_notification'));
+                                        $parts = explode(':', $message, 2);
+                                        $title = trim($parts[0] ?? __('ui.new_notification'));
+                                        $body = trim($parts[1] ?? $message);
+                                        $group = $notification->created_at->isToday()
+                                            ? __('ui.today')
+                                            : ($notification->created_at->isYesterday()
+                                                ? __('ui.yesterday')
+                                                : $notification->created_at->format('d M Y'));
+                                        $icon = match ($type) {
+                                            'user_created' => 'custom-user-bold',
+                                            'user_updated', 'user_deleted' => 'custom-notification',
+                                            'role_created', 'role_updated', 'role_deleted' => 'custom-shield',
+                                            'permission_created', 'permission_updated', 'permission_deleted' => 'custom-lock-outline',
+                                            default => 'custom-notification',
+                                        };
+                                    @endphp
+
+                                    @if ($previousNotificationGroup !== $group)
+                                        <p class="text-span mb-3 {{ $previousNotificationGroup ? 'mt-4' : '' }}">{{ $group }}</p>
+                                        @php $previousNotificationGroup = $group; @endphp
+                                    @endif
+
+                                    <a
+                                        href="{{ route('notifications.redirect', $notification->id) }}"
+                                        class="card mb-2 block text-theme-body no-underline transition hover:text-theme-body hover:shadow-sm dark:text-themedark-body dark:hover:text-themedark-body {{ $notification->read_at ? 'bg-white dark:bg-themedark-cardbg' : 'border-primary-500 bg-primary-500/10' }}"
+                                    >
                                         <div class="card-body">
                                             <div class="flex gap-4">
                                                 <div class="shrink-0">
                                                     <svg class="pc-icon {{ $notification->read_at ? 'text-muted' : 'text-primary-500' }} w-[22px] h-[22px]">
-                                                        <use xlink:href="#custom-notification"></use>
+                                                        <use xlink:href="#{{ $icon }}"></use>
                                                     </svg>
                                                 </div>
                                                 <div class="grow">
                                                     <span class="float-end text-sm text-muted">{{ $notification->created_at->diffForHumans() }}</span>
-                                                    <p class="mb-0 {{ $notification->read_at ? 'text-muted' : '' }}">
-                                                        {{ $notification->data['message'] ?? __('ui.new_notification') }}</p>
+                                                    <h5 class="text-body mb-2 {{ $notification->read_at ? 'text-muted' : '' }}">{{ $title }}</h5>
+                                                    <p class="mb-0 {{ $notification->read_at ? 'text-muted' : '' }}">{{ $body }}</p>
                                                 </div>
+                                                @unless($notification->read_at)
+                                                    <span class="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-primary-500"></span>
+                                                @endunless
                                             </div>
                                         </div>
                                     </a>

@@ -25,6 +25,7 @@ return [
     'search' => 'Pesquisar',
     'rows_per_page' => 'Linhas por página',
     'entries_per_page' => 'entradas por página',
+    'all' => 'Todas',
     'status' => 'Estado',
     'message' => 'Mensagem',
     'type' => 'Tipo',
@@ -103,6 +104,7 @@ return [
     'view_all_notifications' => 'Ver todas as notificações',
     'whats_new_announcement' => 'O que há de novo?',
     'today' => 'Hoje',
+    'yesterday' => 'Ontem',
 
     // Utilizadores
     'user_list' => 'Lista de utilizadores',
@@ -164,6 +166,7 @@ return [
     'new_notification' => 'Nova notificação',
     'no_notifications' => 'Nenhuma notificação encontrada.',
     'confirm_delete_notification' => 'Tem a certeza que deseja eliminar esta notificação?',
+    'earlier' => 'Anteriores',
 
     // Registo de Auditoria
     'audit_log' => 'Registo de Auditoria',
