@@ -7,21 +7,26 @@
 
 <form method="GET" action="{{ $action }}" class="flex items-center gap-2">
     {{ $slot }}
-    <div class="input-group w-auto">
+    <div class="form-search relative flex-1">
+        <i class="search-icon absolute top-[14px] left-[15px]">
+            <svg class="pc-icon w-4 h-4">
+                <use xlink:href="#custom-search-normal-1"></use>
+            </svg>
+        </i>
         <input
-            type="text"
+            type="search"
             name="search"
             value="{{ $value }}"
-            class="form-control"
+            class="form-control px-2.5 pr-3 pl-10 w-full leading-none"
             placeholder="{{ $placeholder ?? __('ui.search') . '...' }}"
             autocomplete="off"
         >
-        <button type="submit" class="btn btn-outline-secondary">
-            <i class="ti ti-search"></i>
-        </button>
     </div>
+    <button type="submit" class="btn btn-icon btn-primary">
+        <i class="ti ti-search"></i>
+    </button>
     @if($clearUrl)
-        <a href="{{ $clearUrl }}" class="btn btn-outline-danger btn-sm">
+        <a href="{{ $clearUrl }}" class="btn btn-icon btn-outline-danger">
             <i class="ti ti-x"></i>
         </a>
     @endif
