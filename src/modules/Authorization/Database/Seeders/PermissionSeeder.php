@@ -10,18 +10,18 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         $modules = [
-            'user'       => ['list', 'view', 'create', 'update', 'delete'],
-            'role'       => ['list', 'view', 'create', 'update', 'delete'],
+            'user' => ['list', 'view', 'create', 'update', 'delete'],
+            'role' => ['list', 'view', 'create', 'update', 'delete'],
             'permission' => ['list', 'view', 'create', 'update', 'delete'],
-            'log'        => ['list', 'view'],
-            'setting'    => ['list', 'view', 'create', 'update', 'delete'],
+            'audit-log' => ['list', 'view'],
+            'setting' => ['list', 'view', 'create', 'update', 'delete'],
         ];
 
         foreach ($modules as $module => $actions) {
             foreach ($actions as $action) {
                 foreach (['api', 'web'] as $guard) {
                     $permission = Permission::withTrashed()->firstOrCreate([
-                        'name'       => "{$module}.{$action}",
+                        'name' => "{$module}.{$action}",
                         'guard_name' => $guard,
                     ]);
 

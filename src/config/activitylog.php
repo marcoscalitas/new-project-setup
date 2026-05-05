@@ -1,8 +1,8 @@
 <?php
 
+use Modules\AuditLog\Models\AuditLog;
 use Spatie\Activitylog\Actions\CleanActivityLogAction;
 use Spatie\Activitylog\Actions\LogActivityAction;
-use Modules\ActivityLog\Models\ActivityLog;
 
 return [
 
@@ -40,7 +40,7 @@ return [
      * It should implement the Spatie\Activitylog\Contracts\Activity interface
      * and extend Illuminate\Database\Eloquent\Model.
      */
-    'activity_model' => ActivityLog::class,
+    'activity_model' => AuditLog::class,
 
     /*
      * These attributes will be excluded from logging for all models.

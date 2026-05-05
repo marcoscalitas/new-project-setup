@@ -90,7 +90,7 @@ return [
     'language'                 => 'Language',
     'total_users'             => 'Total Users',
     'total_roles'             => 'Total Roles',
-    'total_activity_logs'     => 'Activity Logs',
+    'total_audit_logs'     => 'Audit Logs',
     'unread_notifications'    => 'Unread Notifications',
 
     // Header / layout
@@ -162,15 +162,15 @@ return [
     'no_notifications'            => 'No notifications found.',
     'confirm_delete_notification' => 'Are you sure you want to delete this notification?',
 
-    // Activity Log
-    'activity_log'          => 'Activity Log',
-    'activity_log_detail'   => 'Activity Log Detail',
+    // Audit Log
+    'audit_log'          => 'Audit Log',
+    'audit_log_detail'   => 'Audit Log Detail',
     'log_name'              => 'Log Name',
     'description'           => 'Description',
     'causer'                => 'Causer',
     'subject'               => 'Subject',
     'properties'            => 'Properties',
-    'no_logs'               => 'No activity log entries found.',
+    'no_logs'               => 'No audit log entries found.',
     'filter'                => 'Filter',
     'reset'                 => 'Reset',
     'date'                  => 'Date',

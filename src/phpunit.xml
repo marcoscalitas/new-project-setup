@@ -32,8 +32,8 @@
         <testsuite name="Notification-Api">
             <directory>modules/Notification/Tests/Api</directory>
         </testsuite>
-        <testsuite name="ActivityLog-Api">
-            <directory>modules/ActivityLog/Tests/Api</directory>
+        <testsuite name="AuditLog-Api">
+            <directory>modules/AuditLog/Tests/Api</directory>
         </testsuite>
         <testsuite name="Export-Api">
             <directory>modules/Export/Tests/Api</directory>

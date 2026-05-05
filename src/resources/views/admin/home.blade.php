@@ -95,7 +95,7 @@
             </div>
         </div>
 
-        @can('viewAny', \Modules\ActivityLog\Models\ActivityLog::class)
+        @can('viewAny', \Modules\AuditLog\Models\AuditLog::class)
             <div class="col-span-12 lg:col-span-3 md:col-span-6">
                 <div class="card">
                     <div class="card-body">
@@ -107,9 +107,9 @@
                                 </div>
                             </div>
                             <div class="grow ltr:ml-3 rtl:mr-3">
-                                <p class="mb-1">{{ __('ui.total_activity_logs') }}</p>
+                                <p class="mb-1">{{ __('ui.total_audit_logs') }}</p>
                                 <div class="flex items-center justify-between">
-                                    <h4 class="mb-0">{{ $stats['activity_logs'] ?? 0 }}</h4>
+                                    <h4 class="mb-0">{{ $stats['audit_logs'] ?? 0 }}</h4>
                                 </div>
                             </div>
                         </div>

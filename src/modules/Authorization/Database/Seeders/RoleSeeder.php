@@ -13,7 +13,7 @@ class RoleSeeder extends Seeder
         foreach (['api', 'web'] as $guard) {
             // Admin — all permissions
             $admin = Role::withTrashed()->firstOrCreate([
-                'name'       => 'admin',
+                'name' => 'admin',
                 'guard_name' => $guard,
             ]);
             if ($admin->trashed()) {
@@ -25,7 +25,7 @@ class RoleSeeder extends Seeder
 
             // User — read-only access to own resources and shared read permissions
             $user = Role::withTrashed()->firstOrCreate([
-                'name'       => 'user',
+                'name' => 'user',
                 'guard_name' => $guard,
             ]);
             if ($user->trashed()) {
@@ -36,8 +36,8 @@ class RoleSeeder extends Seeder
                     ->whereIn('name', [
                         'user.list',
                         'user.view',
-                        'log.list',
-                        'log.view',
+                        'audit-log.list',
+                        'audit-log.view',
                         'setting.list',
                         'setting.view',
                     ])

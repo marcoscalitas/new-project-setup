@@ -90,7 +90,7 @@ return [
     'language'                 => 'Idioma',
     'total_users'             => 'Total de Utilizadores',
     'total_roles'             => 'Total de Perfis',
-    'total_activity_logs'     => 'Registos de Atividade',
+    'total_audit_logs'     => 'Registos de Auditoria',
     'unread_notifications'    => 'Notificações Não Lidas',
 
     // Header / layout
@@ -162,15 +162,15 @@ return [
     'no_notifications'            => 'Nenhuma notificação encontrada.',
     'confirm_delete_notification' => 'Tem a certeza que deseja eliminar esta notificação?',
 
-    // Registo de Atividade
-    'activity_log'          => 'Registo de Atividade',
-    'activity_log_detail'   => 'Detalhe do Registo de Atividade',
+    // Registo de Auditoria
+    'audit_log'          => 'Registo de Auditoria',
+    'audit_log_detail'   => 'Detalhe do Registo de Auditoria',
     'log_name'              => 'Nome do Log',
     'description'           => 'Descrição',
     'causer'                => 'Autor',
     'subject'               => 'Objeto',
     'properties'            => 'Propriedades',
-    'no_logs'               => 'Nenhum registo de atividade encontrado.',
+    'no_logs'               => 'Nenhum registo de auditoria encontrado.',
     'filter'                => 'Filtrar',
     'reset'                 => 'Limpar',
     'date'                  => 'Data',

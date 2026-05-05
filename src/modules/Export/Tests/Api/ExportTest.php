@@ -276,34 +276,34 @@ class ExportTest extends TestCase
 
     // == ACTIVITY LOG ==
 
-    public function test_sync_csv_export_activity_log(): void
+    public function test_sync_csv_export_audit_log(): void
     {
         Excel::fake();
         config(['export.sync_limit' => 5000]);
 
         $response = $this->postJson('/api/v1/exports', [
-            'module' => 'activity_log',
+            'module' => 'audit_log',
             'format' => 'csv',
         ], $this->authHeaders());
 
         $response->assertOk();
 
-        Excel::assertDownloaded('activity_log_'.now()->format('Y-m-d').'_'.now()->format('His').'.csv');
+        Excel::assertDownloaded('audit_log_'.now()->format('Y-m-d').'_'.now()->format('His').'.csv');
     }
 
-    public function test_sync_xlsx_export_activity_log(): void
+    public function test_sync_xlsx_export_audit_log(): void
     {
         Excel::fake();
         config(['export.sync_limit' => 5000]);
 
         $response = $this->postJson('/api/v1/exports', [
-            'module' => 'activity_log',
+            'module' => 'audit_log',
             'format' => 'xlsx',
         ], $this->authHeaders());
 
         $response->assertOk();
 
-        Excel::assertDownloaded('activity_log_'.now()->format('Y-m-d').'_'.now()->format('His').'.xlsx');
+        Excel::assertDownloaded('audit_log_'.now()->format('Y-m-d').'_'.now()->format('His').'.xlsx');
     }
 
     public function test_sync_pdf_export_users(): void
@@ -329,7 +329,7 @@ class ExportTest extends TestCase
         $response->assertHeader('content-type', 'application/pdf');
     }
 
-    public function test_sync_pdf_export_activity_log(): void
+    public function test_sync_pdf_export_audit_log(): void
     {
         config(['export.sync_limit' => 5000]);
 
@@ -337,13 +337,13 @@ class ExportTest extends TestCase
             $mock->shouldReceive('handle')->once()->andReturn(
                 response('%PDF-1.4 fake', 200, [
                     'Content-Type' => 'application/pdf',
-                    'Content-Disposition' => 'attachment; filename="activity_log_test.pdf"',
+                    'Content-Disposition' => 'attachment; filename="audit_log_test.pdf"',
                 ])
             );
         });
 
         $response = $this->postJson('/api/v1/exports', [
-            'module' => 'activity_log',
+            'module' => 'audit_log',
             'format' => 'pdf',
         ], $this->authHeaders());
 

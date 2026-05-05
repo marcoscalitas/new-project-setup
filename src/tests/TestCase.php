@@ -22,7 +22,7 @@ abstract class TestCase extends BaseTestCase
      */
     protected function createSidebarPermissions(): void
     {
-        foreach (['user.list', 'role.list', 'permission.list', 'log.list'] as $name) {
+        foreach (['user.list', 'role.list', 'permission.list', 'audit-log.list'] as $name) {
             Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
         }
     }

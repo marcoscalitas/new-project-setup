@@ -14,7 +14,7 @@ class ExportFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'module' => $this->faker->randomElement(['users', 'activity_log']),
+            'module' => $this->faker->randomElement(['users', 'audit_log']),
             'format' => $this->faker->randomElement(['csv', 'xlsx', 'pdf']),
             'status' => $this->faker->randomElement(['pending', 'completed', 'failed']),
             'path' => null,

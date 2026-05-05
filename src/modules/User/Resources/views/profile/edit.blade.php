@@ -144,8 +144,8 @@
                                                 <i class="ti ti-activity text-xl leading-none"></i>
                                             </div>
                                             <div>
-                                                <p class="text-muted text-sm mb-0">{{ __('ui.activity_log') }}</p>
-                                                <h5 class="mb-0">{{ \Modules\ActivityLog\Models\ActivityLog::where('causer_id', $user->id)->count() }}</h5>
+                                                <p class="text-muted text-sm mb-0">{{ __('ui.audit_log') }}</p>
+                                                <h5 class="mb-0">{{ \Modules\AuditLog\Models\AuditLog::where('causer_id', $user->id)->count() }}</h5>
                                             </div>
                                         </div>
                                     </div>
