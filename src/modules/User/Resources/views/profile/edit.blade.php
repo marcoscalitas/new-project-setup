@@ -145,7 +145,7 @@
                                             </div>
                                             <div>
                                                 <p class="text-muted text-sm mb-0">{{ __('ui.activity_log') }}</p>
-                                                <h5 class="mb-0">{{ \Spatie\Activitylog\Models\Activity::where('causer_id', $user->id)->count() }}</h5>
+                                                <h5 class="mb-0">{{ \Modules\ActivityLog\Models\ActivityLog::where('causer_id', $user->id)->count() }}</h5>
                                             </div>
                                         </div>
                                     </div>

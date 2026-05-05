@@ -19,7 +19,7 @@ Route::get('/', function () {
             'users'         => \Modules\User\Models\User::count(),
             'roles'         => \Spatie\Permission\Models\Role::count(),
             'permissions'   => \Spatie\Permission\Models\Permission::count(),
-            'activity_logs' => \Spatie\Activitylog\Models\Activity::count(),
+            'activity_logs' => \Modules\ActivityLog\Models\ActivityLog::count(),
         ],
     ]);
 })->middleware(['auth:web', 'verified'])->name('home');

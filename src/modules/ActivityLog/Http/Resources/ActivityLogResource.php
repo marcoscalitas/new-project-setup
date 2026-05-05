@@ -10,20 +10,20 @@ class ActivityLogResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'          => $this->id,
-            'log_name'    => $this->log_name,
+            'id' => $this->id,
+            'log_name' => $this->log_name,
             'description' => $this->description,
-            'subject'     => $this->when($this->subject_type, [
+            'subject' => $this->when($this->subject_type, [
                 'type' => $this->subject_type,
-                'id'   => $this->subject_id,
+                'id' => $this->subject_id,
             ]),
-            'causer'      => $this->when($this->causer_id, [
-                'id'   => $this->causer_id,
+            'causer' => $this->when($this->causer_id, [
+                'id' => $this->causer_id,
                 'type' => $this->causer_type,
             ]),
-            'properties'  => $this->properties,
-            'created_at'  => $this->created_at?->toISOString(),
-            'updated_at'  => $this->updated_at?->toISOString(),
+            'properties' => $this->properties,
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
         ];
     }
 }

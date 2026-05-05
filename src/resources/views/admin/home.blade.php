@@ -95,7 +95,7 @@
             </div>
         </div>
 
-        @can('viewAny', \Spatie\Activitylog\Models\Activity::class)
+        @can('viewAny', \Modules\ActivityLog\Models\ActivityLog::class)
             <div class="col-span-12 lg:col-span-3 md:col-span-6">
                 <div class="card">
                     <div class="card-body">

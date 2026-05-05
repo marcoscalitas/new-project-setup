@@ -9,8 +9,9 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use Modules\ActivityLog\Models\ActivityLog;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Spatie\Activitylog\Models\Activity;
 
 class ActivityLogExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping, WithStyles, WithTitle
 {
@@ -18,25 +19,25 @@ class ActivityLogExport implements FromQuery, ShouldAutoSize, WithHeadings, With
 
     public function query(): Builder
     {
-        $query = Activity::query()->with('causer');
+        $query = ActivityLog::query()->with('causer');
 
-        if (!empty($this->filters['causer_id'])) {
+        if (! empty($this->filters['causer_id'])) {
             $query->where('causer_id', $this->filters['causer_id']);
         }
 
-        if (!empty($this->filters['log_name'])) {
+        if (! empty($this->filters['log_name'])) {
             $query->where('log_name', $this->filters['log_name']);
         }
 
-        if (!empty($this->filters['subject_type'])) {
+        if (! empty($this->filters['subject_type'])) {
             $query->where('subject_type', $this->filters['subject_type']);
         }
 
-        if (!empty($this->filters['date_from'])) {
+        if (! empty($this->filters['date_from'])) {
             $query->whereDate('created_at', '>=', $this->filters['date_from']);
         }
 
-        if (!empty($this->filters['date_to'])) {
+        if (! empty($this->filters['date_to'])) {
             $query->whereDate('created_at', '<=', $this->filters['date_to']);
         }
 
@@ -66,7 +67,7 @@ class ActivityLogExport implements FromQuery, ShouldAutoSize, WithHeadings, With
         return [
             1 => [
                 'fill' => [
-                    'fillType'   => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => '7C3AED'],
                 ],
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],

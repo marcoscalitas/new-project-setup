@@ -4,10 +4,9 @@ namespace Modules\ActivityLog\Tests\Api;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Passport\Client;
+use Modules\ActivityLog\Models\ActivityLog;
 use Modules\Authorization\Models\Permission;
-use Modules\Authorization\Models\Role;
 use Modules\User\Models\User;
-use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
 
 class ActivityLogTest extends TestCase
@@ -15,26 +14,28 @@ class ActivityLogTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private string $adminToken;
 
     private User $regularUser;
+
     private string $userToken;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        if (!file_exists(storage_path('oauth-private.key'))) {
+        if (! file_exists(storage_path('oauth-private.key'))) {
             $this->artisan('passport:keys', ['--force' => true]);
         }
 
         Client::create([
-            'name'          => 'Test Personal Client',
-            'secret'        => null,
+            'name' => 'Test Personal Client',
+            'secret' => null,
             'redirect_uris' => [],
-            'grant_types'   => ['personal_access'],
-            'provider'      => 'users',
-            'revoked'       => false,
+            'grant_types' => ['personal_access'],
+            'provider' => 'users',
+            'revoked' => false,
         ]);
 
         $this->admin = User::factory()->create();
@@ -50,15 +51,15 @@ class ActivityLogTest extends TestCase
 
     private function adminHeaders(): array
     {
-        return ['Authorization' => 'Bearer ' . $this->adminToken];
+        return ['Authorization' => 'Bearer '.$this->adminToken];
     }
 
     private function userHeaders(): array
     {
-        return ['Authorization' => 'Bearer ' . $this->userToken];
+        return ['Authorization' => 'Bearer '.$this->userToken];
     }
 
-    private function createActivity(User $causer, array $overrides = []): Activity
+    private function createActivity(User $causer, array $overrides = []): ActivityLog
     {
         return activity()
             ->causedBy($causer)
@@ -70,7 +71,7 @@ class ActivityLogTest extends TestCase
 
     public function test_admin_can_list_activity_log(): void
     {
-        Activity::truncate();
+        ActivityLog::truncate();
 
         $this->createActivity($this->admin);
         $this->createActivity($this->regularUser);
@@ -108,7 +109,7 @@ class ActivityLogTest extends TestCase
         $this->createActivity($this->regularUser);
 
         $response = $this->getJson(
-            '/api/v1/activity-log?causer_id=' . $this->admin->id,
+            '/api/v1/activity-log?causer_id='.$this->admin->id,
             $this->adminHeaders()
         );
 
@@ -207,8 +208,8 @@ class ActivityLogTest extends TestCase
 
         $this->assertDatabaseHas('activity_log', [
             'subject_type' => User::class,
-            'subject_id'   => $this->admin->id,
-            'description'  => 'updated',
+            'subject_id' => $this->admin->id,
+            'description' => 'updated',
         ]);
     }
 
@@ -216,7 +217,7 @@ class ActivityLogTest extends TestCase
     {
         $this->admin->update(['password' => bcrypt('newpassword')]);
 
-        $activities = Activity::where('subject_id', $this->admin->id)->get();
+        $activities = ActivityLog::where('subject_id', $this->admin->id)->get();
 
         foreach ($activities as $activity) {
             $this->assertArrayNotHasKey('password', $activity->properties->get('attributes', []));
