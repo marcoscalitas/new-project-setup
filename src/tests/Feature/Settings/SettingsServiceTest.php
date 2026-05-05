@@ -4,8 +4,6 @@ namespace Tests\Feature\Settings;
 
 use Illuminate\Support\Facades\Cache;
 use Modules\Settings\Models\Setting;
-use Modules\Settings\Services\DatabaseSettingsReader;
-use Modules\Settings\Services\DatabaseSettingsWriter;
 use Modules\Settings\Services\SettingsService;
 use Shared\Contracts\Settings\SettingsReader;
 use Shared\Contracts\Settings\SettingsWriter;
@@ -26,10 +24,10 @@ class SettingsServiceTest extends TestCase
         $this->assertNull($this->service->get('nonexistent'));
     }
 
-    public function test_settings_contracts_are_bound_to_database_implementations(): void
+    public function test_settings_contracts_are_bound_to_settings_service(): void
     {
-        $this->assertInstanceOf(DatabaseSettingsReader::class, app(SettingsReader::class));
-        $this->assertInstanceOf(DatabaseSettingsWriter::class, app(SettingsWriter::class));
+        $this->assertInstanceOf(SettingsService::class, app(SettingsReader::class));
+        $this->assertInstanceOf(SettingsService::class, app(SettingsWriter::class));
     }
 
     public function test_get_returns_default_when_key_does_not_exist(): void

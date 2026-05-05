@@ -2,33 +2,43 @@
 
 namespace Modules\Settings\Services;
 
+use Illuminate\Support\Facades\Cache;
+use Modules\Settings\Models\Setting;
 use Shared\Contracts\Settings\SettingsReader;
 use Shared\Contracts\Settings\SettingsWriter;
 
 class SettingsService implements SettingsReader, SettingsWriter
 {
+    private const CACHE_KEY = 'settings.all';
+
     public function get(string $key, mixed $default = null): mixed
     {
-        return app(SettingsReader::class)->get($key, $default);
+        return $this->all()[$key] ?? $default;
     }
 
     public function set(string $key, mixed $value): void
     {
-        app(SettingsWriter::class)->set($key, $value);
+        Setting::updateOrCreate(['key' => $key], ['value' => $value]);
+
+        $this->flush();
     }
 
     public function forget(string $key): void
     {
-        app(SettingsWriter::class)->forget($key);
+        Setting::where('key', $key)->delete();
+
+        $this->flush();
     }
 
     public function all(): array
     {
-        return app(SettingsReader::class)->all();
+        return Cache::rememberForever(self::CACHE_KEY, function () {
+            return Setting::all()->pluck('value', 'key')->toArray();
+        });
     }
 
     public function flush(): void
     {
-        app(DatabaseSettingsReader::class)->flush();
+        Cache::forget(self::CACHE_KEY);
     }
 }

@@ -7,8 +7,6 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Modules\Settings\Models\Setting;
 use Modules\Settings\Policies\SettingPolicy;
-use Modules\Settings\Services\DatabaseSettingsReader;
-use Modules\Settings\Services\DatabaseSettingsWriter;
 use Modules\Settings\Services\SettingsService;
 use Shared\Contracts\Settings\SettingsReader;
 use Shared\Contracts\Settings\SettingsWriter;
@@ -17,10 +15,9 @@ class SettingsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(DatabaseSettingsReader::class);
-        $this->app->singleton(SettingsReader::class, DatabaseSettingsReader::class);
-        $this->app->singleton(SettingsWriter::class, DatabaseSettingsWriter::class);
         $this->app->singleton(SettingsService::class);
+        $this->app->alias(SettingsService::class, SettingsReader::class);
+        $this->app->alias(SettingsService::class, SettingsWriter::class);
 
         require_once __DIR__.'/../helpers.php';
     }
