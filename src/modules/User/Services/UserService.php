@@ -20,8 +20,9 @@ class UserService
         $direction = $direction === 'desc' ? 'desc' : 'asc';
 
         $query = User::with('roles')
-            ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%")
-                                         ->orWhere('email', 'like', "%{$search}%"))
+            ->when($search, fn ($q) => $q->where(fn ($query) => $query
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")))
             ->orderBy($sort, $direction);
 
         return $perPage === null ? $query->get() : $query->paginate($perPage);
@@ -136,9 +137,14 @@ class UserService
         }
     }
 
-    public function getTrashed(int $perPage = 15)
+    public function getTrashed(int $perPage = 15, ?string $search = null)
     {
-        return User::onlyTrashed()->with('roles')->paginate($perPage);
+        return User::onlyTrashed()
+            ->with('roles')
+            ->when($search, fn ($q) => $q->where(fn ($query) => $query
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")))
+            ->paginate($perPage);
     }
 
     public function restore(string $ulid): User

@@ -91,7 +91,10 @@ class RoleController
     {
         Gate::authorize('viewTrashed', Role::class);
 
-        $roles = $this->roleService->getTrashed(perPage: $this->resolvePerPage($request));
+        $roles = $this->roleService->getTrashed(
+            perPage: $this->resolvePerPage($request),
+            search: $request->query('search'),
+        );
 
         return view('authorization::roles.trashed', compact('roles'));
     }

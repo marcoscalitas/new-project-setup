@@ -95,7 +95,10 @@ class UserController
     {
         Gate::authorize('viewTrashed', User::class);
 
-        $users = $this->userService->getTrashed(perPage: $this->resolvePerPage($request));
+        $users = $this->userService->getTrashed(
+            perPage: $this->resolvePerPage($request),
+            search: $request->query('search'),
+        );
 
         return view('user::users.trashed', compact('users'));
     }

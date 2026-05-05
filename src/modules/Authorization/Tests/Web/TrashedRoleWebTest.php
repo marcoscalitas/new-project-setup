@@ -56,6 +56,18 @@ class TrashedRoleWebTest extends TestCase
         $this->assertNotContains('active-role', $names);
     }
 
+    public function test_trashed_search_filters_deleted_roles(): void
+    {
+        Role::create(['name' => 'archived-alpha', 'guard_name' => 'web'])->delete();
+        Role::create(['name' => 'archived-beta', 'guard_name' => 'web'])->delete();
+
+        $response = $this->actingAs($this->user)->get('/roles/trashed?search=alpha');
+
+        $response->assertOk()
+            ->assertSee('archived-alpha')
+            ->assertDontSee('archived-beta');
+    }
+
     public function test_unauthenticated_is_redirected_from_trashed(): void
     {
         $this->get('/roles/trashed')->assertRedirect('/auth/login');

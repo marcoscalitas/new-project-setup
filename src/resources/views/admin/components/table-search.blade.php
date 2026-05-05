@@ -5,7 +5,7 @@
     'placeholder' => null,
 ])
 
-<form method="GET" action="{{ $action }}" class="flex items-center gap-2">
+<form method="GET" action="{{ $action }}" class="flex w-80 max-w-full items-center gap-2">
     {{ $slot }}
     @if(request()->filled('per_page'))
         <input type="hidden" name="per_page" value="{{ request('per_page') }}">

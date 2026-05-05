@@ -24,6 +24,7 @@ return [
     'action' => 'Action',
     'search' => 'Search',
     'rows_per_page' => 'Rows per page',
+    'entries_per_page' => 'entries per page',
     'status' => 'Status',
     'message' => 'Message',
     'type' => 'Type',

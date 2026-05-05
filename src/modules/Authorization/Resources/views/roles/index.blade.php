@@ -28,7 +28,9 @@
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    <div class="px-4 pt-4 pb-4">
+                    <div class="flex items-center justify-between gap-4 overflow-x-auto px-4 pt-4 pb-4">
+                        <x-admin::page-length :paginator="$roles" :action="route('roles.index')" />
+
                         <x-admin::table-search
                             :action="route('roles.index')"
                             :value="request('search')"

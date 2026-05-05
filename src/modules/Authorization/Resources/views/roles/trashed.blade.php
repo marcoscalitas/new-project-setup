@@ -22,6 +22,16 @@
                     </div>
                 </div>
                 <div class="card-body p-0">
+                    <div class="flex items-center justify-between gap-4 overflow-x-auto px-4 pt-4 pb-4">
+                        <x-admin::page-length :paginator="$roles" :action="route('roles.trashed')" />
+
+                        <x-admin::table-search
+                            :action="route('roles.trashed')"
+                            :value="request('search')"
+                            :clear-url="request('search') ? route('roles.trashed', array_filter(['per_page' => request('per_page')])) : null"
+                        />
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-hover" id="pc-dt-simple">
                             <thead>

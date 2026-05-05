@@ -81,7 +81,10 @@ class PermissionController
     {
         Gate::authorize('viewTrashed', Permission::class);
 
-        $permissions = $this->permissionService->getTrashed(perPage: $this->resolvePerPage($request));
+        $permissions = $this->permissionService->getTrashed(
+            perPage: $this->resolvePerPage($request),
+            search: $request->query('search'),
+        );
 
         return view('authorization::permissions.trashed', compact('permissions'));
     }

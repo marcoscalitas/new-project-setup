@@ -48,7 +48,7 @@ class TrashedUserWebTest extends TestCase
         $response = $this->actingAs($this->user)->get('/users/trashed?per_page=5');
 
         $response->assertOk()
-            ->assertSee(__('ui.rows_per_page'));
+            ->assertSee(__('ui.entries_per_page'));
 
         $this->assertSame(5, $response->viewData('users')->perPage());
     }
@@ -65,6 +65,18 @@ class TrashedUserWebTest extends TestCase
         $names = collect($users->items())->pluck('name')->all();
         $this->assertContains('Deleted User', $names);
         $this->assertNotContains('Active User', $names);
+    }
+
+    public function test_trashed_search_filters_deleted_users(): void
+    {
+        User::factory()->create(['name' => 'Archived Alpha'])->delete();
+        User::factory()->create(['name' => 'Archived Beta'])->delete();
+
+        $response = $this->actingAs($this->user)->get('/users/trashed?search=Alpha');
+
+        $response->assertOk()
+            ->assertSee('Archived Alpha')
+            ->assertDontSee('Archived Beta');
     }
 
     public function test_unauthenticated_is_redirected_from_trashed(): void

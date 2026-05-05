@@ -79,9 +79,12 @@ class RoleService
         RoleDeleted::dispatch($roleId, $roleName);
     }
 
-    public function getTrashed(int $perPage = 15)
+    public function getTrashed(int $perPage = 15, ?string $search = null)
     {
-        return Role::onlyTrashed()->with('permissions')->paginate($perPage);
+        return Role::onlyTrashed()
+            ->with('permissions')
+            ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
+            ->paginate($perPage);
     }
 
     public function restore(string $ulid): Role

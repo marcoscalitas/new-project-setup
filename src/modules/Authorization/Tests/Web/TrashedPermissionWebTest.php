@@ -55,6 +55,18 @@ class TrashedPermissionWebTest extends TestCase
         $this->assertNotContains('active.perm', $names);
     }
 
+    public function test_trashed_search_filters_deleted_permissions(): void
+    {
+        Permission::create(['name' => 'archived.alpha', 'guard_name' => 'web'])->delete();
+        Permission::create(['name' => 'archived.beta', 'guard_name' => 'web'])->delete();
+
+        $response = $this->actingAs($this->user)->get('/permissions/trashed?search=alpha');
+
+        $response->assertOk()
+            ->assertSee('archived.alpha')
+            ->assertDontSee('archived.beta');
+    }
+
     public function test_unauthenticated_is_redirected_from_trashed(): void
     {
         $this->get('/permissions/trashed')->assertRedirect('/auth/login');

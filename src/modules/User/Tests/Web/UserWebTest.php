@@ -52,7 +52,7 @@ class UserWebTest extends TestCase
             ->get('/users?per_page=5');
 
         $response->assertOk()
-            ->assertSee(__('ui.rows_per_page'));
+            ->assertSee(__('ui.entries_per_page'));
 
         $this->assertSame(5, $response->viewData('users')->perPage());
     }

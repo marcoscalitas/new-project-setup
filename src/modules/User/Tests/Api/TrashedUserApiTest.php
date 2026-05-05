@@ -208,8 +208,8 @@ class TrashedUserApiTest extends TestCase
 
     public function test_index_search_filters_by_email(): void
     {
-        User::factory()->create(['email' => 'alice@example.com']);
-        User::factory()->create(['email' => 'bob@example.com']);
+        User::factory()->create(['name' => 'Email Alpha', 'email' => 'alice@example.com']);
+        User::factory()->create(['name' => 'Email Beta', 'email' => 'bob@example.com']);
 
         $response = $this->getJson('/api/v1/users?search=alice', $this->authHeaders());
 

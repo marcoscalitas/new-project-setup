@@ -64,9 +64,11 @@ class PermissionService
         PermissionDeleted::dispatch($permissionId, $permissionName);
     }
 
-    public function getTrashed(int $perPage = 15)
+    public function getTrashed(int $perPage = 15, ?string $search = null)
     {
-        return Permission::onlyTrashed()->paginate($perPage);
+        return Permission::onlyTrashed()
+            ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
+            ->paginate($perPage);
     }
 
     public function restore(string $ulid): Permission
