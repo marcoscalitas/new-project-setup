@@ -159,6 +159,7 @@ return [
     'notification_details'        => 'Notification Details',
     'read'                        => 'Read',
     'unread'                      => 'Unread',
+    'new_notification'            => 'New notification',
     'no_notifications'            => 'No notifications found.',
     'confirm_delete_notification' => 'Are you sure you want to delete this notification?',
 

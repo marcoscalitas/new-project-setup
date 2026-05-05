@@ -19,4 +19,11 @@ class NotificationController
 
         return redirect($url);
     }
+
+    public function markAllAsRead(): RedirectResponse
+    {
+        Auth::user()->unreadNotifications->markAsRead();
+
+        return back();
+    }
 }

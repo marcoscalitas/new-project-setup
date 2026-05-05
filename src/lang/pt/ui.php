@@ -159,6 +159,7 @@ return [
     'notification_details'        => 'Detalhes da Notificação',
     'read'                        => 'Lida',
     'unread'                      => 'Não lida',
+    'new_notification'            => 'Nova notificação',
     'no_notifications'            => 'Nenhuma notificação encontrada.',
     'confirm_delete_notification' => 'Tem a certeza que deseja eliminar esta notificação?',
 

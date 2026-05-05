@@ -211,45 +211,53 @@
                             </svg>
                         </a>
                     </li>
-                    @php $unreadNotifications = auth()->user()->unreadNotifications->take(5); @endphp
+                    @php
+                        $recentNotifications = auth()->user()->notifications()->latest()->take(8)->get();
+                        $unreadCount = auth()->user()->unreadNotifications()->count();
+                    @endphp
                     <li class="dropdown pc-h-item">
                         <a class="pc-head-link dropdown-toggle me-0" data-pc-toggle="dropdown" href="#"
                             role="button" aria-haspopup="false" aria-expanded="false">
                             <svg class="pc-icon">
                                 <use xlink:href="#custom-notification"></use>
                             </svg>
-                            @if ($unreadNotifications->count() > 0)
+                            @if ($unreadCount > 0)
                                 <span class="badge bg-success-500 text-white rounded-full z-10 absolute right-0 top-0">
-                                    {{ $unreadNotifications->count() }}
+                                    {{ $unreadCount }}
                                 </span>
                             @endif
                         </a>
                         <div class="dropdown-menu dropdown-notification dropdown-menu-end pc-h-dropdown p-2">
                             <div class="dropdown-header flex items-center justify-between py-4 px-5">
                                 <h5 class="m-0">{{ __('ui.notifications') }}</h5>
+                                @if ($unreadCount > 0)
+                                    <form method="POST" action="{{ route('notifications.mark-all-read') }}">
+                                        @csrf
+                                        <button type="submit" class="btn btn-link btn-sm">{{ __('ui.mark_all_read') }}</button>
+                                    </form>
+                                @endif
                             </div>
                             <div class="dropdown-body header-notification-scroll relative py-4 px-5"
                                 style="max-height: calc(100vh - 215px)">
-                                @forelse($unreadNotifications as $notification)
-                                    <a href="{{ route('notifications.redirect', $notification->id) }}" class="card mb-2">
+                                @forelse($recentNotifications as $notification)
+                                    <a href="{{ route('notifications.redirect', $notification->id) }}" class="card mb-2 {{ $notification->read_at ? '' : 'border-primary-500' }}">
                                         <div class="card-body">
                                             <div class="flex gap-4">
                                                 <div class="shrink-0">
-                                                    <svg class="pc-icon text-primary-500 w-[22px] h-[22px]">
+                                                    <svg class="pc-icon {{ $notification->read_at ? 'text-muted' : 'text-primary-500' }} w-[22px] h-[22px]">
                                                         <use xlink:href="#custom-notification"></use>
                                                     </svg>
                                                 </div>
                                                 <div class="grow">
-                                                    <span
-                                                        class="float-end text-sm text-muted">{{ $notification->created_at->diffForHumans() }}</span>
-                                                    <p class="mb-0">
-                                                        {{ $notification->data['message'] ?? 'New notification' }}</p>
+                                                    <span class="float-end text-sm text-muted">{{ $notification->created_at->diffForHumans() }}</span>
+                                                    <p class="mb-0 {{ $notification->read_at ? 'text-muted' : '' }}">
+                                                        {{ $notification->data['message'] ?? __('ui.new_notification') }}</p>
                                                 </div>
                                             </div>
                                         </div>
                                     </a>
                                 @empty
-                                    <p class="text-center text-muted py-4 mb-0">No new notifications</p>
+                                    <p class="text-center text-muted py-4 mb-0">{{ __('ui.no_notifications') }}</p>
                                 @endforelse
                             </div>
                         </div>
