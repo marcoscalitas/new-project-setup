@@ -95,28 +95,5 @@
             </div>
         </div>
 
-        @can('viewAny', \Modules\AuditLog\Models\AuditLog::class)
-            <div class="col-span-12 lg:col-span-3 md:col-span-6">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="flex items-center">
-                            <div class="shrink-0">
-                                <div
-                                    class="w-12 h-12 rounded-lg inline-flex items-center justify-center bg-secondary-500/10 text-secondary-500">
-                                    <i class="ti ti-activity text-2xl leading-none"></i>
-                                </div>
-                            </div>
-                            <div class="grow ltr:ml-3 rtl:mr-3">
-                                <p class="mb-1">{{ __('ui.total_audit_logs') }}</p>
-                                <div class="flex items-center justify-between">
-                                    <h4 class="mb-0">{{ $stats['audit_logs'] ?? 0 }}</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endcan
-
     </div>
 @endsection
