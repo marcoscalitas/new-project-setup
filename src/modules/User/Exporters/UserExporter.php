@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\User\Services;
+namespace Modules\User\Exporters;
 
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
@@ -8,7 +8,7 @@ use Modules\User\Exports\UsersExport;
 use Modules\User\Models\User;
 use Shared\Contracts\Export\Exporter;
 
-class UserExportService implements Exporter
+class UserExporter implements Exporter
 {
     public function key(): string
     {

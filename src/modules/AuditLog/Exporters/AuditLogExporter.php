@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\AuditLog\Services;
+namespace Modules\AuditLog\Exporters;
 
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
@@ -8,7 +8,7 @@ use Modules\AuditLog\Exports\AuditLogExport;
 use Modules\AuditLog\Models\AuditLog;
 use Shared\Contracts\Export\Exporter;
 
-class AuditLogExportService implements Exporter
+class AuditLogExporter implements Exporter
 {
     public function key(): string
     {
