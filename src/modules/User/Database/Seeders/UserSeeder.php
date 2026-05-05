@@ -7,7 +7,7 @@ use Modules\User\Models\User;
 
 class UserSeeder extends Seeder
 {
-    private const DEMO_USER_COUNT = 1000;
+    private const DEMO_USER_COUNT = 298;
 
     public function run(): void
     {
