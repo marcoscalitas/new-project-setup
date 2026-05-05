@@ -17,52 +17,52 @@
     @endphp
 
     <nav role="navigation" aria-label="Pagination Navigation" class="mt-3">
-        <ul class="inline-flex items-center rounded-lg overflow-hidden border border-theme-border dark:border-themedark-border">
+        <ul class="flex flex-wrap items-center gap-1">
 
             {{-- First --}}
             <li>
                 @if ($paginator->onFirstPage())
-                    <span class="inline-block px-3 py-2 select-none opacity-50 bg-secondary-500/10">‹ First</span>
+                    <span class="inline-block px-3 py-1.5 border border-theme-border dark:border-themedark-border rounded-lg select-none bg-secondary-500/10">‹ First</span>
                 @else
-                    <a href="{{ $paginator->url(1) }}" class="inline-block px-3 py-2 hover:bg-secondary-300/10">‹ First</a>
+                    <a href="{{ $paginator->url(1) }}" class="inline-block px-3 py-1.5 border border-theme-border dark:border-themedark-border rounded-lg hover:bg-secondary-300/10">‹ First</a>
                 @endif
             </li>
 
             {{-- Previous --}}
-            <li class="border-l border-theme-border dark:border-themedark-border">
+            <li>
                 @if ($paginator->onFirstPage())
-                    <span class="inline-block px-3 py-2 select-none opacity-50 bg-secondary-500/10">&lt;</span>
+                    <span class="inline-block px-3 py-1.5 border border-theme-border dark:border-themedark-border rounded-lg select-none bg-secondary-500/10">&lt;</span>
                 @else
-                    <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="inline-block px-3 py-2 hover:bg-secondary-300/10">&lt;</a>
+                    <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="inline-block px-3 py-1.5 border border-theme-border dark:border-themedark-border rounded-lg hover:bg-secondary-300/10">&lt;</a>
                 @endif
             </li>
 
             {{-- Page window --}}
             @foreach ($pages as $page)
-                <li class="border-l border-theme-border dark:border-themedark-border">
+                <li>
                     @if ($page === $current)
-                        <span aria-current="page" class="inline-block px-4 py-2 bg-primary-500 text-white select-none">{{ $page }}</span>
+                        <span aria-current="page" class="inline-block px-3 py-1.5 border border-primary-500 rounded-lg bg-primary-500 text-white select-none">{{ $page }}</span>
                     @else
-                        <a href="{{ $paginator->url($page) }}" class="inline-block px-4 py-2 hover:bg-secondary-300/10">{{ $page }}</a>
+                        <a href="{{ $paginator->url($page) }}" class="inline-block px-3 py-1.5 border border-theme-border dark:border-themedark-border rounded-lg hover:bg-secondary-300/10">{{ $page }}</a>
                     @endif
                 </li>
             @endforeach
 
             {{-- Next --}}
-            <li class="border-l border-theme-border dark:border-themedark-border">
+            <li>
                 @if ($paginator->hasMorePages())
-                    <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="inline-block px-3 py-2 hover:bg-secondary-300/10">&gt;</a>
+                    <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="inline-block px-3 py-1.5 border border-theme-border dark:border-themedark-border rounded-lg hover:bg-secondary-300/10">&gt;</a>
                 @else
-                    <span class="inline-block px-3 py-2 select-none opacity-50 bg-secondary-500/10">&gt;</span>
+                    <span class="inline-block px-3 py-1.5 border border-theme-border dark:border-themedark-border rounded-lg select-none bg-secondary-500/10">&gt;</span>
                 @endif
             </li>
 
             {{-- Last --}}
-            <li class="border-l border-theme-border dark:border-themedark-border">
+            <li>
                 @if ($paginator->hasMorePages())
-                    <a href="{{ $paginator->url($last) }}" class="inline-block px-3 py-2 hover:bg-secondary-300/10">Last ›</a>
+                    <a href="{{ $paginator->url($last) }}" class="inline-block px-3 py-1.5 border border-theme-border dark:border-themedark-border rounded-lg hover:bg-secondary-300/10">Last ›</a>
                 @else
-                    <span class="inline-block px-3 py-2 select-none opacity-50 bg-secondary-500/10">Last ›</span>
+                    <span class="inline-block px-3 py-1.5 border border-theme-border dark:border-themedark-border rounded-lg select-none bg-secondary-500/10">Last ›</span>
                 @endif
             </li>
 
