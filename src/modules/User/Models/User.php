@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Passport\HasApiTokens;
 use Modules\User\Database\Factories\UserFactory;
+use Shared\Contracts\Notification\NotificationRecipient;
 use Shared\Traits\HasUlid;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -22,7 +23,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements HasMedia, MustVerifyEmail
+class User extends Authenticatable implements HasMedia, MustVerifyEmail, NotificationRecipient
 {
     use HasApiTokens, HasFactory, HasRoles, HasUlid, InteractsWithMedia, LogsActivity, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
@@ -76,9 +77,19 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         ];
     }
 
+    public function notificationRecipientId(): string|int
+    {
+        return $this->ulid;
+    }
+
     public function notifications(): MorphMany
     {
         return $this->morphMany(config('notifications.database_model', DatabaseNotification::class), 'notifiable')->latest();
+    }
+
+    public function unreadNotifications(): MorphMany
+    {
+        return $this->notifications()->unread();
     }
 
     public function registerMediaCollections(): void

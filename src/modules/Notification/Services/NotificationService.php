@@ -5,42 +5,42 @@ namespace Modules\Notification\Services;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Modules\Notification\Events\NotificationDeleted;
 use Modules\Notification\Events\NotificationRead;
-use Modules\User\Models\User;
+use Shared\Contracts\Notification\NotificationRecipient;
 
 class NotificationService
 {
-    public function getAll(User $user, ?int $perPage = 15)
+    public function getAll(NotificationRecipient $recipient, ?int $perPage = 15)
     {
-        $query = $user->notifications();
+        $query = $recipient->notifications();
         return $perPage === null ? $query->get() : $query->paginate($perPage);
     }
 
-    public function getUnread(User $user, int $perPage = 15): LengthAwarePaginator
+    public function getUnread(NotificationRecipient $recipient, int $perPage = 15): LengthAwarePaginator
     {
-        return $user->unreadNotifications()->paginate($perPage);
+        return $recipient->unreadNotifications()->paginate($perPage);
     }
 
-    public function findById(User $user, string $id)
+    public function findById(NotificationRecipient $recipient, string $id)
     {
-        return $user->notifications()->findOrFail($id);
+        return $recipient->notifications()->findOrFail($id);
     }
 
-    public function markAsRead(User $user, string $id): void
+    public function markAsRead(NotificationRecipient $recipient, string $id): void
     {
-        $user->notifications()->findOrFail($id)->markAsRead();
+        $recipient->notifications()->findOrFail($id)->markAsRead();
 
-        NotificationRead::dispatch($user->ulid, $id);
+        NotificationRead::dispatch($recipient->notificationRecipientId(), $id);
     }
 
-    public function markAllAsRead(User $user): void
+    public function markAllAsRead(NotificationRecipient $recipient): void
     {
-        $user->unreadNotifications->markAsRead();
+        $recipient->unreadNotifications->markAsRead();
     }
 
-    public function delete(User $user, string $id): void
+    public function delete(NotificationRecipient $recipient, string $id): void
     {
-        $user->notifications()->findOrFail($id)->delete();
+        $recipient->notifications()->findOrFail($id)->delete();
 
-        NotificationDeleted::dispatch($user->ulid, $id);
+        NotificationDeleted::dispatch($recipient->notificationRecipientId(), $id);
     }
 }
