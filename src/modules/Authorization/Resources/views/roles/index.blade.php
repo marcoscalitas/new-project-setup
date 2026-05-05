@@ -29,23 +29,14 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="px-4 pt-4 pb-4">
-                    <form method="GET" action="{{ route('roles.index') }}" class="flex items-center gap-2">
-                        @if($sort !== 'name') <input type="hidden" name="sort" value="{{ $sort }}"> @endif
-                        @if($dir  !== 'asc')  <input type="hidden" name="direction" value="{{ $dir }}"> @endif
-                        <div class="input-group">
-                            <input type="text" name="search" value="{{ request('search') }}"
-                                   class="form-control" placeholder="{{ __('ui.search') }}...">
-                            <button type="submit" class="btn btn-outline-secondary">
-                                <i class="ti ti-search"></i>
-                            </button>
-                        </div>
-                        @if(request('search'))
-                            <a href="{{ route('roles.index', array_filter(['sort' => $sort !== 'name' ? $sort : null, 'direction' => $dir !== 'asc' ? $dir : null])) }}"
-                               class="btn btn-outline-danger btn-sm">
-                                <i class="ti ti-x"></i>
-                            </a>
-                        @endif
-                    </form>
+                        <x-admin::table-search
+                            :action="route('roles.index')"
+                            :value="request('search')"
+                            :clear-url="request('search') ? route('roles.index', array_filter(['sort' => $sort !== 'name' ? $sort : null, 'direction' => $dir !== 'asc' ? $dir : null])) : null"
+                        >
+                            @if($sort !== 'name') <input type="hidden" name="sort" value="{{ $sort }}"> @endif
+                            @if($dir  !== 'asc')  <input type="hidden" name="direction" value="{{ $dir }}"> @endif
+                        </x-admin::table-search>
                     </div>
 
                     <div class="table-responsive">
