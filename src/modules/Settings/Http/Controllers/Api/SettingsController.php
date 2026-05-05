@@ -8,11 +8,11 @@ use Illuminate\Support\Facades\Gate;
 use Modules\Settings\Http\Requests\UpdateSettingRequest;
 use Modules\Settings\Http\Resources\SettingResource;
 use Modules\Settings\Models\Setting;
-use Modules\Settings\Services\SettingsService;
+use Shared\Contracts\Settings\SettingsWriter;
 
 class SettingsController
 {
-    public function __construct(private readonly SettingsService $settingsService) {}
+    public function __construct(private readonly SettingsWriter $settingsWriter) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -36,7 +36,7 @@ class SettingsController
     {
         Gate::authorize('update', Setting::class);
 
-        $this->settingsService->set($key, $request->input('value'));
+        $this->settingsWriter->set($key, $request->input('value'));
 
         return SettingResource::make(Setting::findOrFail($key))->response();
     }
@@ -47,7 +47,7 @@ class SettingsController
 
         Gate::authorize('delete', $setting);
 
-        $this->settingsService->forget($key);
+        $this->settingsWriter->forget($key);
 
         return response()->json(null, 204);
     }

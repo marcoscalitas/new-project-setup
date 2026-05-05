@@ -14,26 +14,28 @@ class SettingsTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private string $adminToken;
 
     private User $regular;
+
     private string $regularToken;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        if (!file_exists(storage_path('oauth-private.key'))) {
+        if (! file_exists(storage_path('oauth-private.key'))) {
             $this->artisan('passport:keys', ['--force' => true]);
         }
 
         Client::create([
-            'name'          => 'Test Personal Client',
-            'secret'        => null,
+            'name' => 'Test Personal Client',
+            'secret' => null,
             'redirect_uris' => [],
-            'grant_types'   => ['personal_access'],
-            'provider'      => 'users',
-            'revoked'       => false,
+            'grant_types' => ['personal_access'],
+            'provider' => 'users',
+            'revoked' => false,
         ]);
 
         $this->admin = User::factory()->create();
@@ -46,18 +48,18 @@ class SettingsTest extends TestCase
 
     private function grantPermissions(User $user, array $names): void
     {
-        $perms = array_map(fn($name) => Permission::firstOrCreate(['name' => $name, 'guard_name' => 'api']), $names);
+        $perms = array_map(fn ($name) => Permission::firstOrCreate(['name' => $name, 'guard_name' => 'api']), $names);
         $user->givePermissionTo($perms);
     }
 
     private function adminHeaders(): array
     {
-        return ['Authorization' => 'Bearer ' . $this->adminToken];
+        return ['Authorization' => 'Bearer '.$this->adminToken];
     }
 
     private function regularHeaders(): array
     {
-        return ['Authorization' => 'Bearer ' . $this->regularToken];
+        return ['Authorization' => 'Bearer '.$this->regularToken];
     }
 
     // == LIST ==
