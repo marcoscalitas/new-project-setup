@@ -3,13 +3,12 @@
 namespace Modules\Export\Services;
 
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
-use Modules\Export\Contracts\ExportableInterface;
 use Modules\Export\Jobs\ProcessExportJob;
 use Modules\Export\Models\Export;
+use Shared\Contracts\Export\Exporter;
+use Shared\Data\Export\ExportRequestData;
+use Shared\Data\Export\ExportResultData;
 use Spatie\Browsershot\Browsershot;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -19,39 +18,39 @@ class ExportService
     private const SYNC_LIMIT = 5000;
 
     public function handle(
-        ExportableInterface $exporter,
-        string $format,
-        array $filters = [],
-    ): BinaryFileResponse|StreamedResponse|Response|array {
-        $count = $exporter->getQuery($filters)->count();
+        Exporter $exporter,
+        ExportRequestData $data,
+    ): BinaryFileResponse|StreamedResponse|Response|ExportResultData {
+        abort_unless(in_array($data->format, $exporter->allowedFormats(), true), 422, 'Formato de exportação inválido.');
+
+        $count = $exporter->getQuery($data->filters)->count();
 
         if ($count > self::getSyncLimit()) {
-            return $this->dispatchAsync($exporter, $format, $filters);
+            return $this->dispatchAsync($exporter, $data);
         }
 
-        return $this->generateSync($exporter, $format, $filters);
+        return $this->generateSync($exporter, $data);
     }
 
     private function generateSync(
-        ExportableInterface $exporter,
-        string $format,
-        array $filters,
+        Exporter $exporter,
+        ExportRequestData $data,
     ): BinaryFileResponse|StreamedResponse|Response {
-        $filename = $exporter->getFilename() . '_' . now()->format('Y-m-d_His') . '.' . $format;
+        $filename = $exporter->getFilename().'_'.now()->format('Y-m-d_His').'.'.$data->format;
 
-        if ($format === 'pdf') {
-            return $this->generatePdfResponse($exporter, $filters, $filename);
+        if ($data->format === 'pdf') {
+            return $this->generatePdfResponse($exporter, $data->filters, $filename);
         }
 
-        $excelFormat = $format === 'xlsx'
+        $excelFormat = $data->format === 'xlsx'
             ? \Maatwebsite\Excel\Excel::XLSX
             : \Maatwebsite\Excel\Excel::CSV;
 
-        return Excel::download($exporter->getExportClass($filters), $filename, $excelFormat);
+        return Excel::download($exporter->getExportClass($data->filters), $filename, $excelFormat);
     }
 
     private function generatePdfResponse(
-        ExportableInterface $exporter,
+        Exporter $exporter,
         array $filters,
         string $filename,
     ): Response {
@@ -65,27 +64,26 @@ class ExportService
             ->pdf();
 
         return response($pdf, 200, [
-            'Content-Type'        => 'application/pdf',
+            'Content-Type' => 'application/pdf',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }
 
     private function dispatchAsync(
-        ExportableInterface $exporter,
-        string $format,
-        array $filters,
-    ): array {
+        Exporter $exporter,
+        ExportRequestData $data,
+    ): ExportResultData {
         $export = Export::create([
-            'user_id'    => Auth::id(),
-            'module'     => $exporter->getFilename(),
-            'format'     => $format,
-            'status'     => 'pending',
+            'user_id' => $data->userId,
+            'module' => $exporter->key(),
+            'format' => $data->format,
+            'status' => 'pending',
             'expires_at' => now()->addHours(self::getExpirationHours()),
         ]);
 
-        ProcessExportJob::dispatch($export, $exporter, $format, $filters);
+        ProcessExportJob::dispatch($export, $exporter->key(), $data->format, $data->filters);
 
-        return ['ulid' => $export->ulid, 'status' => 'pending'];
+        return new ExportResultData($export->ulid, 'pending');
     }
 
     public static function getSyncLimit(): int

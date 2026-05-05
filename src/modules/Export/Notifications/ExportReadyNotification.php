@@ -21,10 +21,10 @@ class ExportReadyNotification extends Notification
     {
         return [
             'export_uuid' => $this->export->uuid,
-            'module'      => $this->export->module,
-            'format'      => $this->export->format,
-            'filename'    => $this->export->filename,
-            'expires_at'  => $this->export->expires_at?->toISOString(),
+            'module' => $this->export->module,
+            'format' => $this->export->format,
+            'filename' => $this->export->filename,
+            'expires_at' => $this->export->expires_at?->toISOString(),
             'download_url' => route('api.exports.download', $this->export->uuid),
         ];
     }

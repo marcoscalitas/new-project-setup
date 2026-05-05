@@ -9,8 +9,10 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
-use Modules\Export\Contracts\ExportableInterface;
 use Modules\Export\Models\Export;
+use Modules\Export\Notifications\ExportReadyNotification;
+use Shared\Contracts\Export\Exporter;
+use Shared\Contracts\Export\ExportRegistry;
 use Spatie\Browsershot\Browsershot;
 use Throwable;
 
@@ -19,11 +21,12 @@ class ProcessExportJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
     public int $timeout = 300;
 
     public function __construct(
         private readonly Export $export,
-        private readonly ExportableInterface $exporter,
+        private readonly string $exporterKey,
         private readonly string $format,
         private readonly array $filters = [],
     ) {}
@@ -32,49 +35,51 @@ class ProcessExportJob implements ShouldQueue
     {
         $this->export->update(['status' => 'processing']);
 
-        $filename = $this->exporter->getFilename() . '_' . now()->format('Y-m-d_His') . '.' . $this->format;
-        $path     = 'exports/' . $this->export->uuid . '/' . $filename;
+        $exporter = app(ExportRegistry::class)->get($this->exporterKey);
+
+        $filename = $exporter->getFilename().'_'.now()->format('Y-m-d_His').'.'.$this->format;
+        $path = 'exports/'.$this->export->uuid.'/'.$filename;
 
         if ($this->format === 'pdf') {
-            $this->generatePdf($path);
+            $this->generatePdf($exporter, $path);
         } else {
-            $this->generateSpreadsheet($path);
+            $this->generateSpreadsheet($exporter, $path);
         }
 
         $this->export->update([
-            'status'   => 'completed',
-            'path'     => $path,
+            'status' => 'completed',
+            'path' => $path,
             'filename' => $filename,
         ]);
 
-        $this->export->user->notify(new \Modules\Export\Notifications\ExportReadyNotification($this->export));
+        $this->export->user->notify(new ExportReadyNotification($this->export));
     }
 
     public function failed(Throwable $e): void
     {
         $this->export->update([
             'status' => 'failed',
-            'error'  => $e->getMessage(),
+            'error' => $e->getMessage(),
         ]);
     }
 
-    private function generateSpreadsheet(string $path): void
+    private function generateSpreadsheet(Exporter $exporter, string $path): void
     {
         $excelFormat = $this->format === 'xlsx'
             ? \Maatwebsite\Excel\Excel::XLSX
             : \Maatwebsite\Excel\Excel::CSV;
 
         Excel::store(
-            $this->exporter->getExportClass($this->filters),
+            $exporter->getExportClass($this->filters),
             $path,
             'local',
             $excelFormat,
         );
     }
 
-    private function generatePdf(string $path): void
+    private function generatePdf(Exporter $exporter, string $path): void
     {
-        $html = view($this->exporter->getPdfView(), $this->exporter->getPdfData($this->filters))->render();
+        $html = view($exporter->getPdfView(), $exporter->getPdfData($this->filters))->render();
 
         $pdf = Browsershot::html($html)
             ->format('A4')

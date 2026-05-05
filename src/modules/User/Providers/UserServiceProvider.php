@@ -16,6 +16,8 @@ use Modules\User\Listeners\NotifyOnUserDeleted;
 use Modules\User\Listeners\NotifyOnUserUpdated;
 use Modules\User\Models\User;
 use Modules\User\Policies\UserPolicy;
+use Modules\User\Services\UserExportService;
+use Shared\Contracts\Export\ExportRegistry;
 
 class UserServiceProvider extends ServiceProvider
 {
@@ -24,7 +26,7 @@ class UserServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind('export.users', \Modules\User\Services\UserExportService::class);
+        $this->app->bind(UserExportService::class);
     }
 
     /**
@@ -34,22 +36,24 @@ class UserServiceProvider extends ServiceProvider
     {
         Gate::policy(User::class, UserPolicy::class);
 
+        app(ExportRegistry::class)->register(app(UserExportService::class));
+
         Event::listen(UserUpdated::class, [LogUserUpdate::class, 'handle']);
         Event::listen(UserDeleted::class, [LogUserDeletion::class, 'handle']);
         Event::listen(UserCreated::class, [NotifyOnUserCreated::class, 'handle']);
         Event::listen(UserUpdated::class, [NotifyOnUserUpdated::class, 'handle']);
         Event::listen(UserDeleted::class, [NotifyOnUserDeleted::class, 'handle']);
 
-        if (file_exists($web = __DIR__ . '/../Routes/web.php')) {
+        if (file_exists($web = __DIR__.'/../Routes/web.php')) {
             Route::middleware('web')->group($web);
         }
-        if (file_exists($api = __DIR__ . '/../Routes/api.php')) {
+        if (file_exists($api = __DIR__.'/../Routes/api.php')) {
             Route::prefix('api/v1')->middleware('api')->group($api);
         }
-        if (is_dir($migrations = __DIR__ . '/../Database/Migrations')) {
+        if (is_dir($migrations = __DIR__.'/../Database/Migrations')) {
             $this->loadMigrationsFrom($migrations);
         }
-        if (is_dir($views = __DIR__ . '/../Resources/views')) {
+        if (is_dir($views = __DIR__.'/../Resources/views')) {
             $this->loadViewsFrom($views, 'user');
         }
     }

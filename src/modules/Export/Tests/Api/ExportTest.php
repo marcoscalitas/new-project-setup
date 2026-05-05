@@ -10,7 +10,6 @@ use Maatwebsite\Excel\Facades\Excel;
 use Modules\Export\Jobs\ProcessExportJob;
 use Modules\Export\Models\Export;
 use Modules\Export\Services\ExportService;
-use Modules\Authorization\Models\Permission;
 use Modules\User\Models\User;
 use Tests\TestCase;
 
@@ -19,23 +18,24 @@ class ExportTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private string $token;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        if (!file_exists(storage_path('oauth-private.key'))) {
+        if (! file_exists(storage_path('oauth-private.key'))) {
             $this->artisan('passport:keys', ['--force' => true]);
         }
 
         Client::create([
-            'name'          => 'Test Personal Client',
-            'secret'        => null,
+            'name' => 'Test Personal Client',
+            'secret' => null,
             'redirect_uris' => [],
-            'grant_types'   => ['personal_access'],
-            'provider'      => 'users',
-            'revoked'       => false,
+            'grant_types' => ['personal_access'],
+            'provider' => 'users',
+            'revoked' => false,
         ]);
 
         $this->user = User::factory()->create();
@@ -44,7 +44,7 @@ class ExportTest extends TestCase
 
     private function authHeaders(): array
     {
-        return ['Authorization' => 'Bearer ' . $this->token];
+        return ['Authorization' => 'Bearer '.$this->token];
     }
 
     // == SYNC EXPORTS ==
@@ -91,7 +91,7 @@ class ExportTest extends TestCase
             'format' => 'csv',
         ], $this->authHeaders());
 
-        Excel::assertDownloaded('users_' . now()->format('Y-m-d') . '_' . now()->format('His') . '.csv');
+        Excel::assertDownloaded('users_'.now()->format('Y-m-d').'_'.now()->format('His').'.csv');
     }
 
     public function test_sync_xlsx_export_returns_file_when_under_limit(): void
@@ -108,7 +108,7 @@ class ExportTest extends TestCase
 
         $response->assertOk();
 
-        Excel::assertDownloaded('users_' . now()->format('Y-m-d') . '_' . now()->format('His') . '.xlsx');
+        Excel::assertDownloaded('users_'.now()->format('Y-m-d').'_'.now()->format('His').'.xlsx');
     }
 
     // == ASYNC EXPORTS ==
@@ -142,9 +142,9 @@ class ExportTest extends TestCase
 
         $this->assertDatabaseHas('exports', [
             'user_id' => $this->user->id,
-            'module'  => 'users',
-            'format'  => 'xlsx',
-            'status'  => 'pending',
+            'module' => 'users',
+            'format' => 'xlsx',
+            'status' => 'pending',
         ]);
     }
 
@@ -153,12 +153,12 @@ class ExportTest extends TestCase
     public function test_can_check_status_of_own_export(): void
     {
         $export = Export::create([
-            'user_id'    => $this->user->id,
-            'module'     => 'users',
-            'format'     => 'xlsx',
-            'status'     => 'completed',
-            'path'       => 'exports/test/users.xlsx',
-            'filename'   => 'users.xlsx',
+            'user_id' => $this->user->id,
+            'module' => 'users',
+            'format' => 'xlsx',
+            'status' => 'completed',
+            'path' => 'exports/test/users.xlsx',
+            'filename' => 'users.xlsx',
             'expires_at' => now()->addHours(24),
         ]);
 
@@ -173,10 +173,10 @@ class ExportTest extends TestCase
     {
         $otherUser = User::factory()->create();
         $export = Export::create([
-            'user_id'    => $otherUser->id,
-            'module'     => 'users',
-            'format'     => 'xlsx',
-            'status'     => 'completed',
+            'user_id' => $otherUser->id,
+            'module' => 'users',
+            'format' => 'xlsx',
+            'status' => 'completed',
             'expires_at' => now()->addHours(24),
         ]);
 
@@ -190,10 +190,10 @@ class ExportTest extends TestCase
     public function test_cannot_download_pending_export(): void
     {
         $export = Export::create([
-            'user_id'    => $this->user->id,
-            'module'     => 'users',
-            'format'     => 'xlsx',
-            'status'     => 'pending',
+            'user_id' => $this->user->id,
+            'module' => 'users',
+            'format' => 'xlsx',
+            'status' => 'pending',
             'expires_at' => now()->addHours(24),
         ]);
 
@@ -208,12 +208,12 @@ class ExportTest extends TestCase
         Storage::disk('local')->put('exports/test/users.xlsx', 'fake content');
 
         $export = Export::create([
-            'user_id'    => $this->user->id,
-            'module'     => 'users',
-            'format'     => 'xlsx',
-            'status'     => 'completed',
-            'path'       => 'exports/test/users.xlsx',
-            'filename'   => 'users.xlsx',
+            'user_id' => $this->user->id,
+            'module' => 'users',
+            'format' => 'xlsx',
+            'status' => 'completed',
+            'path' => 'exports/test/users.xlsx',
+            'filename' => 'users.xlsx',
             'expires_at' => now()->subHour(),
         ]);
 
@@ -228,12 +228,12 @@ class ExportTest extends TestCase
         Storage::disk('local')->put('exports/test/users.xlsx', 'fake xlsx content');
 
         $export = Export::create([
-            'user_id'    => $this->user->id,
-            'module'     => 'users',
-            'format'     => 'xlsx',
-            'status'     => 'completed',
-            'path'       => 'exports/test/users.xlsx',
-            'filename'   => 'users.xlsx',
+            'user_id' => $this->user->id,
+            'module' => 'users',
+            'format' => 'xlsx',
+            'status' => 'completed',
+            'path' => 'exports/test/users.xlsx',
+            'filename' => 'users.xlsx',
             'expires_at' => now()->addHours(24),
         ]);
 
@@ -251,20 +251,20 @@ class ExportTest extends TestCase
         Storage::disk('local')->put('exports/abc/users.xlsx', 'content');
 
         $expired = Export::create([
-            'user_id'    => $this->user->id,
-            'module'     => 'users',
-            'format'     => 'xlsx',
-            'status'     => 'completed',
-            'path'       => 'exports/abc/users.xlsx',
-            'filename'   => 'users.xlsx',
+            'user_id' => $this->user->id,
+            'module' => 'users',
+            'format' => 'xlsx',
+            'status' => 'completed',
+            'path' => 'exports/abc/users.xlsx',
+            'filename' => 'users.xlsx',
             'expires_at' => now()->subHour(),
         ]);
 
         $valid = Export::create([
-            'user_id'    => $this->user->id,
-            'module'     => 'users',
-            'format'     => 'csv',
-            'status'     => 'completed',
+            'user_id' => $this->user->id,
+            'module' => 'users',
+            'format' => 'csv',
+            'status' => 'completed',
             'expires_at' => now()->addHours(24),
         ]);
 
@@ -288,7 +288,7 @@ class ExportTest extends TestCase
 
         $response->assertOk();
 
-        Excel::assertDownloaded('activity_log_' . now()->format('Y-m-d') . '_' . now()->format('His') . '.csv');
+        Excel::assertDownloaded('activity_log_'.now()->format('Y-m-d').'_'.now()->format('His').'.csv');
     }
 
     public function test_sync_xlsx_export_activity_log(): void
@@ -303,7 +303,7 @@ class ExportTest extends TestCase
 
         $response->assertOk();
 
-        Excel::assertDownloaded('activity_log_' . now()->format('Y-m-d') . '_' . now()->format('His') . '.xlsx');
+        Excel::assertDownloaded('activity_log_'.now()->format('Y-m-d').'_'.now()->format('His').'.xlsx');
     }
 
     public function test_sync_pdf_export_users(): void
@@ -314,7 +314,7 @@ class ExportTest extends TestCase
         $this->mock(ExportService::class, function ($mock) {
             $mock->shouldReceive('handle')->once()->andReturn(
                 response('%PDF-1.4 fake', 200, [
-                    'Content-Type'        => 'application/pdf',
+                    'Content-Type' => 'application/pdf',
                     'Content-Disposition' => 'attachment; filename="users_test.pdf"',
                 ])
             );
@@ -336,7 +336,7 @@ class ExportTest extends TestCase
         $this->mock(ExportService::class, function ($mock) {
             $mock->shouldReceive('handle')->once()->andReturn(
                 response('%PDF-1.4 fake', 200, [
-                    'Content-Type'        => 'application/pdf',
+                    'Content-Type' => 'application/pdf',
                     'Content-Disposition' => 'attachment; filename="activity_log_test.pdf"',
                 ])
             );
@@ -367,9 +367,9 @@ class ExportTest extends TestCase
         Queue::assertPushed(ProcessExportJob::class);
         $this->assertDatabaseHas('exports', [
             'user_id' => $this->user->id,
-            'module'  => 'users',
-            'format'  => 'csv',
-            'status'  => 'pending',
+            'module' => 'users',
+            'format' => 'csv',
+            'status' => 'pending',
         ]);
     }
 
@@ -387,9 +387,9 @@ class ExportTest extends TestCase
         Queue::assertPushed(ProcessExportJob::class);
         $this->assertDatabaseHas('exports', [
             'user_id' => $this->user->id,
-            'module'  => 'users',
-            'format'  => 'pdf',
-            'status'  => 'pending',
+            'module' => 'users',
+            'format' => 'pdf',
+            'status' => 'pending',
         ]);
     }
 
@@ -401,13 +401,13 @@ class ExportTest extends TestCase
         Storage::disk('local')->put('exports/other/users.xlsx', 'fake content');
 
         $otherUser = User::factory()->create();
-        $export    = Export::create([
-            'user_id'    => $otherUser->id,
-            'module'     => 'users',
-            'format'     => 'xlsx',
-            'status'     => 'completed',
-            'path'       => 'exports/other/users.xlsx',
-            'filename'   => 'users.xlsx',
+        $export = Export::create([
+            'user_id' => $otherUser->id,
+            'module' => 'users',
+            'format' => 'xlsx',
+            'status' => 'completed',
+            'path' => 'exports/other/users.xlsx',
+            'filename' => 'users.xlsx',
             'expires_at' => now()->addHours(24),
         ]);
 
@@ -419,11 +419,11 @@ class ExportTest extends TestCase
     public function test_failed_export_shows_failed_status(): void
     {
         $export = Export::create([
-            'user_id'    => $this->user->id,
-            'module'     => 'users',
-            'format'     => 'xlsx',
-            'status'     => 'failed',
-            'error'      => 'Chrome process failed',
+            'user_id' => $this->user->id,
+            'module' => 'users',
+            'format' => 'xlsx',
+            'status' => 'failed',
+            'error' => 'Chrome process failed',
             'expires_at' => now()->addHours(24),
         ]);
 
@@ -433,4 +433,3 @@ class ExportTest extends TestCase
         $response->assertJsonPath('status', 'failed');
     }
 }
-

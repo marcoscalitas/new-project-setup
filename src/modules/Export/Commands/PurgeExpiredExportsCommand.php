@@ -8,7 +8,8 @@ use Modules\Export\Models\Export;
 
 class PurgeExpiredExportsCommand extends Command
 {
-    protected $signature   = 'exports:purge';
+    protected $signature = 'exports:purge';
+
     protected $description = 'Delete expired export files and records';
 
     public function handle(): int

@@ -13,13 +13,13 @@ class ExportFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id'    => User::factory(),
-            'module'     => $this->faker->randomElement(['users', 'activity_log']),
-            'format'     => $this->faker->randomElement(['csv', 'xlsx', 'pdf']),
-            'status'     => $this->faker->randomElement(['pending', 'completed', 'failed']),
-            'path'       => null,
-            'filename'   => null,
-            'error'      => null,
+            'user_id' => User::factory(),
+            'module' => $this->faker->randomElement(['users', 'activity_log']),
+            'format' => $this->faker->randomElement(['csv', 'xlsx', 'pdf']),
+            'status' => $this->faker->randomElement(['pending', 'completed', 'failed']),
+            'path' => null,
+            'filename' => null,
+            'error' => null,
             'expires_at' => null,
         ];
     }
@@ -27,9 +27,9 @@ class ExportFactory extends Factory
     public function completed(): static
     {
         return $this->state([
-            'status'     => 'completed',
-            'path'       => 'exports/test.csv',
-            'filename'   => 'test.csv',
+            'status' => 'completed',
+            'path' => 'exports/test.csv',
+            'filename' => 'test.csv',
             'expires_at' => now()->addDays(7),
         ]);
     }

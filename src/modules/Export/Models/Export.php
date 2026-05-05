@@ -5,16 +5,17 @@ namespace Modules\Export\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Shared\Traits\HasUlid;
+use Modules\Export\Database\Factories\ExportFactory;
 use Modules\User\Models\User;
+use Shared\Traits\HasUlid;
 
 class Export extends Model
 {
     use HasFactory, HasUlid;
 
-    protected static function newFactory(): \Modules\Export\Database\Factories\ExportFactory
+    protected static function newFactory(): ExportFactory
     {
-        return \Modules\Export\Database\Factories\ExportFactory::new();
+        return ExportFactory::new();
     }
 
     protected $fillable = [

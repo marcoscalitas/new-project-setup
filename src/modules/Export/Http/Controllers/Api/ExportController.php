@@ -9,31 +9,38 @@ use Illuminate\Support\Facades\Storage;
 use Modules\Export\Http\Requests\ExportRequest;
 use Modules\Export\Models\Export;
 use Modules\Export\Services\ExportService;
+use Shared\Contracts\Export\ExportRegistry;
+use Shared\Data\Export\ExportRequestData;
+use Shared\Data\Export\ExportResultData;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExportController
 {
-    public function __construct(private readonly ExportService $exportService) {}
+    public function __construct(
+        private readonly ExportService $exportService,
+        private readonly ExportRegistry $exportRegistry,
+    ) {}
 
     public function export(ExportRequest $request): JsonResponse|BinaryFileResponse|StreamedResponse|Response
     {
-        $module = $request->input('module');
-        $key    = "export.{$module}";
+        $data = new ExportRequestData(
+            module: $request->input('module'),
+            format: $request->input('format'),
+            filters: $request->input('filters', []),
+            userId: Auth::id(),
+        );
 
-        abort_unless(app()->bound($key), 422, 'Módulo de exportação inválido.');
+        $result = $this->exportService->handle(
+            $this->exportRegistry->get($data->module),
+            $data,
+        );
 
-        $exporter = app($key);
-        $filters  = $request->input('filters', []);
-        $format   = $request->input('format');
-
-        $result = $this->exportService->handle($exporter, $format, $filters);
-
-        if (is_array($result)) {
+        if ($result instanceof ExportResultData) {
             return response()->json([
                 'message' => 'Exportação em processamento. Receberás uma notificação quando estiver pronto.',
-                'ulid'    => $result['ulid'],
-                'status'  => $result['status'],
+                'ulid' => $result->ulid,
+                'status' => $result->status,
             ], 202);
         }
 
@@ -47,10 +54,10 @@ class ExportController
             ->firstOrFail();
 
         return response()->json([
-            'ulid'       => $export->ulid,
-            'module'     => $export->module,
-            'format'     => $export->format,
-            'status'     => $export->status,
+            'ulid' => $export->ulid,
+            'module' => $export->module,
+            'format' => $export->format,
+            'status' => $export->status,
             'expires_at' => $export->expires_at?->toISOString(),
         ]);
     }

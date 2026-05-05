@@ -10,12 +10,13 @@ use Modules\ActivityLog\Policies\ActivityLogPolicy;
 use Modules\ActivityLog\Services\ActivityLogExportService;
 use Modules\ActivityLog\Services\SpatieActivityLogger;
 use Shared\Contracts\ActivityLog\ActivityLogger;
+use Shared\Contracts\Export\ExportRegistry;
 
 class ActivityLogServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->bind('export.activity_log', ActivityLogExportService::class);
+        $this->app->bind(ActivityLogExportService::class);
         $this->app->bind(ActivityLogger::class, SpatieActivityLogger::class);
     }
 
@@ -26,6 +27,8 @@ class ActivityLogServiceProvider extends ServiceProvider
         }
 
         Gate::policy(ActivityLog::class, ActivityLogPolicy::class);
+
+        app(ExportRegistry::class)->register(app(ActivityLogExportService::class));
 
         if (file_exists($api = __DIR__.'/../Routes/api.php')) {
             Route::prefix('api/v1')->middleware('api')->group($api);

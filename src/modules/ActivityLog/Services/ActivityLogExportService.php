@@ -6,10 +6,20 @@ use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Modules\ActivityLog\Exports\ActivityLogExport;
 use Modules\ActivityLog\Models\ActivityLog;
-use Modules\Export\Contracts\ExportableInterface;
+use Shared\Contracts\Export\Exporter;
 
-class ActivityLogExportService implements ExportableInterface
+class ActivityLogExportService implements Exporter
 {
+    public function key(): string
+    {
+        return 'activity_log';
+    }
+
+    public function allowedFormats(): array
+    {
+        return ['csv', 'xlsx', 'pdf'];
+    }
+
     public function getQuery(array $filters = []): Builder
     {
         $query = ActivityLog::query();
