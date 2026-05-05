@@ -1,0 +1,25 @@
+<?php
+
+namespace Modules\Authentication\Listeners;
+
+use App\Contracts\MailSenderInterface;
+use App\Mail\MailMessage;
+use Modules\User\Events\UserCreated;
+
+class SendWelcomeEmail
+{
+    public function __construct(private MailSenderInterface $mail) {}
+
+    public function handle(UserCreated $event): void
+    {
+        $this->mail->queue(
+            MailMessage::make(
+                to: $event->userEmail,
+                subject: 'Welcome to ' . config('app.name'),
+                view: 'auth::emails.welcome',
+                data: ['user' => (object)['name' => $event->userName, 'email' => $event->userEmail]],
+            )
+        );
+    }
+}
+
