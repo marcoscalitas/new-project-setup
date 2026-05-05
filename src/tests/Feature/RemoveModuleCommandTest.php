@@ -61,7 +61,7 @@ class RemoveModuleCommandTest extends TestCase
 
     public function test_fails_for_protected_modules(): void
     {
-        $protected = ['Identity', 'User', 'Authorization', 'Notification'];
+        $protected = ['Authentication', 'User', 'Authorization', 'Notification'];
 
         foreach ($protected as $module) {
             $this->artisan('remove:module', ['name' => $module, '--force' => true])
@@ -117,7 +117,7 @@ class RemoveModuleCommandTest extends TestCase
 
         $providers = file_get_contents(base_path('bootstrap/providers.php'));
 
-        $this->assertStringContainsString('Modules\Identity\Providers\IdentityServiceProvider::class', $providers);
+        $this->assertStringContainsString('Modules\Authentication\Providers\AuthenticationServiceProvider::class', $providers);
         $this->assertStringContainsString('Modules\User\Providers\UserServiceProvider::class', $providers);
         $this->assertStringContainsString('Modules\Authorization\Providers\AuthorizationServiceProvider::class', $providers);
         $this->assertStringContainsString('Modules\Notification\Providers\NotificationServiceProvider::class', $providers);
@@ -151,7 +151,7 @@ class RemoveModuleCommandTest extends TestCase
 
     public function test_protection_works_with_lowercase_input(): void
     {
-        $this->artisan('remove:module', ['name' => 'identity', '--force' => true])
+        $this->artisan('remove:module', ['name' => 'authentication', '--force' => true])
             ->assertFailed();
 
         $this->artisan('remove:module', ['name' => 'user', '--force' => true])
@@ -208,7 +208,7 @@ class RemoveModuleCommandTest extends TestCase
         $phpunit = file_get_contents(base_path('phpunit.xml'));
 
         $this->assertStringContainsString('name="Feature"', $phpunit);
-        $this->assertStringContainsString('name="Identity-Web"', $phpunit);
+        $this->assertStringContainsString('name="Authentication-Web"', $phpunit);
         $this->assertStringContainsString('name="User-Api"', $phpunit);
         $this->assertStringContainsString('name="User-Web"', $phpunit);
         $this->assertStringContainsString('name="Authorization-Api"', $phpunit);
